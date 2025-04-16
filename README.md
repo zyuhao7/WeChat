@@ -19,8 +19,8 @@
 
 | 模块 | 技术 |
 |------|------|
-| 前端 | C++17, Qt, QSS, QPainter |
-| 后端 | C++17, Boost.Asio, gRPC, protobuf |
+| 前端 | C++, Qt, QSS, QPainter |
+| 后端 | C++, Boost.Asio, gRPC, protobuf |
 | 数据 | Redis, MySQL |
 | 系统 | Linux, TCP/IP, Epoll |
 | 部署 | Makefile, Shell 脚本（可后续加 Docker 支持） |
