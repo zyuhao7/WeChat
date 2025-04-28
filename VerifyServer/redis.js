@@ -1,21 +1,22 @@
-
 const config_module = require('./config')
 const Redis = require("ioredis");
 
 // 创建Redis客户端实例
 const RedisCli = new Redis({
-  host: config_module.redis_host,       // Redis服务器主机名
+  host: config_module.redis_host,        // Redis服务器主机名
   port: config_module.redis_port,        // Redis服务器端口号
-  password: config_module.redis_passwd, // Redis密码
+  password: config_module.redis_passwd,  // Redis密码
 
-  enableOfflineQueue: false, // 禁用离线队列
-  enableReadyCheck: true,    // 启用连接就绪检查
+  enableOfflineQueue: false,             // 禁用离线队列
+  enableReadyCheck: true,                // 启用连接就绪检查
 });
 
 
-// 监听连接错误事件
+/**
+ * 监听连接错误信息
+ */
 RedisCli.on("error", function (err) {
-  console.error("Redis connection error:", err);
+  console.log("Redis connection error", err);
   // 尝试重新连接
   RedisCli.connect();
 });
@@ -26,12 +27,13 @@ RedisCli.on("end", function () {
   // 尝试重新连接
   RedisCli.connect();
 });
-
+  
 // 心跳机制：定时发送心跳消息
 setInterval(() => {
   // 发送心跳消息，比如向一个特定的 key 写入当前时间戳
   RedisCli.set("heartbeat", Date.now());
-}, 60000); // 每 5 秒发送一次心跳消息
+}, 10000); // 每10秒发送一次心跳消息
+
 
 /**
  * 根据key获取value
@@ -39,7 +41,6 @@ setInterval(() => {
  * @returns 
  */
 async function GetRedis(key) {
-    
     try{
         const result = await RedisCli.get(key)
         if(result === null){
@@ -50,9 +51,8 @@ async function GetRedis(key) {
         return result
     }catch(error){
         console.log('GetRedis error is', error);
-        return null
+        return null 
     }
-
   }
 
 /**
@@ -60,7 +60,7 @@ async function GetRedis(key) {
  * @param {*} key 
  * @returns 
  */
-async function QueryRedis(key) {
+async function QueryRedis(key){
     try{
         const result = await RedisCli.exists(key)
         //  判断该值是否为空 如果为空返回null
@@ -97,5 +97,4 @@ async function SetRedisExpire(key,value, exptime){
     }
 }
 
-
-module.exports = {GetRedis, QueryRedis,SetRedisExpire,}
+module.exports = {GetRedis, QueryRedis, SetRedisExpire,}
