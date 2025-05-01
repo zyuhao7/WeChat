@@ -5,7 +5,7 @@
 ChatGrpcClient::ChatGrpcClient()
 {
 	auto& cfg = ConfigMgr::Inst();
-	auto server_list = cfg["PeerServer"]["Servers"];
+	auto server_list = cfg["chatservers"]["Name"];
 
 	std::vector<std::string> words;
 	std::stringstream ss(server_list);
