@@ -16,6 +16,8 @@ MysqlDao::~MysqlDao() {
 	pool_->Close();
 }
 
+
+
 int MysqlDao::RegUser(const std::string& name, const std::string& email, const std::string& pwd)
 {
 	auto con = pool_->getConnection();
