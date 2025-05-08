@@ -62,8 +62,8 @@ void ClickedLabel::mouseReleaseEvent(QMouseEvent *event)
             return;
      }
 
-     // 调用基类的 mousePressEvent 以保证正常的事件处理
-    QLabel::mousePressEvent(event);
+     // 调用基类的 mouseReleaseEvent 以保证正常的事件处理
+    QLabel::mouseReleaseEvent(event);
 }
 
 void ClickedLabel::enterEvent(QEnterEvent *event)
