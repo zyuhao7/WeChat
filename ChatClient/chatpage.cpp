@@ -8,6 +8,7 @@
 #include "chatitembase.h"
 #include "textbubble.h"
 #include "picturebubble.h"
+#include "messagetextedit.h"
 #include "usermgr.h"
 #include <QJsonArray>
 #include <QJsonObject>
@@ -27,6 +28,9 @@ ChatPage::ChatPage(QWidget *parent) :
     // 设置图标样式
     ui->emo_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
     ui->file_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
+
+    // 添加回车发送消息信号
+    connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);
 }
 
 ChatPage::~ChatPage()
@@ -131,6 +135,7 @@ void ChatPage::on_send_btn_clicked()
                QString uuidString = uuid.toString();
 
                pBubble = new TextBubble(role, msgList[i].content);
+               // 发送已累积的消息并重置.
                if(txt_size + msgList[i].content.length() > 1024)
                {
                    textObj["fromuid"] = user_info->_uid;
@@ -138,24 +143,26 @@ void ChatPage::on_send_btn_clicked()
                    textObj["text_array"] = textArray;
                    QJsonDocument doc(textObj);
                    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+                   emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
 
                    txt_size = 0;
                    textArray = QJsonArray();
                    textObj = QJsonObject();
-
-                   emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
                }
 
                //将bubble和uid绑定，以后可以等网络返回消息后设置是否送达
-               //_bubble_map[uuidString] = pBubble;
+               // _bubble_map[uuidString] = pBubble;
                txt_size += msgList[i].content.length();
                QJsonObject obj;
                QByteArray utf8Message = msgList[i].content.toUtf8();
                obj["content"] = QString::fromUtf8(utf8Message);
                obj["msgid"] = uuidString;
                textArray.append(obj);
+
+               // 触发信号更新本地聊天记录
                auto txt_msg = std::make_shared<TextChatData>(uuidString, obj["content"].toString(),
                    user_info->_uid, _user_info->_uid);
+
                emit sig_append_send_chat_msg(txt_msg);
            }
            else if(type == "image")
@@ -166,7 +173,7 @@ void ChatPage::on_send_btn_clicked()
            {
 
            }
-           // 发送消息
+           // :) 添加气泡到聊天界面
            if(pBubble != nullptr)
            {
                pChatItem->setWidget(pBubble);
