@@ -733,21 +733,25 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg)
        // 更新当前聊天页面记录
        UpdateChatMsg(msg->_chat_msgs);
        UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
+       // + 个 return 不写 else, 或者写 else.
+    }
+    else
+    {
+        // 如果没找到, 创建插入新的 ListWidget
+        auto* chat_user_wid = new ChatUserWid();
+        auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
+        chat_user_wid->SetInfo(fri_ptr);
+
+        QListWidgetItem* item = new QListWidgetItem;
+        item->setSizeHint(chat_user_wid->sizeHint());
+        chat_user_wid->UpdateLastMsg(msg->_chat_msgs);
+        UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
+        ui->chat_user_list->insertItem(0, item);
+        ui->chat_user_list->setItemWidget(item, chat_user_wid);
+        _chat_items_added.insert(msg->_from_uid, item);
     }
 
 
-    // 如果没找到, 创建插入新的 ListWidget
-    auto* chat_user_wid = new ChatUserWid();
-    auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
-    chat_user_wid->SetInfo(fri_ptr);
-
-    QListWidgetItem* item = new QListWidgetItem;
-    item->setSizeHint(chat_user_wid->sizeHint());
-    chat_user_wid->UpdateLastMsg(msg->_chat_msgs);
-    UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
-    ui->chat_user_list->insertItem(0, item);
-    ui->chat_user_list->setItemWidget(item, chat_user_wid);
-    _chat_items_added.insert(msg->_from_uid, item);
 }
 
 void ChatDialog::slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data)
