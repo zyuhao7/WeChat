@@ -1,8 +1,6 @@
 #include "chatpage.h"
 #include "ui_chatpage.h"
 #include "chatitembase.h"
-#include "chatpage.h"
-#include "ui_chatpage.h"
 #include <QStyleOption>
 #include <QPainter>
 #include "chatitembase.h"
@@ -143,11 +141,12 @@ void ChatPage::on_send_btn_clicked()
                    textObj["text_array"] = textArray;
                    QJsonDocument doc(textObj);
                    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-                   emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
-
+                   // //发送并清空之前累计的文本列表
                    txt_size = 0;
                    textArray = QJsonArray();
                    textObj = QJsonObject();
+
+                   emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
                }
 
                //将bubble和uid绑定，以后可以等网络返回消息后设置是否送达
@@ -189,6 +188,7 @@ void ChatPage::on_send_btn_clicked()
       QJsonDocument doc(textObj);
       QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
       //发送并清空之前累计的文本列表
+      txt_size = 0;
       textArray = QJsonArray();
       textObj = QJsonObject();
       //发送tcp请求给chat server
