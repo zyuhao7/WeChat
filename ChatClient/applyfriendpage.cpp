@@ -46,6 +46,7 @@ void ApplyFriendPage::AddNewApply(std::shared_ptr<AddFriendApply> apply)
         ui->apply_friend_list->insertItem(0,item);
         ui->apply_friend_list->setItemWidget(item, apply_item);
         apply_item->ShowAddBtn(true);
+        _unauth_items[apply_info->_uid] = apply_item;
 
         //收到审核好友信号
         connect(apply_item, &ApplyFriendItem::sig_auth_friend, [this](std::shared_ptr<ApplyInfo> apply_info) {
@@ -54,6 +55,8 @@ void ApplyFriendPage::AddNewApply(std::shared_ptr<AddFriendApply> apply)
             authFriend->SetApplyInfo(apply_info);
             authFriend->show();
         });
+
+
 }
 
 void ApplyFriendPage::paintEvent(QPaintEvent *event)
