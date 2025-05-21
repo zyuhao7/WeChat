@@ -14,19 +14,19 @@ void ClickedLabel::mousePressEvent(QMouseEvent *event)
     // _curstate 是标签本身的逻辑状态，和鼠标是否按着没关
     if (event->button() == Qt::LeftButton)
     {
-            // 如果当前状态时 Normal(未选中).
-            if(_curstate == ClickLbState::Normal){
-                  qDebug()<<"clicked , change to selected hover: "<< _selected_hover;
+            // 如果当前状态是 Normal(未选中).
+            if(_curstate == ClickLbState::Normal)
+            {
+                qDebug()<<"clicked , change to selected hover: "<< _selected_hover;
                 _curstate = ClickLbState::Selected;
                 setProperty("state",_selected_hover); // 选中状态下的 hover 样式
                 repolish(this);
                 update();
-
             }
             // 当前为 Selected(选中).
             else
             {
-                   qDebug()<<"clicked , change to normal hover: "<< _normal_hover;
+                qDebug()<<"clicked , change to normal hover: "<< _normal_hover;
                 _curstate = ClickLbState::Normal;
                 setProperty("state",_normal_hover);
                 repolish(this);
