@@ -93,7 +93,7 @@ bool ContactUserList::eventFilter(QObject *watched, QEvent *event)
             return true; // 停止事件传递
         }
 
-           return QListWidget::eventFilter(watched, event);
+        return QListWidget::eventFilter(watched, event);
 }
 
 void ContactUserList::addContactUserList()
@@ -147,7 +147,7 @@ void ContactUserList::addContactUserList()
         int name_i = randomValue%names.size();
 
         auto *con_user_wid = new ConUserItem();
-        con_user_wid->SetInfo(0,names[name_i], heads[head_i]);
+        con_user_wid->SetInfo(0, names[name_i], heads[head_i]);
         QListWidgetItem *item = new QListWidgetItem;
         //qDebug()<<"chat_user_wid sizeHint is " << chat_user_wid->sizeHint();
         item->setSizeHint(con_user_wid->sizeHint());
