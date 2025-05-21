@@ -23,7 +23,7 @@ public:
     void ResetNormalState();
 
 private:
-     QString _normal;
+     QString    _normal;
      QString _normal_hover;
      QString _normal_press;
 
