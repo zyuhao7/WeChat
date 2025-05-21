@@ -29,7 +29,6 @@ ChatView::ChatView(QWidget *parent)
     QScrollBar* pVScrollBar = m_pScrollArea->verticalScrollBar();
     connect(pVScrollBar, &QScrollBar::rangeChanged, this, &ChatView::onVScrollBarMoved);
 
-    // 把垂直 ScrollBar 放到上边, 而不是原来的并排
     QHBoxLayout* pHLayout_2 = new QHBoxLayout();
     pHLayout_2->addWidget(pVScrollBar, 0, Qt::AlignRight);
     pHLayout_2->setContentsMargins(0, 0, 0, 0);
