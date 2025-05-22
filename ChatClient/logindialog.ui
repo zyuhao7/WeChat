@@ -112,7 +112,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QLabel" name="email_label">
+        <widget class="QLabel" name="email_lb">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -151,7 +151,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QLabel" name="pass_label">
+        <widget class="QLabel" name="pass_lb">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -253,11 +253,20 @@
        </item>
        <item>
         <widget class="QPushButton" name="login_btn">
-         <property name="maximumSize">
+         <property name="minimumSize">
           <size>
-           <width>100</width>
+           <width>80</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
          </property>
          <property name="text">
           <string>登录</string>
@@ -296,11 +305,20 @@
        </item>
        <item>
         <widget class="QPushButton" name="reg_btn">
-         <property name="maximumSize">
+         <property name="minimumSize">
           <size>
-           <width>100</width>
+           <width>80</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>120</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
          </property>
          <property name="text">
           <string>注册</string>
