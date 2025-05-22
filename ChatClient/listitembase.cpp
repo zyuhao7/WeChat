@@ -20,6 +20,7 @@ ListItemType ListItemBase::GetItemType()
 
 void ListItemBase::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     QStyleOption opt;
     opt.initFrom(this);
     QPainter p(this);
