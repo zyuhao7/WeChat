@@ -226,7 +226,7 @@ void TcpMgr::initHandlers()
         emit sig_user_search(search_info);
 
     });
-
+    // A -> B 返回给 A 的客户端响应
     _handlers.insert(ID_ADD_FRIEND_RSP, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
@@ -257,7 +257,7 @@ void TcpMgr::initHandlers()
         qDebug()<<"add Friend RSP success!";
 
     });
-
+    // A -> B  返回给 B 的客户端的响应
     _handlers.insert(ID_NOTIFY_ADD_FRIEND_REQ, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
@@ -265,7 +265,8 @@ void TcpMgr::initHandlers()
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
            // 检查转换是否成功
-           if(jsonDoc.isNull()){
+           if(jsonDoc.isNull())
+           {
               qDebug() << "Failed to create QJsonDocument.";
               return;
            }
@@ -273,22 +274,22 @@ void TcpMgr::initHandlers()
            QJsonObject jsonObj = jsonDoc.object();
            qDebug()<< "data jsonobj is " << jsonObj ;
 
-           if(!jsonObj.contains("error")){
+           if(!jsonObj.contains("error"))
+           {
                int err = ErrorCodes::ERR_JSON;
                qDebug() << "notify add friend Failed, err is Json Parse Err" << err;
-
-               emit sig_user_search(nullptr);
+               emit sig_friend_apply(nullptr);
                return;
            }
 
            int err = jsonObj["error"].toInt();
            if(err != ErrorCodes::SUCCESS){
                qDebug() << "notify add friend Failed, err is " << err;
-               emit sig_user_search(nullptr);
+              emit sig_friend_apply(nullptr);
                return;
            }
 
-        int from_uid = jsonObj["applyuid"].toInt();
+         int from_uid = jsonObj["applyuid"].toInt();
          auto name = jsonObj["name"].toString();
          auto nick = jsonObj["nick"].toString();
          auto desc = jsonObj["desc"].toString();
@@ -475,7 +476,7 @@ void TcpMgr::slot_send_data(ReqId reqId, QByteArray dataBytes)
        // 设置数据流使用网络字节序
        out.setByteOrder(QDataStream::BigEndian);
 
-       // 写入ID和长度
+       // 写入id和长度
        out << id << len;
 
        // 添加字符串数据
