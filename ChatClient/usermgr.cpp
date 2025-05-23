@@ -222,24 +222,30 @@ bool UserMgr::CheckFriendById(int uid)
 
 void UserMgr::AddFriend(std::shared_ptr<AuthRsp> auth_rsp)
 {
-    // Fixed
-    auto friend_info = std::make_shared<FriendInfo>(auth_rsp);
-    if (_friend_map.contains(friend_info->_uid))
-            return;
 
-    _friend_list.push_back(friend_info);
+    auto friend_info = std::make_shared<FriendInfo>(auth_rsp);
     _friend_map[friend_info->_uid] = friend_info;
+    // Fixed
+    //auto friend_info = std::make_shared<FriendInfo>(auth_rsp);
+    //if (_friend_map.contains(friend_info->_uid))
+    //        return;
+
+    //_friend_list.push_back(friend_info);
+    //_friend_map[friend_info->_uid] = friend_info;
 }
 
 void UserMgr::AddFriend(std::shared_ptr<AuthInfo> auth_info)
 {
-    //Fixed
     auto friend_info = std::make_shared<FriendInfo>(auth_info);
-    if (_friend_map.contains(friend_info->_uid))
-            return;
-
-    _friend_list.push_back(friend_info);
     _friend_map[friend_info->_uid] = friend_info;
+
+    //Fixed
+        //auto friend_info = std::make_shared<FriendInfo>(auth_info);
+        //if (_friend_map.contains(friend_info->_uid))
+        //        return;
+
+        //_friend_list.push_back(friend_info);
+        //_friend_map[friend_info->_uid] = friend_info;
 }
 
 std::shared_ptr<FriendInfo> UserMgr::GetFriendById(int uid)
