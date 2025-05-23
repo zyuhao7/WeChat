@@ -300,13 +300,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="text">
@@ -336,13 +336,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="text">
@@ -355,13 +355,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>25</height>
+               <height>30</height>
               </size>
              </property>
              <property name="text">
@@ -455,13 +455,13 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>25</height>
+                <height>30</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>25</height>
+                <height>30</height>
                </size>
               </property>
               <property name="text">
@@ -508,14 +508,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TimerBtn</class>
-   <extends>QPushButton</extends>
-   <header>timerbtn.h</header>
-  </customwidget>
-  <customwidget>
    <class>ClickedLabel</class>
    <extends>QLabel</extends>
    <header>clickedlabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TimerBtn</class>
+   <extends>QPushButton</extends>
+   <header>timerbtn.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
