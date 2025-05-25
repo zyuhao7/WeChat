@@ -23,7 +23,7 @@
 | 后端 | C++, Boost.Asio, gRPC, protobuf |
 | 数据 | Redis, MySQL |
 | 系统 | Linux, TCP/IP, Epoll |
-| 部署 | Makefile, Shell 脚本（可后续加 Docker 支持） |
+| 部署 | Makefile, Shell 脚本 |
 
 ## 📁 项目结构
 
