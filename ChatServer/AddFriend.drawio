@@ -1,0 +1,116 @@
+<mxfile host="Electron" modified="2025-05-16T06:47:48.661Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.18 Chrome/120.0.6099.199 Electron/28.1.2 Safari/537.36" etag="roeWmQK58omedmuX4Y3L" version="22.1.18" type="device">
+  <diagram name="第 1 页" id="MeOgTXJA13UmkpyKbUSB">
+    <mxGraphModel dx="1448" dy="702" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-1" value="&lt;font face=&quot;Georgia&quot;&gt;CLient1&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="190" y="160" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-2" value="&lt;font face=&quot;Georgia&quot;&gt;CLient2&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="980" y="160" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-3" value="&lt;font face=&quot;Georgia&quot;&gt;Server1&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="300" y="460" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-4" value="&lt;font face=&quot;Georgia&quot;&gt;Server2&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="840" y="460" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-6" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.458;exitY=1.092;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.128;entryY=-0.075;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="05sUL_pFnaKxh3tO1CzM-1" target="05sUL_pFnaKxh3tO1CzM-3" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-7" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;ID_ADD_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-6" vertex="1" connectable="0">
+          <mxGeometry x="-0.2221" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-10" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=1;entryY=1;entryDx=0;entryDy=0;" parent="1" target="05sUL_pFnaKxh3tO1CzM-1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="430" y="450" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-11" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;ID_ADD_FRIEND_RSP&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-10" vertex="1" connectable="0">
+          <mxGeometry x="-0.12" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-12" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=0.3;entryY=1.125;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="05sUL_pFnaKxh3tO1CzM-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="970" y="460" as="sourcePoint" />
+            <mxPoint x="1020" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-13" value="&lt;font style=&quot;font-size: 14px;&quot; face=&quot;Georgia&quot;&gt;ID_NOTIFY_ADD_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-12" vertex="1" connectable="0">
+          <mxGeometry x="0.0543" y="5" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-14" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" target="05sUL_pFnaKxh3tO1CzM-4" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="510" y="480" as="sourcePoint" />
+            <mxPoint x="560" y="350" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-21" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;NotifyAddFriend&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-14" vertex="1" connectable="0">
+          <mxGeometry x="-0.2545" y="-3" relative="1" as="geometry">
+            <mxPoint x="27" y="-3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-16" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.975;exitY=1.092;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="05sUL_pFnaKxh3tO1CzM-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="1050" y="490" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-17" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;ID_AUTH_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-16" vertex="1" connectable="0">
+          <mxGeometry x="0.0367" relative="1" as="geometry">
+            <mxPoint x="11" y="11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-19" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" parent="1" source="05sUL_pFnaKxh3tO1CzM-3" target="05sUL_pFnaKxh3tO1CzM-1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="400" as="sourcePoint" />
+            <mxPoint x="650" y="350" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="180" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-23" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=1.032;entryY=0.625;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="05sUL_pFnaKxh3tO1CzM-4" target="05sUL_pFnaKxh3tO1CzM-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1040" y="499.3599999999999" as="sourcePoint" />
+            <mxPoint x="1359.6" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1300" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-26" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;ID_AUTH_FRIEND_RSP&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-23" vertex="1" connectable="0">
+          <mxGeometry x="0.296" y="-4" relative="1" as="geometry">
+            <mxPoint x="34" y="29" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-28" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.188;exitY=-0.033;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="05sUL_pFnaKxh3tO1CzM-4" target="05sUL_pFnaKxh3tO1CzM-2" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="870" y="500" as="sourcePoint" />
+            <mxPoint x="870" y="220" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="840" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="05sUL_pFnaKxh3tO1CzM-29" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 14px;&quot;&gt;ID_NOTIFY_AUTH_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="05sUL_pFnaKxh3tO1CzM-28" vertex="1" connectable="0">
+          <mxGeometry x="0.1318" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
