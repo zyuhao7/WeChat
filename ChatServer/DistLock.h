@@ -2,7 +2,9 @@
 #include <hiredis.h>
 #include <string>
 
-// 分布式锁
+/**
+ * @brief 分布式锁实现类
+ */
 class DistLock
 {
 public:
