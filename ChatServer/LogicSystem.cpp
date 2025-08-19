@@ -4,6 +4,7 @@
 #include "const.h"
 #include "RedisMgr.h"
 #include "UserMgr.h"
+#include "CServer.h"
 #include "ChatGrpcClient.h"
 using namespace std;
 
@@ -98,6 +99,7 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 	Json::Reader reader;
 	Json::Value root;
 	reader.parse(msg_data, root);
+
 	auto uid = root["uid"].asInt();
 	auto token = root["token"].asString();
 	std::cout << "user login uid is  " << uid << " user token  is "
@@ -125,6 +127,48 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 	}
 
 	rtvalue["error"] = ErrorCodes::Success;
+
+	//此处添加分布式锁，让该线程独占登录
+	// 拼接用户 ip 对应的 key
+
+	auto lock_key = LOCK_PREFIX + uid_str;
+	auto identifier = RedisMgr::GetInstance()->acquireLock(lock_key, LOCK_TIME_OUT, ACQUIRE_TIME_OUT);
+
+	// 利用 defer 解锁
+	Defer defer2([this, identifier, lock_key]() {
+		RedisMgr::GetInstance()->releaseLock(lock_key, identifier);
+		});
+
+	// 判断是否在别处或者本服务登录
+	std::string uid_ip_value = "";
+	auto uid_ip_key = USERIPPREFIX + uid_str;
+	bool b_ip = RedisMgr::GetInstance()->Get(uid_ip_key, uid_ip_value);
+	// 说明已经登录了, 此处应该踢掉之前的用户登录状态
+	if (b_ip)
+	{
+		// 获取当前服务器的 ip 信息
+		auto& cfg = ConfigMgr::Inst();
+		auto self_name = cfg["SelfServer"]["Name"];
+		// 如果之前登录和当前登录的服务器相同, 则直接在本服务器踢掉
+		if (uid_ip_value == self_name)
+		{
+			// 查找旧有连接
+			auto old_session = UserMgr::GetInstance()->GetSession(uid);
+
+			// 发送踢人消息
+			if (old_session)
+			{
+				old_session->NotifyOffline(uid);
+				// 清除旧有连接
+				_p_server->ClearSession(old_session->GetSessionId());
+			}
+		}
+		else
+		{
+			// 如果不是本服务器, 则通过 grpc 通知其他服务器踢掉.
+		}
+	}
+
 
 	std::string base_key = USER_BASE_INFO + uid_str;
 	auto user_info = std::make_shared<UserInfo>();
@@ -195,6 +239,8 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 
 	//uid 和 session 绑定管理,方便以后踢人操作
 	UserMgr::GetInstance()->SetUserSession(uid, session);
+	std::string uid_session_key = USER_SESSION_PREFIX + uid_str;
+	RedisMgr::GetInstance()->Set(uid_session_key, session->GetSessionId());
 
 	return;
 }
