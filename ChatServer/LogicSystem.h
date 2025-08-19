@@ -44,6 +44,7 @@ private:
 	std::condition_variable _consume;
 	bool _b_stop;
 	std::map<short, FunCallBack> _fun_callbacks;
+	std::shared_ptr<CServer> _p_server;
 
 };
 
