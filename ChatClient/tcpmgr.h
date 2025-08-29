@@ -7,6 +7,15 @@
 #include "global.h"
 #include "userdata.h"
 
+/******************************************************************************
+ *
+ * @file       tcpmgr.h
+ * @brief      网络收发消息管理者
+ *
+ * @author     沫羽皓
+ * @date       2024/12/3
+ * @history
+ *****************************************************************************/
 
 class TcpMgr : public QObject, public Singleton<TcpMgr>,
         public std::enable_shared_from_this<TcpMgr>
@@ -14,7 +23,7 @@ class TcpMgr : public QObject, public Singleton<TcpMgr>,
     Q_OBJECT
 public:
     ~TcpMgr();
-
+    void CloseConnection();
 private:
     friend class Singleton<TcpMgr>;
     TcpMgr();
@@ -44,6 +53,8 @@ private:
       void sig_add_auth_friend(std::shared_ptr<AuthInfo>);  
       void sig_auth_rsp(std::shared_ptr<AuthRsp>);
       void sig_text_chat_msg(std::shared_ptr<TextChatMsg> msg);
+      void sig_notify_offline();
+      void sig_connection_closed();
 };
 
 #endif // TCPMGR_H
