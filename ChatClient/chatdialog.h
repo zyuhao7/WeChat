@@ -3,6 +3,7 @@
 #include "global.h"
 #include "statewidget.h"
 #include "userdata.h"
+#include "statelabel.h"
 #include <QDialog>
 #include <QLabel>
 #include <QList>
@@ -45,6 +46,7 @@ private:
     QWidget* _last_widget;
     QMap<int, QListWidgetItem*> _chat_items_added;
     int _cur_chat_uid;
+    QTimer* _timer;
 
 public slots:
     void slot_loading_chat_user();
