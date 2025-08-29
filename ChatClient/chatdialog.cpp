@@ -148,15 +148,29 @@ ChatDialog::ChatDialog(QWidget *parent) :
    //连接聊天列表点击信号
    connect(ui->chat_user_list, &QListWidget::itemClicked, this, &ChatDialog::slot_item_clicked);
 
-//   //连接对端消息通知
+   //连接对端消息通知
    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_text_chat_msg,
            this, &ChatDialog::slot_text_chat_msg);
 
    connect(ui->chat_page, &ChatPage::sig_append_send_chat_msg, this, &ChatDialog::slot_append_send_chat_msg);
-;}
+
+   _timer = new QTimer(this);
+   connect(_timer, &QTimer::timeout, this, [](){
+       auto user_info = UserMgr::GetInstance()->GetUserInfo();
+       QJsonObject textobj;
+       textobj["fromuid"] = user_info->_uid;
+       QJsonDocument doc(textobj);
+       QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+
+       emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_HEART_BEAT_REQ, jsonData);
+   });
+
+   _timer->start(10000);
+}
 
 ChatDialog::~ChatDialog()
 {
+    _timer->stop();
     delete ui;
 }
 
