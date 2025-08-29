@@ -8,6 +8,11 @@ TcpMgr::~TcpMgr()
 
 }
 
+void TcpMgr::CloseConnection()
+{
+    _socket.close();
+}
+
 TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_message_len(0)
 {
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
@@ -126,6 +131,8 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
         // 处理连接断开
         QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
             qDebug() << "Disconnected from server.";
+            // 发送信号通知到界面
+            emit sig_connection_closed();
         });
 
         //  //连接发送信号用来发送数据
@@ -171,7 +178,8 @@ void TcpMgr::initHandlers()
          auto nick = jsonObj["nick"].toString();
          auto icon = jsonObj["icon"].toString();
          auto sex = jsonObj["sex"].toInt();
-         auto user_info = std::make_shared<UserInfo>(uid, name, nick, icon, sex);
+         auto desc = jsonObj["desc"].toString();
+         auto user_info = std::make_shared<UserInfo>(uid, name, nick, icon, sex, "" ,desc);
 
          UserMgr::GetInstance()->SetUserInfo(user_info);
          UserMgr::GetInstance()->SetToken(jsonObj["token"].toString());
@@ -377,7 +385,7 @@ void TcpMgr::initHandlers()
         qDebug() << "Auth Friend Success " ;
     });
 
-    _handlers.insert(ID_TEXT_CHAT_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
+    _handlers.insert(ID_TEXT_CHAT_MSG_RSP, [](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
         qDebug() << "handle id is " << id << " data is " << data;
         // 将QByteArray转换为QJsonDocument
@@ -438,6 +446,27 @@ void TcpMgr::initHandlers()
         emit sig_text_chat_msg(msg_ptr);
     });
 
+    _handlers.insert(ID_HEART_BEAT_RSP, [](ReqId id, int len, QByteArray data){
+        Q_UNUSED(len);
+        qDebug() << "handler id is " << id << " data is : " << data;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
+
+        if(jsonDoc.isNull())
+        {
+            qDebug() << "Failed to create QJsonDocument.";
+            return;
+        }
+
+        QJsonObject jsonObj = jsonDoc.object();
+        if(!jsonObj.contains("error"))
+        {
+            int err = ErrorCodes::ERR_JSON;
+            qDebug() << "Heart Beat Msg Failed, err is Json Parse Err" << err;
+            return;
+        }
+
+        qDebug() << " Receive Heart Beat Msg Success";
+    });
 
 }
 
