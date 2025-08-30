@@ -21,6 +21,7 @@ class LogicSystem  : public Singleton<LogicSystem>
 public:
 	~LogicSystem();
 	void PostMsgToQue(std::shared_ptr<LogicNode> msg);
+	void SetServer(std::shared_ptr<CServer> pserver);
 
 private:
 	LogicSystem();
@@ -31,6 +32,7 @@ private:
 	void AddFriendApply(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
 	void AuthFriendApply(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
 	void DealChatTextMsg(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
+	void HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data);
 	bool isPureDigit(const std::string& str);
 	void GetUserByUid(std::string uid_str, Json::Value& rtvalue);
 	void GetUserByName(std::string name, Json::Value& rtvalue);
