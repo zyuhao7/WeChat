@@ -9,7 +9,8 @@
 using namespace std;
 
 LogicSystem::LogicSystem()
-	:_b_stop(false)
+	:_b_stop(false),
+	_p_server(nullptr)
 {
 	RegisterCallBacks();
 	_worker_thread = std::thread(&LogicSystem::DealMsg, this);
@@ -33,6 +34,11 @@ void LogicSystem::PostMsgToQue(std::shared_ptr<LogicNode> msg)
 		unique_lk.unlock();
 		_consume.notify_one();
 	}
+}
+
+void LogicSystem::SetServer(std::shared_ptr<CServer> pserver)
+{
+	_p_server = pserver;
 }
 
 void LogicSystem::DealMsg()
@@ -93,6 +99,8 @@ void LogicSystem::RegisterCallBacks()
 		placeholders::_1, placeholders::_2, placeholders::_3);
 	_fun_callbacks[ID_TEXT_CHAT_MSG_REQ] = std::bind(&LogicSystem::DealChatTextMsg, this, 
 		placeholders::_1, placeholders::_2, placeholders::_3);
+	_fun_callbacks[ID_HEART_BEAT_REQ] = std::bind(&LogicSystem::HeartBeatHandler, this,
+		placeholders::_1, placeholders::_2, placeholders::_3);
 }
 
 void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id, const string& msg_data) {
@@ -102,8 +110,7 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 
 	auto uid = root["uid"].asInt();
 	auto token = root["token"].asString();
-	std::cout << "user login uid is  " << uid << " user token  is "
-		<< token << endl;
+	std::cout << "user login uid is  " << uid << " user token  is " << token << endl;
 
 	Json::Value  rtvalue;
 	Defer defer([this, &rtvalue, session]() {
@@ -127,48 +134,6 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 	}
 
 	rtvalue["error"] = ErrorCodes::Success;
-
-	//此处添加分布式锁，让该线程独占登录
-	// 拼接用户 ip 对应的 key
-
-	auto lock_key = LOCK_PREFIX + uid_str;
-	auto identifier = RedisMgr::GetInstance()->acquireLock(lock_key, LOCK_TIME_OUT, ACQUIRE_TIME_OUT);
-
-	// 利用 defer 解锁
-	Defer defer2([this, identifier, lock_key]() {
-		RedisMgr::GetInstance()->releaseLock(lock_key, identifier);
-		});
-
-	// 判断是否在别处或者本服务登录
-	std::string uid_ip_value = "";
-	auto uid_ip_key = USERIPPREFIX + uid_str;
-	bool b_ip = RedisMgr::GetInstance()->Get(uid_ip_key, uid_ip_value);
-	// 说明已经登录了, 此处应该踢掉之前的用户登录状态
-	if (b_ip)
-	{
-		// 获取当前服务器的 ip 信息
-		auto& cfg = ConfigMgr::Inst();
-		auto self_name = cfg["SelfServer"]["Name"];
-		// 如果之前登录和当前登录的服务器相同, 则直接在本服务器踢掉
-		if (uid_ip_value == self_name)
-		{
-			// 查找旧有连接
-			auto old_session = UserMgr::GetInstance()->GetSession(uid);
-
-			// 发送踢人消息
-			if (old_session)
-			{
-				old_session->NotifyOffline(uid);
-				// 清除旧有连接
-				_p_server->ClearSession(old_session->GetSessionId());
-			}
-		}
-		else
-		{
-			// 如果不是本服务器, 则通过 grpc 通知其他服务器踢掉.
-		}
-	}
-
 
 	std::string base_key = USER_BASE_INFO + uid_str;
 	auto user_info = std::make_shared<UserInfo>();
@@ -219,29 +184,61 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 	}
 
 	auto server_name = ConfigMgr::Inst().GetValue("SelfServer", "Name");
-	//将登录数量增加
-	auto rd_res = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server_name);
-	int count = 0;
-	if (!rd_res.empty()) {
-		count = std::stoi(rd_res);
+	{
+		//此处添加分布式锁，让该线程独占登录
+		// 拼接用户 ip 对应的 key
+		auto lock_key = LOCK_PREFIX + uid_str;
+		auto identifier = RedisMgr::GetInstance()->acquireLock(lock_key, LOCK_TIME_OUT, ACQUIRE_TIME_OUT);
+
+		// 利用 defer 解锁
+		Defer defer2([this, identifier, lock_key]() {
+			RedisMgr::GetInstance()->releaseLock(lock_key, identifier);
+			});
+
+		// 判断是否在别处或者本服务登录
+		std::string uid_ip_value = "";
+		auto uid_ip_key = USERIPPREFIX + uid_str;
+		bool b_ip = RedisMgr::GetInstance()->Get(uid_ip_key, uid_ip_value);
+		// 说明已经登录了, 此处应该踢掉之前的用户登录状态
+		if (b_ip)
+		{
+			// 获取当前服务器的 ip 信息
+			auto& cfg = ConfigMgr::Inst();
+			auto self_name = cfg["SelfServer"]["Name"];
+			// 如果之前登录和当前登录的服务器相同, 则直接在本服务器踢掉
+			if (uid_ip_value == self_name)
+			{
+				// 查找旧有连接
+				auto old_session = UserMgr::GetInstance()->GetSession(uid);
+				// 发送踢人消息
+				if (old_session)
+				{
+					old_session->NotifyOffline(uid);
+					// 清除旧有连接
+					_p_server->ClearSession(old_session->GetSessionId());
+				}
+			}
+			else
+			{
+				// 如果不是本服务器, 则通过 grpc 通知其他服务器踢掉.
+				// 发送通知
+				
+			}
+		}
+
+		//session绑定用户uid
+		session->SetUserId(uid);
+
+		//为用户设置登录ip server的名字
+		std::string  ipkey = USERIPPREFIX + uid_str;
+		RedisMgr::GetInstance()->Set(ipkey, server_name);
+
+		//uid 和 session 绑定管理,方便以后踢人操作
+		UserMgr::GetInstance()->SetUserSession(uid, session);
+		std::string uid_session_key = USER_SESSION_PREFIX + uid_str;
+		RedisMgr::GetInstance()->Set(uid_session_key, session->GetSessionId());
 	}
-	count++;
-
-	auto count_str = std::to_string(count);
-	RedisMgr::GetInstance()->HSet(LOGIN_COUNT, server_name, count_str);
-
-	//session绑定用户uid
-	session->SetUserId(uid);
-
-	//为用户设置登录ip server的名字
-	std::string  ipkey = USERIPPREFIX + uid_str;
-	RedisMgr::GetInstance()->Set(ipkey, server_name);
-
-	//uid 和 session 绑定管理,方便以后踢人操作
-	UserMgr::GetInstance()->SetUserSession(uid, session);
-	std::string uid_session_key = USER_SESSION_PREFIX + uid_str;
-	RedisMgr::GetInstance()->Set(uid_session_key, session->GetSessionId());
-
+	
 	return;
 }
 
@@ -497,6 +494,18 @@ void LogicSystem::DealChatTextMsg(std::shared_ptr<CSession> session, const short
 
 	//发送通知
 	ChatGrpcClient::GetInstance()->NotifyTextChatMsg(to_ip_value, text_msg_req, rtvalue);
+}
+
+void LogicSystem::HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data)
+{
+	Json::Reader reader;
+	Json::Value root;
+	reader.parse(msg_data, root);
+	auto uid = root["fromuid"].asInt();
+	std::cout << "receive heartbeat msg, uid is " << uid << std::endl;
+	Json::Value rtvalue;
+	rtvalue["error"] = ErrorCodes::Success;
+	session->Send(rtvalue.toStyledString(), ID_HEARTBEAT_RSP);
 }
 
 
