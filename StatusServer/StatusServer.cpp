@@ -51,10 +51,12 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-    try {
+    try 
+    {
         RunServer();
     }
-    catch (std::exception const& e) {
+    catch (std::exception const& e)
+    {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
