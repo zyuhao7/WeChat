@@ -35,6 +35,7 @@ void CServer::StartAccept() {
 	shared_ptr<CSession> new_session = make_shared<CSession>(io_context, this);
 	_acceptor.async_accept(new_session->GetSocket(), std::bind(&CServer::HandleAccept, this, new_session, placeholders::_1));
 }
+
 // //根据session 的id删除 session，并移除用户和session的关联
 void CServer::ClearSession(std::string session_id) {
 	lock_guard<mutex> lock(_mutex);
