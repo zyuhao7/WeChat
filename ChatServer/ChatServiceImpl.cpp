@@ -169,3 +169,26 @@ bool ChatServiceImpl::GetBaseInfo(std::string base_key, int uid, std::shared_ptr
 
 	return true;
 }
+
+Status ChatServiceImpl::NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* reply)
+{
+	// 查找用户是否在本服务器
+	auto uid = req->uid();
+	auto session = UserMgr::GetInstance()->GetSession(uid);
+
+	Defer defer([req, reply]() {
+		reply->set_error(ErrorCodes::Success);
+		reply->set_uid(req->uid());
+		});
+	//用户不在内存则返回
+	if (session == nullptr) return Status::OK;
+
+	session->NotifyOffline(uid);
+	_p_server->ClearSession(session->GetSessionId());
+	return Status::OK;
+}
+
+void ChatServiceImpl::RegisterServer(std::shared_ptr<CServer> pServer)
+{
+	_p_server = pServer;
+}
