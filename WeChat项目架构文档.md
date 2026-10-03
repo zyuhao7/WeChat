@@ -340,9 +340,113 @@ ChatServer 每 60s 巡检：超过 60s 未心跳 → 关连接 → DealException
 
 ---
 
-## 9. 已修复问题与遗留注意事项
+## 9. 构建与运行（环境与指令）
 
-### 9.1 已修复（本次改动，分支 `dev_xh`）
+### 9.1 构建环境版本
+
+已在 **Ubuntu 24.04 (noble)** 上验证通过：
+
+| 工具 / 库 | 版本 | apt 包 |
+|-----------|------|--------|
+| gcc / g++ | 13.3.0 | 系统自带 |
+| CMake | 要求 ≥ 3.16，实测 3.28.3 | `cmake` |
+| C++ 标准 | C++17 | — |
+| protoc | 3.21.12 | `protobuf-compiler` |
+| gRPC C++ 插件 | 1.51.1 | `libgrpc++-dev`、`protobuf-compiler-grpc` |
+| protobuf 开发库 | 3.21.12 | `libprotobuf-dev` |
+| Boost | 1.83.0 | `libboost-all-dev` |
+| jsoncpp | 1.9.5 | `libjsoncpp-dev` |
+| hiredis | 1.2.0 | `libhiredis-dev` |
+| MySQL Connector/C++ | 1.1.12 | `libmysqlcppconn-dev` |
+| Node.js / npm | 20.20.2 / 10.8.2 | VerifyServer 用 |
+| Qt（仅客户端） | 5.14+ 或 6.x，需 Widgets + Network | `qtbase5-dev` / `qt6-base-dev` |
+
+安装后端依赖：
+
+```bash
+sudo apt update
+sudo apt install -y cmake build-essential pkg-config \
+  libboost-all-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc \
+  libgrpc++-dev libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev \
+  default-libmysqlclient-dev
+```
+
+> Debian/Ubuntu 下 MySQL 头文件位于 `/usr/include/mysql_driver.h` 与 `/usr/include/cppconn/`，
+> 而源码以 `<jdbc/mysql_driver.h>` 形式包含。根目录 `CMakeLists.txt` 在 configure 阶段生成
+> `mysql_shim/jdbc/` 软链接树做兼容，无需改动源码。
+
+### 9.2 构建三个 C++ 服务
+
+```bash
+cmake -S . -B build
+cmake --build build -j4          # 注意下方内存说明
+```
+
+产物为 `build/GateServer`、`build/StatusServer`、`build/ChatServer`。
+构建期由 `protoc` + `grpc_cpp_plugin` 重新生成 `message.pb.*` / `message.grpc.pb.*` 到
+`build/gen/<service>/`，仓库不再提交预生成的 protobuf 文件。
+
+> **内存说明**：gRPC/protobuf 的单文件编译非常吃内存。在约 8 GB 机器上用
+> `-j$(nproc)` 会出现 `cc1plus` 被 OOM 杀死，建议 `-j4`。
+
+### 9.3 构建 Node.js 版 VerifyServer
+
+```bash
+cd VerifyServer
+npm install
+node server.js                    # 监听 0.0.0.0:50052
+```
+
+### 9.4 客户端（Qt）
+
+客户端为 qmake 工程：用 Qt Creator 打开 `ChatClient/Chat.pro`，或在 Qt 工具链 shell 中
+`qmake && make`。当前 `Chat.pro` 含 Windows 专用的构建后置步骤（`copy` / `xcopy`）和 MSVC 专用
+参数，在 Linux/macOS 上构建需先删除这些。**客户端构建未在本 Linux 后端环境验证。**
+
+### 9.5 数据存储
+
+```bash
+# MySQL 建库（db01 + reg_user 存储过程）
+mysql -uroot -p < sql/db01.sql
+
+# Redis 监听 6380，密码 123456（示例配置的默认值）
+redis-server --port 6380 --requirepass 123456
+```
+
+### 9.6 启动顺序
+
+按依赖顺序启动。三个 C++ 服务均从**各自的工作目录**读取 `config.ini`，因此需在服务目录内启动：
+
+```bash
+(cd StatusServer && ../build/StatusServer)     # gRPC 50053
+(cd ChatServer   && ../build/ChatServer)       # TCP 8090 + gRPC 50055
+(cd GateServer   && ../build/GateServer)       # HTTP 8080
+```
+
+### 9.7 冒烟测试
+
+```bash
+# 1. HTTP 连通性
+curl "http://127.0.0.1:8080/get_test?foo=bar"
+
+# 2. 注册。/get_verify_code 会真的发邮件，本地测试直接往 Redis 注入验证码：
+redis-cli -p 6380 -a 123456 SET "code_me@example.com" 123456 EX 300
+curl -X POST http://127.0.0.1:8080/user_register -H 'Content-Type: application/json' \
+  -d '{"user":"me","email":"me@example.com","passwd":"123456","confirm":"123456","verifycode":"123456","icon":""}'
+
+# 3. 登录（以 email 为键）——返回 token 与目标 ChatServer 的 host/port
+curl -X POST http://127.0.0.1:8080/user_login -H 'Content-Type: application/json' \
+  -d '{"email":"me@example.com","passwd":"123456"}'
+```
+
+登录成功返回 `{"error":0,"uid":..,"token":"..","host":"127.0.0.1","port":"8090"}`，
+即验证了 GateServer → MySQL → StatusServer(gRPC) → Redis 整条链路。
+
+---
+
+## 10. 已修复问题与遗留注意事项
+
+### 10.1 已修复（本次改动，分支 `dev_xh`）
 
 1. **GateServer/LogicSystem.cpp 内容错误**：原文件实为 ChatServer 的 TCP 版 LogicSystem 拷贝，与 `LogicSystem.h` 声明的 HTTP 路由接口不匹配、无法编译。已从历史提交 `e434a92` 恢复正确的 HTTP 实现（`/get_test`、`/get_verify_code`、`/user_register`、`/reset_pwd`、`/user_login`），第 3.1 节路由表即按此描述。
 
@@ -356,7 +460,7 @@ ChatServer 每 60s 巡检：超过 60s 未心跳 → 关连接 → DealException
 
 6. **仓库无构建系统**：原工程依赖 Windows/VS 手工配置。已新增根目录 `CMakeLists.txt`，一键构建 GateServer / StatusServer / ChatServer 三个后端服务（VerifyServer 用 npm 管理）。
 
-### 9.2 遗留注意
+### 10.2 遗留注意
 
 - **硬编码的敏感信息**：`VerifyServer/config.json` 含真实邮箱账号/授权码及远程 MySQL/Redis 地址；`ChatServer/config.ini` 等含明文 Redis 密码。提交或部署前应改用环境变量或占位符。
 - **客户端无自动重连**：断线后直接回登录页，未实现指数退避重连。
@@ -365,7 +469,7 @@ ChatServer 每 60s 巡检：超过 60s 未心跳 → 关连接 → DealException
 
 ---
 
-## 10. 目录结构速览
+## 11. 目录结构速览
 
 ```
 WeChat/
@@ -376,14 +480,15 @@ WeChat/
 ├── ChatServer/      长连接与消息服务（TCP + gRPC + Redis/MySQL）
 ├── CMakeLists.txt   后端构建脚本（三个 C++ 服务）
 ├── README.md
-└── WeChat项目架构文档.md（本文档）
+├── WeChat项目架构文档.md（中文版，本文档）
+└── WeChat_Project_Architecture.md（英文版）
 ```
 
 各服务目录中还包含 `.drawio` 架构/时序图文件，可用 draw.io 打开查看设计图。
 
 ---
 
-## 11. 教程进度对照（gitbookcpp.llfc.club day01–day45）
+## 12. 教程进度对照（gitbookcpp.llfc.club day01–day45）
 
 本项目按教程逐日实现，当前进度跟进到 **day35**，另已提前完成 day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
 
