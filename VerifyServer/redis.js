@@ -1,42 +1,42 @@
 const config_module = require('./config')
 const Redis = require("ioredis");
 
-// 创建Redis客户端实例
+// create the Redis client instance
 const RedisCli = new Redis({
-  host: config_module.redis_host,        // Redis服务器主机名
-  port: config_module.redis_port,        // Redis服务器端口号
-  password: config_module.redis_passwd,  // Redis密码
+  host: config_module.redis_host,        // Redis server host
+  port: config_module.redis_port,        // Redis server port
+  password: config_module.redis_passwd,  // Redis password
 
-  enableOfflineQueue: false,             // 禁用离线队列
-  enableReadyCheck: true,                // 启用连接就绪检查
+  enableOfflineQueue: false,             // disable the offline queue
+  enableReadyCheck: true,                // enable connection-ready checking
 });
 
 
 /**
- * 监听连接错误信息
+ * listen for connection error messages
  */
 RedisCli.on("error", function (err) {
   console.log("Redis connection error", err);
-  // 尝试重新连接
+  // try to reconnect
   RedisCli.connect();
 });
 
-// 监听连接断开事件
+// listen for the disconnect event
 RedisCli.on("end", function () {
   console.log("Redis connection closed");
-  // 尝试重新连接
+  // try to reconnect
   RedisCli.connect();
 });
   
-// 心跳机制：定时发送心跳消息
+// heartbeat mechanism: send heartbeat messages on a timer
 setInterval(() => {
-  // 发送心跳消息，比如向一个特定的 key 写入当前时间戳
+  // send a heartbeat, e.g. write the current timestamp to a specific key
   RedisCli.set("heartbeat", Date.now());
-}, 10000); // 每10秒发送一次心跳消息
+}, 10000); // send a heartbeat every 10 seconds
 
 
 /**
- * 根据key获取value
+ * get the value by key
  * @param {*} key 
  * @returns 
  */
@@ -56,14 +56,14 @@ async function GetRedis(key) {
   }
 
 /**
- * 根据key查询redis中是否存在key
+ * check whether the key exists in redis
  * @param {*} key 
  * @returns 
  */
 async function QueryRedis(key){
     try{
         const result = await RedisCli.exists(key)
-        //  判断该值是否为空 如果为空返回null
+        //  check whether the value is empty; return null if so
         if (result === 0) {
           console.log('result:<','<'+result+'>','This key is null...');
           return null
@@ -78,7 +78,7 @@ async function QueryRedis(key){
   }
 
 /**
- * 设置key和value，并过期时间
+ * set the key and value with an expiration time
  * @param {*} key 
  * @param {*} value 
  * @param {*} exptime 
@@ -86,9 +86,9 @@ async function QueryRedis(key){
  */
 async function SetRedisExpire(key,value, exptime){
     try{
-        // 设置键和值
+        // set the key and value
         await RedisCli.set(key,value)
-        // 设置过期时间（以秒为单位）
+        // set the expiration time (in seconds)
         await RedisCli.expire(key, exptime);
         return true;
     }catch(error){

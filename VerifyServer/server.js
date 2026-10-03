@@ -7,9 +7,9 @@ const emailModule = require('./email');
 const redis_module = require('./redis')
 
 /**
- * GetVerifyCode grpc响应获取验证码的服务
- * @param {*} call 为grpc请求
- * @param {*} callback 为grpc回调
+ * GetVerifyCode grpc service that returns the verify code
+ * @param {*} call the grpc request
+ * @param {*} callback the grpc callback
  * @returns
  */
 async function GetVerifyCode(call, callback) {
@@ -37,7 +37,7 @@ async function GetVerifyCode(call, callback) {
 
         console.log("uniqueId is ", uniqueId)
         let text_str =  '您的验证码为'+ uniqueId +'请三分钟内完成注册'
-        //发送邮件
+        //send the mail
         let mailOptions = {
             from: 'secondtonone1@163.com',
             to: call.request.email,
