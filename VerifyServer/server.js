@@ -7,12 +7,12 @@ const emailModule = require('./email');
 const redis_module = require('./redis')
 
 /**
- * GetVarifyCode grpc响应获取验证码的服务
- * @param {*} call 为grpc请求 
+ * GetVerifyCode grpc响应获取验证码的服务
+ * @param {*} call 为grpc请求
  * @param {*} callback 为grpc回调
- * @returns 
+ * @returns
  */
-async function GetVarifyCode(call, callback) {
+async function GetVerifyCode(call, callback) {
     console.log("email is ", call.request.email)
     try{
         let query_res = await redis_module.GetRedis(const_module.code_prefix+call.request.email);
@@ -65,10 +65,9 @@ async function GetVarifyCode(call, callback) {
 
 function main() {
     var server = new grpc.Server()
-    server.addService(message_proto.VarifyService.service, { GetVarifyCode: GetVarifyCode })
-    server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
-        server.start()
-        console.log('varify server started')        
+    server.addService(message_proto.VerifyService.service, { GetVerifyCode: GetVerifyCode })
+    server.bindAsync('0.0.0.0:50052', grpc.ServerCredentials.createInsecure(), () => {
+        console.log('verify server started on 50052')
     })
 }
 
