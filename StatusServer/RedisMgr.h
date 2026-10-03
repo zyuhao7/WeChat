@@ -24,12 +24,12 @@ public:
             auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
             if (reply->type == REDIS_REPLY_ERROR) {
                 std::cout << "认证失败" << std::endl;
-                //执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+                //on success, free the redisReply memory returned after redisCommand executes
                 freeReplyObject(reply);
                 continue;
             }
 
-            //执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+            //on success, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
             std::cout << "认证成功" << std::endl;
             connections_.push(context);
@@ -42,7 +42,7 @@ public:
                     checkThreadPro(); 
                     counter_ = 0;
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(1)); // 每隔 30 秒发送一次 PING 命令
+                std::this_thread::sleep_for(std::chrono::seconds(1)); // send a PING every 30 seconds
             }
             });
 
@@ -70,7 +70,7 @@ public:
             }
             return !connections_.empty();
             });
-        //如果停止则直接返回空指针
+        //if stopped, return a null pointer
         if (b_stop_) {
             return  nullptr;
         }
@@ -79,23 +79,23 @@ public:
         return context;
     }
 
-    // 非阻塞获取 context
+    // non-blocking context acquisition
     redisContext* getConnNonBlock()
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        // 如果停服或者没有连接,不等待,直接返回 nullptr
+        // if shutting down or no connection available, return nullptr without waiting
         if (b_stop_ || !connections_.empty()) return nullptr;
 
-        // auto 和 auto*  都可以, 看习惯.
+        // both auto and auto* work; pick your preference.
         auto* context = connections_.front();
         connections_.pop();
         return context;
     }
 
-    // 回收 rediscontext 连接以备复用.
+    // recycle the redisContext connection for reuse.
     void returnConnection(redisContext* context) {
         std::lock_guard<std::mutex> lock(mutex_);
-        // 如果停服, 不回收, 直接返回.
+        // if shutting down, do not recycle, just return.
         if (b_stop_) {
             return;
         }
@@ -105,13 +105,13 @@ public:
 
     void Close() {
         b_stop_ = true;
-        // 唤醒等待获取连接的条件变量, 通知关闭服务了.
+        // wake the condition variable waiting for connections, signaling shutdown.
         cond_.notify_all();
         check_thread_.join();
     }
 
 private:
-    // 重试连接
+    // retry the connection
     bool reconnect()
     {
         auto context = redisConnect(host_, port_);
@@ -119,7 +119,7 @@ private:
         {
             if (context != nullptr)
                 redisFree(context);
-            // 重连失败
+            // reconnect failed
             return false;
         }
 
@@ -127,15 +127,15 @@ private:
         if (reply->type == REDIS_REPLY_ERROR)
         {
             std::cout << "重连认证失败!" << std::endl;
-            // 执行失败, 释放 redisCommand 执行后返回的 redisReply所占用的内存
+            // on failure, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
             redisFree(context);
             return false;
         }
-        // 执行成功, 释放 redisCommand 执行后返回的 redisReply所占用的内存
+        // on success, free the redisReply memory returned after redisCommand executes
         freeReplyObject(reply);
         std::cout << "重连认证成功!" << std::endl;
-        // 交给回收函数回收context.
+        // hand the context to the recycle function.
         returnConnection(context);
         return true;
     }
@@ -144,14 +144,14 @@ private:
     {
         size_t pool_size;
         {
-            // 先拿到当前连接数.
+            // first get the current online count.
             std::lock_guard<std::mutex> lock(mutex_);
             pool_size = connections_.size();
         }
 
         for (int i = 0; i < pool_size && !b_stop_; ++i) {
             redisContext* ctx = nullptr;
-            // 1) 取出一个连接(持有锁)
+            // 1) take a connection (holding the lock)
             bool bsuccess = false;
             auto* context = getConnNonBlock();
             if (context == nullptr)
@@ -162,8 +162,8 @@ private:
             redisReply* reply = nullptr;
             try
             {
-                reply = (redisReply*)redisCommand(context, "PING"); // 发送 PING 请求.
-                // 2) 先看底层I/O 协议层有没有错
+                reply = (redisReply*)redisCommand(context, "PING"); // send a PING request.
+                // 2) first check for low-level I/O protocol errors
                 if (context->err)
                 {
                     std::cout << "Coonnection error: " << context->err << std::endl;
@@ -174,7 +174,7 @@ private:
                     fail_count_++;
                     continue;
                 }
-                // 3) 再看 Reply 自身返回的是不是 ERROR
+                // 3) then check whether the Reply itself is ERROR
                 if (!reply || reply->type == REDIS_REPLY_ERROR)
                 {
                     std::cout << "reply is null, redis ping failed: " << std::endl;
@@ -184,7 +184,7 @@ private:
                     fail_count_++;
                     continue;
                 }
-                // 4) 如果都没问题, 则还回去
+                // 4) if all is fine, return it to the pool
                 std::cout << "connection alive... " << std::endl;
                 freeReplyObject(reply);
                 returnConnection(context);
@@ -198,13 +198,13 @@ private:
 
             }
         }
-        // 执行重连操作
+        // perform the reconnect
         while (fail_count_ > 0)
         {
             auto res = reconnect();
             if (res) fail_count_--;
             else
-                break; // 留给下次在重试.
+                break; // leave it for the next retry.
         }
     }
 

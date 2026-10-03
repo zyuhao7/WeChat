@@ -34,7 +34,7 @@ struct  SectionInfo
 		if (_section_datas.find(key) == _section_datas.end()) {
 			return "";
 		}
-		// 这里可以添加一些边界检查  
+		// some bounds checks can be added here  
 		return _section_datas[key];
 	}
 };
