@@ -31,27 +31,27 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 enum ErrorCodes {
 	Success = 0,
-	Error_Json = 1001,  //Json解析错误
-	RPCFailed = 1002,  //RPC请求错误
-	VarifyExpired = 1003, //验证码过期
-	VarifyCodeErr = 1004, //验证码错误
-	UserExist = 1005,       //用户已经存在
-	PasswdErr = 1006,    //密码错误
-	EmailNotMatch = 1007,  //邮箱不匹配
-	PasswdUpFailed = 1008,  //更新密码失败
-	PasswdInvalid = 1009,   //密码更新失败
-	TokenInvalid = 1010,   //Token失效
-	UidInvalid = 1011,  //uid无效
+	Error_Json = 1001,  //JSON parse error
+	RPCFailed = 1002,  //RPC request error
+	VarifyExpired = 1003, //verify code expired
+	VarifyCodeErr = 1004, //verify code wrong
+	UserExist = 1005,       //the user already exists
+	PasswdErr = 1006,    //wrong password
+	EmailNotMatch = 1007,  //email mismatch
+	PasswdUpFailed = 1008,  //password update failed
+	PasswdInvalid = 1009,   //password update failed
+	TokenInvalid = 1010,   //Token invalid
+	UidInvalid = 1011,  //invalid uid
 };
 
 
-// Defer类
+// Defer class
 class Defer {
 public:
-	// 接受一个lambda表达式或者函数指针
+	// accept a lambda or a function pointer
 	Defer(std::function<void()> func) : func_(func) {}
 
-	// 析构函数中执行传入的函数
+	// run the passed function in the destructor
 	~Defer() {
 		func_();
 	}
@@ -68,7 +68,7 @@ private:
 
 #define LOCK_COUNT "lockcount"
 
-// 分布式锁的持有时间
+// distributed lock lease time
 #define LOCK_TIME_OUT 10
-//分布式锁的重试时间
+//distributed lock retry interval
 #define ACQUIRE_TIME_OUT 5

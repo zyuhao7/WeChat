@@ -5,10 +5,10 @@
 #include <climits>
 
 std::string generate_unique_string() {
-	// 创建UUID对象
+	// create the UUID object
 	boost::uuids::uuid uuid = boost::uuids::random_generator()();
 
-	// 将UUID转换为字符串
+	// convert the UUID to a string
 	std::string unique_string = to_string(uuid);
 
 	return unique_string;
@@ -59,7 +59,7 @@ ChatServer StatusServiceImpl::getChatServer() {
 	auto minServer = _servers.begin()->second;
 	auto count_str = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, minServer.name);
 	if (count_str.empty()) {
-		//不存在则默认设置为最大
+		//default to the maximum when absent
 		minServer.con_count = INT_MAX;
 	}
 	else {
@@ -67,7 +67,7 @@ ChatServer StatusServiceImpl::getChatServer() {
 	}
 
 
-	// 使用范围基于for循环
+	// use a range-based for loop
 	for (auto& server : _servers) {
 
 		if (server.second.name == minServer.name) {
