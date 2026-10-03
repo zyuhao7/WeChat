@@ -19,15 +19,15 @@ ChatPage::ChatPage(QWidget *parent) :
     ui(new Ui::ChatPage)
 {
     ui->setupUi(this);
-    // 设置按钮样式
+    // set the button style
     ui->receive_btn->SetState("normal", "hover","press");
     ui->send_btn->SetState("normal", "hover", "press");
 
-    // 设置图标样式
+    // set the icon style
     ui->emo_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
     ui->file_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
 
-    // 添加回车发送消息信号
+    // add the Enter-to-send-message signal
     connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);
 }
 
@@ -39,7 +39,7 @@ ChatPage::~ChatPage()
 void ChatPage::SetUserInfo(std::shared_ptr<UserInfo> user_info)
 {
     _user_info = user_info;
-    // 设置界面显示
+    // set the UI display
     ui->title_lb->setText(_user_info->_name);
     ui->chat_data_list->removeAllItem();
     for(auto& msg : user_info->_chat_msgs)
@@ -116,7 +116,7 @@ void ChatPage::on_send_btn_clicked()
        int txt_size = 0;
        for(int i=0; i<msgList.size(); ++i)
        {
-           //消息内容长度超过最大长度就跳过
+           //skip if the message body exceeds the max length
            if(msgList[i].content.length() > 1024)
                continue;
 
@@ -133,7 +133,7 @@ void ChatPage::on_send_btn_clicked()
                QString uuidString = uuid.toString();
 
                pBubble = new TextBubble(role, msgList[i].content);
-               // 发送已累积的消息并重置.
+               // send the accumulated messages and reset.
                if(txt_size + msgList[i].content.length() > 1024)
                {
                    textObj["fromuid"] = user_info->_uid;
@@ -141,7 +141,7 @@ void ChatPage::on_send_btn_clicked()
                    textObj["text_array"] = textArray;
                    QJsonDocument doc(textObj);
                    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-                   // //发送并清空之前累计的文本列表
+                   // // send and clear the previously accumulated text list
                    txt_size = 0;
                    textArray = QJsonArray();
                    textObj = QJsonObject();
@@ -149,7 +149,7 @@ void ChatPage::on_send_btn_clicked()
                    emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
                }
 
-               //将bubble和uid绑定，以后可以等网络返回消息后设置是否送达
+               //bind the bubble to the uid so delivery can be marked once the network replies
                // _bubble_map[uuidString] = pBubble;
                txt_size += msgList[i].content.length();
                QJsonObject obj;
@@ -158,7 +158,7 @@ void ChatPage::on_send_btn_clicked()
                obj["msgid"] = uuidString;
                textArray.append(obj);
 
-               // 触发信号更新本地聊天记录
+               // trigger a signal to update the local chat history
                auto txt_msg = std::make_shared<TextChatData>(uuidString, obj["content"].toString(),
                    user_info->_uid, _user_info->_uid);
 
@@ -172,7 +172,7 @@ void ChatPage::on_send_btn_clicked()
            {
 
            }
-           // :) 添加气泡到聊天界面
+           // :) add the bubble to the chat page
            if(pBubble != nullptr)
            {
                pChatItem->setWidget(pBubble);
@@ -181,17 +181,17 @@ void ChatPage::on_send_btn_clicked()
        }
 
        qDebug() << "textArray is " << textArray;
-      //发送给服务器
+      //send to the server
       textObj["text_array"] = textArray;
       textObj["fromuid"] = user_info->_uid;
       textObj["touid"] = _user_info->_uid;
       QJsonDocument doc(textObj);
       QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-      //发送并清空之前累计的文本列表
+      //send and clear the previously accumulated text list
       txt_size = 0;
       textArray = QJsonArray();
       textObj = QJsonObject();
-      //发送tcp请求给chat server
+      //send the TCP request to the chat server
       emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, jsonData);
 }
 

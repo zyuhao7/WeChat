@@ -14,7 +14,7 @@ AuthenFriend::AuthenFriend(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // 隐藏对话框标题栏
+    // hide the dialog title bar
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
     this->setObjectName("AuthenFriend");
     this->setModal(true);
@@ -35,7 +35,7 @@ AuthenFriend::AuthenFriend(QWidget *parent) :
     };
     connect(ui->more_lb, &ClickedOnceLabel::clicked, this, &AuthenFriend::ShowMoreLabel);
     InitTipLbs();
-    //连接输入标签回车事件
+    //connect the input label Enter event
     connect(ui->lb_ed, &CustomizeEdit::returnPressed, this, &AuthenFriend::SlotLabelEnter);
     connect(ui->lb_ed, &CustomizeEdit::textChanged, this, &AuthenFriend::SlotLabelTextChange);
     connect(ui->lb_ed, &CustomizeEdit::editingFinished, this, &AuthenFriend::SlotLabelEditFinished);
@@ -69,7 +69,7 @@ void AuthenFriend::InitTipLbs()
         lb->setText(_tip_data[i]);
         connect(lb, &ClickedLabel::clicked, this, &AuthenFriend::SlotChangeFriendLabelByTip);
 
-        QFontMetrics fontMetrics(lb->font()); // 获取 QLabel 部件的字体信息
+        QFontMetrics fontMetrics(lb->font()); // get the QLabel font info
         int textWidth = fontMetrics.horizontalAdvance(lb->text());
         int textHeight = fontMetrics.height();
 
@@ -154,13 +154,13 @@ void AuthenFriend::resetLabels()
 
 void AuthenFriend::addLabel(QString name)
 {
-    // 如果已经存在, 则清空输入框后返回.
+    // if it already exists, clear the input box and return.
     if(_friend_labels.find(name) != _friend_labels.end())
     {
         ui->lb_ed->clear();
         return;
     }
-    //  创建新的好友标签
+    //  create a new friend label
     auto tmplabel = new FriendLabel(ui->gridWidget);
     tmplabel->SetText(name);
     tmplabel->setObjectName("FriendLabel");
@@ -171,7 +171,7 @@ void AuthenFriend::addLabel(QString name)
         _label_point.setX(2);
     }
     else{
-        // // 如果不需要换行，保持当前 _label_point 的 X 坐标不变
+        // // if no line break is needed, keep the current X of _label_point
     }
 
     tmplabel->move(_label_point);
@@ -207,7 +207,7 @@ void AuthenFriend::ShowMoreLabel()
     int textWidth;
     int textHeight;
 
-    //重排现有的 Label
+    //re-layout the existing labels
     for(auto& added_key : _add_label_keys)
     {
         auto added_lb = _add_labels[added_key];
@@ -229,7 +229,7 @@ void AuthenFriend::ShowMoreLabel()
         _tip_cur_point = next_point;
     }
 
-    // 添加未添加到展示列表的
+    // add those not yet in the display list
     for(size_t i = 0; i < _tip_data.size(); ++i)
     {
         auto iter = _add_labels.find(_tip_data[i]);
@@ -242,9 +242,9 @@ void AuthenFriend::ShowMoreLabel()
         lb->setText(_tip_data[i]);
         connect(lb, &ClickedLabel::clicked, this, &AuthenFriend::SlotChangeFriendLabelByTip);
 
-        QFontMetrics fontMetrics(lb->font()); // 获取QLabel控件的字体信息
-        int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
-        int textHeight = fontMetrics.height(); // 获取文本的高度
+        QFontMetrics fontMetrics(lb->font()); // get the QLabel font info
+        int textWidth = fontMetrics.horizontalAdvance(lb->text()); // get the text width
+        int textHeight = fontMetrics.height(); // get the text height
 
         if (_tip_cur_point.x() + textWidth + tip_offset > ui->lb_list->width()) {
 
@@ -309,15 +309,15 @@ void AuthenFriend::SlotRemoveFriendLabel(QString name)
 
 void AuthenFriend::SlotChangeFriendLabelByTip(QString lbtext, ClickLbState state)
 {
-    auto find_iter = _add_labels.find(lbtext); // 为什么要查找 _add_labels.find()？ 为了确保点击的 Tip 标签合法且存在，防止空指针操作
+    auto find_iter = _add_labels.find(lbtext); // Why check _add_labels.find()? To ensure the clicked Tip label is valid and exists, preventing null-pointer access
     if(find_iter == _add_labels.end())
         return;
-    if(state == ClickLbState::Selected) //  添加好友标签
+    if(state == ClickLbState::Selected) //  add the friend label
     {
         addLabel(lbtext);
         return;
     }
-    if(state == ClickLbState::Normal)  //  移除好友标签
+    if(state == ClickLbState::Normal)  //  remove the friend label
     {
         SlotRemoveFriendLabel(lbtext);
         return;
@@ -360,7 +360,7 @@ void AuthenFriend::SlotAddFirendLabelByClickTip(QString text)
 
     if (std::find(_tip_data.begin(), _tip_data.end(), text) == _tip_data.end())
     {
-        _tip_data.push_back(text); // 确保不重复添加
+        _tip_data.push_back(text); // ensure no duplicate insertion
     }
 
     auto find_add = _add_labels.find(text);
@@ -398,7 +398,7 @@ void AuthenFriend::SlotAddFirendLabelByClickTip(QString text)
     ui->lb_list->setFixedHeight(next_point.y() + textHeight + tip_offset);
 
     lb->SetCurState(ClickLbState::Selected);
-    // 适配新增tip标签后超出显示区域，防止 UI 视觉混乱或显示不全
+    // handle overflow after adding tip labels, to prevent visual clutter or clipping
     ui->scrollcontent->setFixedHeight(ui->scrollcontent->height() + diff_height);
 }
 

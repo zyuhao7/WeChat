@@ -8,12 +8,12 @@ LoadingDlg::LoadingDlg(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Dialog |Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowStaysOnTopHint);
-    setAttribute(Qt::WA_TranslucentBackground); // 设置背景透明
+    setAttribute(Qt::WA_TranslucentBackground); // make the background transparent
 
-    // 获取屏幕尺寸
-    setFixedSize(parent->size()); // 设置对话框为全屏尺寸
+    // get the screen size
+    setFixedSize(parent->size()); // set the dialog to fullscreen size
 
-    QMovie* movie = new QMovie(":/res/loading.gif"); // 加载动画的资源文件
+    QMovie* movie = new QMovie(":/res/loading.gif"); // load the animation resource file
     ui->loading_lb->setMovie(movie);
     movie->start();
 }

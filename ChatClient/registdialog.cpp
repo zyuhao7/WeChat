@@ -52,7 +52,7 @@ RegistDialog::RegistDialog(QWidget *parent) :
     ui->confirm_visible->SetState("unvisible","unvisible_hover","","visible",
                                     "visible_hover","");
 
-    //连接点击事件
+    //connect the click event
 
     connect(ui->pass_visible, &ClickedLabel::clicked, this, [this]() {
         auto state = ui->pass_visible->GetCurState();
@@ -74,10 +74,10 @@ RegistDialog::RegistDialog(QWidget *parent) :
         qDebug() << "Label was clicked!";
     });
 
-    // 创建定时器
+    // create the timer
     _countdown_timer = new QTimer(this);
 
-    // 连接信号和槽
+    // connect signal and slot
     connect(_countdown_timer, &QTimer::timeout, [this](){
         if(_countdown==0){
             _countdown_timer->stop();
@@ -104,7 +104,7 @@ void RegistDialog::on_get_code_clicked()
 
     if(match)
     {
-        // 发送 http 验证码
+        // send the HTTP verify code
         QJsonObject json_obj;
         json_obj["email"] = email;
         Httpmgr::GetInstance()->PostHttpReq(QUrl( gate_url_prefix +"/get_verify_code"),
@@ -124,7 +124,7 @@ void RegistDialog::slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err)
         return;
     }
 
-    // 解析 JSON字符串 res 转为 QByteArray
+    // parse the JSON string; convert res to a QByteArray
     QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
     if(jsonDoc.isNull())
     {
@@ -132,7 +132,7 @@ void RegistDialog::slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err)
         return;
     }
 
-    // json 解析错误
+    // JSON parse error
     if(!jsonDoc.isObject())
     {
         showTip(tr("json 解析失败"), false);
@@ -164,7 +164,7 @@ void RegistDialog::ChangeTipPage()
     _countdown_timer->stop();
      ui->stackedWidget->setCurrentWidget(ui->page_2);
 
-   // 启动定时器，设置间隔为1000毫秒（1秒）
+   // start the timer with a 1000 ms (1s) interval
    _countdown_timer->start(1000);
 }
 
@@ -181,13 +181,13 @@ bool RegistDialog::checkUserValid()
 
 bool RegistDialog::checkEmailValid()
 {
-    //验证邮箱的地址正则表达式
+    //regex for validating the email address
     auto email = ui->email_edit->text();
-    // 邮箱地址的正则表达式
+    // regex for the email address
     QRegularExpression regex(R"((\w+)(\.|_)?(\w*)@(\w+)(\.(\w+))+)");
-    bool match = regex.match(email).hasMatch(); // 执行正则表达式匹配
+    bool match = regex.match(email).hasMatch(); // run the regex match
     if(!match){
-        //提示邮箱不正确
+        //warn that the email is incorrect
         AddTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
         return false;
     }
@@ -201,18 +201,18 @@ bool RegistDialog::checkPassValid()
     auto pass = ui->pass_edit->text();
 
     if(pass.length() < 6 || pass.length()>15){
-        //提示长度不准确
+        //warn that the length is invalid
         AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
 
-    // 创建一个正则表达式对象，按照上述密码要求
-    // 这个正则表达式解释：
-    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
+    // create a regex object for the password rules above
+    // explanation of this regex:
+    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ password at least 6 chars, letters, digits and some special chars
     QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*]{6,15}$");
     bool match = regExp.match(pass).hasMatch();
     if(!match){
-        //提示字符非法
+        //warn that the characters are invalid
         AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
     }
@@ -240,18 +240,18 @@ bool RegistDialog::checkConfirmValid()
        auto confirm = ui->confirm_edit->text();
 
        if(confirm.length() < 6 || confirm.length() > 15 ){
-           //提示长度不准确
+           //warn that the length is invalid
            AddTipErr(TipErr::TIP_CONFIRM_ERR, tr("密码长度应为6~15"));
            return false;
        }
 
-       // 创建一个正则表达式对象，按照上述密码要求
-       // 这个正则表达式解释：
-       // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
+       // create a regex object for the password rules above
+       // explanation of this regex:
+       // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ password at least 6 chars, letters, digits and some special chars
        QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*.]{6,15}$");
        bool match = regExp.match(confirm).hasMatch();
        if(!match){
-           //提示字符非法
+           //warn that the characters are invalid
            AddTipErr(TipErr::TIP_CONFIRM_ERR, tr("不能包含非法字符"));
            return false;
        }
@@ -259,7 +259,7 @@ bool RegistDialog::checkConfirmValid()
        DelTipErr(TipErr::TIP_CONFIRM_ERR);
 
        if(pass != confirm){
-           //提示密码不匹配
+           //warn that the passwords do not match
            AddTipErr(TipErr::TIP_PWD_CONFIRM, tr("确认密码和密码不匹配"));
            return false;
        }else{
@@ -272,7 +272,7 @@ bool RegistDialog::checkConfirmValid()
 
 void RegistDialog::initHttpHandlers()
 {
-    // 注册 获取验证码回包的逻辑
+    // register: get-verify-code reply logic
     _handlers.insert(ReqId::ID_GET_VERIFY_CODE,[this](const QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS)
@@ -285,7 +285,7 @@ void RegistDialog::initHttpHandlers()
         qDebug()<<"email is "<<email;
     });
 
-    //注册 注册用户回包逻辑
+    //register: register-user reply logic
     _handlers.insert(ReqId::ID_REG_USER, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
@@ -355,7 +355,7 @@ void RegistDialog::on_confirm_btn_clicked()
         json_obj["passwd"] = xorString(ui->pass_edit->text());
         json_obj["sex"] = 0;
 
-        int randomValue = QRandomGenerator::global()->bounded(100); // 生成0到99之间的随机整数
+        int randomValue = QRandomGenerator::global()->bounded(100); // generate a random integer between 0 and 99
         int head_i = randomValue % heads.size();
 
         json_obj["icon"] = heads[head_i];

@@ -9,12 +9,12 @@ std::function<void(QWidget*)> repolish = [](QWidget* w)
 };
 
 std::function<QString(QString)> xorString = [](QString input){
-    QString result = input; // 复制原始字符串，以便进行修改
-     int length = input.length(); // 获取字符串的长度
+    QString result = input; // copy the original string so it can be modified
+     int length = input.length(); // get the string length
      ushort xor_code = length % 255;
      for (int i = 0; i < length; ++i) {
-         // 对每个字符进行异或操作
-         // 注意：这里假设字符都是ASCII，因此直接转换为QChar
+         // XOR each character
+         // Note: characters are assumed ASCII here, so they convert directly to QChar
          result[i] = QChar(static_cast<ushort>(input[i].unicode() ^ xor_code));
      }
      return result;

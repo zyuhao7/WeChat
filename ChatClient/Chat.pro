@@ -142,44 +142,44 @@ DISTFILES += \
 CONFIG(debug, debug|release) {
         #debug
     message("debug mode")
-    #指定要拷贝的文件目录为工程目录下release目录下的所有dll、lib文件，例如工程目录在D:\QT\Test
-    #PWD就为D:/QT/Test，DllFile = D:/QT/Test/release/*.dll
+    #the dir to copy is all dll/lib files under the project's release dir, e.g. project at D:\QT\Test
+    #PWD is D:/QT/Test, DllFile = D:/QT/Test/release/*.dll
     TargetConfig = $${PWD}/config.ini
-    #将输入目录中的"/"替换为"\"
+    #replace "/" in the input dir with "\"
     TargetConfig = $$replace(TargetConfig, /, \\)
-    #将输出目录中的"/"替换为"\"
+    #replace "/" in the output dir with "\"
     OutputDir =  $${OUT_PWD}/$${DESTDIR}
     OutputDir = $$replace(OutputDir, /, \\)
-    //执行copy命令
+    //run the copy command
     QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\" &
 
-    # 首先，定义static文件夹的路径
+    # First, define the path of the static folder
     StaticDir = $${PWD}/static
-    # 将路径中的"/"替换为"\"
+    # replace "/" in the path with "\"
     StaticDir = $$replace(StaticDir, /, \\)
     #message($${StaticDir})
-    # 使用xcopy命令拷贝文件夹，/E表示拷贝子目录及其内容，包括空目录。/I表示如果目标不存在则创建目录。/Y表示覆盖现有文件而不提示。
+    # use the xcopy command to copy the folder; /E copies subdirs and their contents including empty ones, /I creates the target dir if missing, /Y overwrites without prompting.
      QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
 }else{
       #release
     message("release mode")
-    #指定要拷贝的文件目录为工程目录下release目录下的所有dll、lib文件，例如工程目录在D:\QT\Test
-    #PWD就为D:/QT/Test，DllFile = D:/QT/Test/release/*.dll
+    #the dir to copy is all dll/lib files under the project's release dir, e.g. project at D:\QT\Test
+    #PWD is D:/QT/Test, DllFile = D:/QT/Test/release/*.dll
     TargetConfig = $${PWD}/config.ini
-    #将输入目录中的"/"替换为"\"
+    #replace "/" in the input dir with "\"
     TargetConfig = $$replace(TargetConfig, /, \\)
-    #将输出目录中的"/"替换为"\"
+    #replace "/" in the output dir with "\"
     OutputDir =  $${OUT_PWD}/$${DESTDIR}
     OutputDir = $$replace(OutputDir, /, \\)
-    #执行copy命令
+    #run the copy command
     QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\"
 
-    # 首先，定义static文件夹的路径
+    # First, define the path of the static folder
     StaticDir = $${PWD}/static
-    # 将路径中的"/"替换为"\"
+    # replace "/" in the path with "\"
     StaticDir = $$replace(StaticDir, /, \\)
     #message($${StaticDir})
-    # 使用xcopy命令拷贝文件夹，/E表示拷贝子目录及其内容，包括空目录。/I表示如果目标不存在则创建目录。/Y表示覆盖现有文件而不提示。
+    # use the xcopy command to copy the folder; /E copies subdirs and their contents including empty ones, /I creates the target dir if missing, /Y overwrites without prompting.
      QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
 }
 

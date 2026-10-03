@@ -17,45 +17,45 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
 {
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
            qDebug() << "Connected to server!";
-           // 连接建立后发送消息
+           // send the message after the connection is established
             emit sig_con_success(true);
        });
 
        QObject::connect(&_socket, &QTcpSocket::readyRead, [&]() {
-           // 当有数据可读时，读取所有数据
-           // 读取所有数据并追加到缓冲区
+           // when data is readable, read all of it
+           // read all data and append it to the buffer
            _buffer.append(_socket.readAll());
 
            QDataStream stream(&_buffer, QIODevice::ReadOnly);
            stream.setVersion(QDataStream::Qt_5_0);
 
            forever {
-                //先解析头部
+                //parse the header first
                if(!_b_recv_pending){
-                   // 检查缓冲区中的数据是否足够解析出一个消息头（消息ID + 消息长度）
+                   // check whether the buffer has enough data to parse a header (msg id + length)
                    if (_buffer.size() < static_cast<int>(sizeof(quint16) * 2)) {
-                       return; // 数据不够，等待更多数据
+                       return; // not enough data; wait for more
                    }
 
-                   // 预读取消息ID和消息长度，但不从缓冲区中移除
+                   // peek the message id and length without removing them from the buffer
                    stream >> _message_id >> _message_len;
 
-                   //将buffer 中的前四个字节移除
+                   //remove the first four bytes from the buffer
                    _buffer = _buffer.mid(sizeof(quint16) * 2);
 
-                   // 输出读取的数据
+                   // output the read data
                    qDebug() << "Message ID:" << _message_id << ", Length:" << _message_len;
 
                }
 
-                //buffer剩余长读是否满足消息体长度，不满足则退出继续等待接受
+                //check whether the remaining buffer has the full body length; if not, return and keep waiting
                if(_buffer.size() < _message_len){
                     _b_recv_pending = true;
                     return;
                }
 
                _b_recv_pending = false;
-               // 读取消息体
+               // read the message body
                QByteArray messageBody = _buffer.mid(0, _message_len);
                 qDebug() << "receive body msg is " << messageBody ;
 
@@ -65,7 +65,7 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
 
        });
 
-       // 5.15 之后版本
+       // versions after 5.15
       QObject::connect(&_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred), [&](QAbstractSocket::SocketError socketError) {
           Q_UNUSED(socketError)
           qDebug() << "Error:" << _socket.errorString();
@@ -99,7 +99,7 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
        //                      }
        //                  });
 
-       // 处理错误（适用于Qt 5.15之前的版本）
+       // handle the error (for Qt versions before 5.15)
         // QObject::connect(&_socket, static_cast<void (QTcpSocket::*)(QTcpSocket::SocketError)>(&QTcpSocket::error),
         //                     [&](QTcpSocket::SocketError socketError) {
         //        qDebug() << "Error:" << _socket.errorString() ;
@@ -128,17 +128,17 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
         //        }
         //  });
 
-        // 处理连接断开
+        // handle the disconnection
         QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
             qDebug() << "Disconnected from server.";
-            // 发送信号通知到界面
+            // emit a signal to notify the UI
             emit sig_connection_closed();
         });
 
-        //  //连接发送信号用来发送数据
+        //  // connect the send signal used to send data
         QObject::connect(this, &TcpMgr::sig_send_data, this, &TcpMgr::slot_send_data);
 
-        // 注册消息
+        // register the message
         initHandlers();
 }
 
@@ -147,10 +147,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_CHAT_LOGIN_RSP, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
-           // 将QByteArray转换为QJsonDocument
+           // convert the QByteArray to a QJsonDocument
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-           // 检查转换是否成功
+           // check whether the conversion succeeded
            if(jsonDoc.isNull()){
               qDebug() << "Failed to create QJsonDocument.";
               return;
@@ -189,7 +189,7 @@ void TcpMgr::initHandlers()
              UserMgr::GetInstance()->AppendApplyList(jsonObj["apply_list"].toArray());
          }
 
-         // 添加好友列表
+         // add the friend list
          if(jsonObj.contains("friend_list"))
          {
              UserMgr::GetInstance()->AppendFriendList(jsonObj["friend_list"].toArray());
@@ -201,10 +201,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
-           // 将QByteArray转换为QJsonDocument
+           // convert the QByteArray to a QJsonDocument
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-           // 检查转换是否成功
+           // check whether the conversion succeeded
            if(jsonDoc.isNull()){
               qDebug() << "Failed to create QJsonDocument.";
               return;
@@ -234,14 +234,14 @@ void TcpMgr::initHandlers()
         emit sig_user_search(search_info);
 
     });
-    // A -> B 返回给 A 的客户端响应
+    // A -> B response returned to A's client
     _handlers.insert(ID_ADD_FRIEND_RSP, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
-           // 将QByteArray转换为QJsonDocument
+           // convert the QByteArray to a QJsonDocument
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-           // 检查转换是否成功
+           // check whether the conversion succeeded
            if(jsonDoc.isNull()){
               qDebug() << "Failed to create QJsonDocument.";
               return;
@@ -265,14 +265,14 @@ void TcpMgr::initHandlers()
         qDebug()<<"add Friend RSP success!";
 
     });
-    // A -> B  返回给 B 的客户端的响应
+    // A -> B  response returned to B's client
     _handlers.insert(ID_NOTIFY_ADD_FRIEND_REQ, [this](ReqId id, int len, QByteArray data){
            Q_UNUSED(len);
            qDebug()<< "handle id is "<< id ;
-           // 将QByteArray转换为QJsonDocument
+           // convert the QByteArray to a QJsonDocument
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-           // 检查转换是否成功
+           // check whether the conversion succeeded
            if(jsonDoc.isNull())
            {
               qDebug() << "Failed to create QJsonDocument.";
@@ -314,10 +314,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_NOTIFY_AUTH_FRIEND_REQ, [this](ReqId id, int len, QByteArray data) {
            Q_UNUSED(len);
            qDebug() << "handle id is " << id << " data is " << data;
-           // 将QByteArray转换为QJsonDocument
+           // convert the QByteArray to a QJsonDocument
            QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-           // 检查转换是否成功
+           // check whether the conversion succeeded
            if (jsonDoc.isNull()) {
                qDebug() << "Failed to create QJsonDocument.";
                return;
@@ -351,10 +351,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_AUTH_FRIEND_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
         qDebug() << "handle id is " << id << " data is " << data;
-        // 将QByteArray转换为QJsonDocument
+        // convert the QByteArray to a QJsonDocument
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-        // 检查转换是否成功
+        // check whether the conversion succeeded
         if (jsonDoc.isNull()) {
             qDebug() << "Failed to create QJsonDocument.";
             return;
@@ -388,10 +388,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_TEXT_CHAT_MSG_RSP, [](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
         qDebug() << "handle id is " << id << " data is " << data;
-        // 将QByteArray转换为QJsonDocument
+        // convert the QByteArray to a QJsonDocument
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-        // 检查转换是否成功
+        // check whether the conversion succeeded
         if (jsonDoc.isNull()) {
             qDebug() << "Failed to create QJsonDocument.";
             return;
@@ -417,10 +417,10 @@ void TcpMgr::initHandlers()
     _handlers.insert(ID_NOTIFY_TEXT_CHAT_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
         qDebug() << "handle id is " << id << " data is " << data;
-        // 将QByteArray转换为QJsonDocument
+        // convert the QByteArray to a QJsonDocument
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
 
-        // 检查转换是否成功
+        // check whether the conversion succeeded
         if (jsonDoc.isNull()) {
             qDebug() << "Failed to create QJsonDocument.";
             return;
@@ -484,7 +484,7 @@ void TcpMgr::HandleMsg(ReqId id, int len, QByteArray data)
 void TcpMgr::slot_tcp_connect(ServerInfo si)
 {
     qDebug()<< "receive tcp connect signal";
-      // 尝试连接到服务器
+      // try to connect to the server
       qDebug() << "Connecting to server...";
       _host = si.Host;
       _port = static_cast<uint16_t>(si.Port.toUInt());
@@ -495,23 +495,23 @@ void TcpMgr::slot_send_data(ReqId reqId, QByteArray dataBytes)
 {
         uint16_t id = reqId;
 
-       // 计算长度（使用网络字节序转换）
+       // compute the length (using network byte order)
        quint16 len = static_cast<quint16>(dataBytes.length());
 
-       // 创建一个 QByteArray 用于存储要发送的所有数据
+       // create a QByteArray to hold all data to be sent
        QByteArray block;
        QDataStream out(&block, QIODevice::WriteOnly);
 
-       // 设置数据流使用网络字节序
+       // set the data stream to use network byte order
        out.setByteOrder(QDataStream::BigEndian);
 
-       // 写入id和长度
+       // write the id and length
        out << id << len;
 
-       // 添加字符串数据
+       // add string data
        block.append(dataBytes);
 
-       // 发送数据
+       // send data
        _socket.write(block);
        qDebug() << "tcp mgr send byte data is " << block ;
 }

@@ -13,38 +13,38 @@ MessageTextEdit::~MessageTextEdit()
 
 }
 /*
- 该函数的主要功能是从 QTextEdit 控件中提取消息列表（mGetMsgList），并返回提取的消息列表。
- 消息列表包括文本消息和文件消息（如图片、文件等）。
+ This function extracts the message list (mGetMsgList) from the QTextEdit and returns it.
+ the message list holds text and file messages (e.g. images, files).
 */
 
 QVector<MsgInfo> MessageTextEdit::getMsgList()
 {
     mGetMsgList.clear();
 
-    QString doc = this->document()->toPlainText(); // 获取 QTextEdit 中的纯文本内容。
-    QString text = "";  // 临时存储文本消息
-    int indexUrl = 0;  // 用于遍历 mMsgList 的索引
+    QString doc = this->document()->toPlainText(); // get the plain text from the QTextEdit.
+    QString text = "";  // temporarily store text messages
+    int indexUrl = 0;  // index used to iterate mMsgList
     int count = mMsgList.size();
 
     for(int index = 0; index < doc.size(); index++)
     {
-        // 处理文件消息
-        if(doc[index] == QChar::ObjectReplacementCharacter)  // 遇到文件消息标记
+        // handle the file message
+        if(doc[index] == QChar::ObjectReplacementCharacter)  // file message marker encountered
         {
-            // 如果 text 不为空，说明之前有未处理的文本消息，将其插入到 mGetMsgList 中
+            // if text is not empty there were pending text messages; insert them into mGetMsgList
             if(!text.isEmpty())
             {
-                // 处理之前的文本消息
+                // handle the earlier text messages
                 insertMsgList(mGetMsgList, "text", text, QPixmap());
                 text.clear();
             }
 
-            // 遍历 mMsgList，找到与当前文件消息匹配的 MsgInfo 对象
+            // iterate mMsgList to find the MsgInfo matching the current file message
             while(indexUrl < count)
             {
                 MsgInfo msg = mMsgList[indexUrl];
 
-                // 如果 this->document()->toHtml() 包含 msg.content，说明这是一个文件消息，将其添加到 mGetMsgList 中。
+                // if this->document()->toHtml() contains msg.content, it is a file message; add it to mGetMsgList.
                 if(this->document()->toHtml().contains(msg.content, Qt::CaseSensitive))
                 {
                     indexUrl++;
@@ -56,12 +56,12 @@ QVector<MsgInfo> MessageTextEdit::getMsgList()
         }
         else
         {
-            // 处理文本消息
+            // handle the text message
             text.append(doc[index]);
         }
     }
 
-    // 处理剩余的文本消息
+    // handle the remaining text messages
     if(!text.isEmpty())
     {
         QPixmap pix;
@@ -70,7 +70,7 @@ QVector<MsgInfo> MessageTextEdit::getMsgList()
     }
 
     mMsgList.clear();
-    this->clear(); // 清空 QTextEdit 的内容
+    this->clear(); // clear the QTextEdit content
     return mGetMsgList;
 }
 
@@ -96,25 +96,25 @@ void MessageTextEdit::dragEnterEvent(QDragEnterEvent *event)
 
 void MessageTextEdit::dropEvent(QDropEvent *event)
 {
-    insertFromMimeData(event->mimeData());  // 获取被拖拽过来的 数据内容，event->mimeData() 的类型是 const QMimeData*
-    event->accept();                        // 表示接收了这次拖拽操作，事件处理完毕  !阻止事件往上传递
+    insertFromMimeData(event->mimeData());  // get the dropped data; the type of event->mimeData() is const QMimeData*
+    event->accept();                        // accept this drag; handled, do not propagate the event further
 }
 
 void MessageTextEdit::keyPressEvent(QKeyEvent *e)
 {
-    // // 如果用户按下的是 Enter 或 Return，并且没有按住 Shift 键
+    // // if the user pressed Enter or Return without holding Shift
     if((e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return) && !(e->modifiers() & Qt::ShiftModifier))
     {
-        emit send(); // 触发 send() 信号，执行发送消息操作
-        return;      // 阻止回车换行的默认行为
+        emit send(); // trigger the send() signal to send the message
+        return;      // prevent the default Enter-newline behavior
     }
-    QTextEdit::keyPressEvent(e); // 其他按键正常处理，交给父类
+    QTextEdit::keyPressEvent(e); // handle other keys normally by delegating to the base class
 }
 
 void MessageTextEdit::insertImages(const QString &url)
 {
     QImage image(url);
-    // 按比例缩放图片
+    // scale the image proportionally
     if(image.width() > 120 || image.height() > 80)
     {
         if(image.width() > image.height())
@@ -124,8 +124,8 @@ void MessageTextEdit::insertImages(const QString &url)
         else
             image = image.scaledToHeight(80, Qt::SmoothTransformation);
     }
-    QTextCursor cursor = this->textCursor();    // 获取当前光标位置
-    cursor.insertImage(image, url);             // 把图片插入到文本框中
+    QTextCursor cursor = this->textCursor();    // get the current cursor position
+    cursor.insertImage(image, url);             // insert the image into the text box
 
     insertMsgList(mMsgList, "image", url, QPixmap::fromImage(image));
 }
@@ -209,37 +209,37 @@ QStringList MessageTextEdit::getUrl(QString text)
     return urls;
 }
 
-// 为传入的文件生成一张带有图标、文件名和文件大小信息的 QPixmap 图片，用于显示在聊天窗口里
+// build a QPixmap for the given file with icon, name and size, to show in the chat window
 QPixmap MessageTextEdit::getFileIconPixmap(const QString &url)
 {
-    QFileIconProvider provider; // QFileIconProvider 获取系统默认的文件图标
+    QFileIconProvider provider; // QFileIconProvider gets the system default file icon
     QFileInfo fileinfo(url);
     QIcon icon = provider.icon(fileinfo);
 
-    QString strFileSize = getFileSize(fileinfo.size()); // 把文件大小（字节数）转成可读字符串（比如 1.23MB）
+    QString strFileSize = getFileSize(fileinfo.size()); // turn the file size in bytes into a readable string (e.g. 1.23MB)
 
     QFont font(QString("宋体"), 10, QFont::Normal, false);
     QFontMetrics fontMetrics(font);
-    QSize textSize = fontMetrics.size(Qt::TextSingleLine, fileinfo.fileName()); // 计算文字的尺寸
-    QSize FileSize =fontMetrics.size(Qt::TextSingleLine, strFileSize);          // 计算文件大小
+    QSize textSize = fontMetrics.size(Qt::TextSingleLine, fileinfo.fileName()); // compute the text size
+    QSize FileSize =fontMetrics.size(Qt::TextSingleLine, strFileSize);          // compute the file size
 
     int maxWidth = textSize.width() > FileSize.width() ? textSize.width() : FileSize.width();
-    QPixmap pix(50 + maxWidth + 10, 50); // 图片总宽度 = 图标宽（50）+ 最大文本宽 + 间隔（10)
-    pix.fill(); // 清空背景
+    QPixmap pix(50 + maxWidth + 10, 50); // total image width = icon width (50) + max text width + gap (10)
+    pix.fill(); // clear the background
 
     QPainter painter;
     painter.begin(&pix);
-    // 文件图标
+    // file icon
     QRect rect(0, 0, 50, 50);
-    painter.drawPixmap(rect, icon.pixmap(40, 40)); // 在左侧（50x50）区域画文件图标（内部图标 40x40）
+    painter.drawPixmap(rect, icon.pixmap(40, 40)); // draw the file icon in the left 50x50 area (inner icon 40x40)
 
 
-    // 文件名称
+    // file name
     painter.setPen(Qt::black);
-    QRect rectText(50 + 10, 3, textSize.width(), textSize.height()); // 文件名绘制在图标右侧，稍微往下 3 像素
+    QRect rectText(50 + 10, 3, textSize.width(), textSize.height()); // draw the file name to the right of the icon, 3 pixels lower
     painter.drawText(rectText, fileinfo.fileName());
 
-    // 文件大小
+    // file size
     QRect rectFile(50 + 10, textSize.height() + 5, FileSize.width(), FileSize.height());
     painter.drawText(rectFile, strFileSize);
     painter.end();
@@ -265,7 +265,7 @@ QString MessageTextEdit::getFileSize(qint64 size)
         num = size / 1024.0 / 1024.0 / 1024.0;
         Unit = "GB";
     }
-//    使用 QString::number() 方法将 num 转换为字符串，保留 2 位小数（'f' 格式代表固定小数点格式）
+//    convert num to a string with QString::number(), keeping 2 decimals ('f' means fixed-point format)
     return QString::number(num, 'f', 2) + " " + Unit;
 }
 

@@ -9,7 +9,7 @@ namespace Ui {
 class ChatUserWid;
 }
 
-// 显示聊天用户信息
+// show the chat user info
 class ChatUserWid : public ListItemBase
 {
     Q_OBJECT
@@ -25,7 +25,7 @@ public:
     void ShowRedPoint(bool bshow);
 
     std::shared_ptr<UserInfo> GetUserInfo();
-    // 更新最后一条消息
+    // update the last message
     void UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs);
 private:
     Ui::ChatUserWid *ui;

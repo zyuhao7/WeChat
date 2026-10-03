@@ -12,10 +12,10 @@ public:
     ~ClickedBtn();
     void SetState(QString normal, QString hover, QString press);
 protected:
-    virtual void enterEvent(QEnterEvent* event) override ; // 鼠标进入
-    virtual void leaveEvent(QEvent* event) override;  //鼠标离开
-    virtual void mousePressEvent(QMouseEvent* event) override; // 鼠标按下
-    virtual void mouseReleaseEvent(QMouseEvent* event) override; //鼠标释放
+    virtual void enterEvent(QEnterEvent* event) override ; // mouse enter
+    virtual void leaveEvent(QEvent* event) override;  //mouse leave
+    virtual void mousePressEvent(QMouseEvent* event) override; // mouse press
+    virtual void mouseReleaseEvent(QMouseEvent* event) override; //mouse release
 private:
     QString _normal;
     QString _hover;
