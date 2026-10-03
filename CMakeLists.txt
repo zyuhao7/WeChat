@@ -20,8 +20,8 @@ pkg_check_modules(HIREDIS REQUIRED hiredis)
 find_library(MYSQLCPPCONN mysqlcppconn REQUIRED)
 find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin REQUIRED)
 
-# 源码里用 Windows/VS 的 <jdbc/xxx.h> 布局；在构建目录生成兼容 shim，
-# 指向本机 MySQL Connector/C++ 的真实头文件，避免改动源码。
+# sources use the Windows/VS <jdbc/xxx.h> layout; generate a compat shim in the build dir,
+# point to the real MySQL Connector/C++ headers on this machine, avoiding source changes.
 find_path(MYSQLCPPCONN_INC mysql_driver.h PATHS /usr/include /usr/local/include REQUIRED)
 set(MYSQL_SHIM "${CMAKE_BINARY_DIR}/mysql_shim")
 file(MAKE_DIRECTORY "${MYSQL_SHIM}/jdbc")
@@ -45,7 +45,7 @@ set(COMMON_LIBS
   Threads::Threads
 )
 
-# 三个 C++ 后端服务各自独立可执行；proto 在构建期用本机 protoc 重新生成
+# the three C++ backends build as separate executables; proto is regenerated at build time with the local protoc
 foreach(svc GateServer StatusServer ChatServer)
   set(GEN_DIR "${CMAKE_BINARY_DIR}/gen/${svc}")
   file(MAKE_DIRECTORY "${GEN_DIR}")
