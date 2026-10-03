@@ -1,5 +1,5 @@
--- 项目运行所需数据库结构（依据 MysqlDao 中的 SQL 反推）
--- 用法: mysql -uroot -p123456 < sql/db01.sql
+-- database schema required to run the project (inferred from the SQL in MysqlDao)
+-- usage: mysql -uroot -p123456 < sql/db01.sql
 
 CREATE DATABASE IF NOT EXISTS db01 DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE db01;
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS user (
   UNIQUE KEY uk_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 单行自增发号表
+-- single-row auto-increment id table
 CREATE TABLE IF NOT EXISTS user_id (
   id INT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
