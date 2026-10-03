@@ -43,15 +43,10 @@ done
 start gate "$ROOT/GateServer" "$BUILD/GateServer"
 
 if [ "${1:-}" = "--client" ]; then
-  CLIENT_BIN="$ROOT/ChatClient/build/bin"
-  if [ -x "$CLIENT_BIN/Chat" ]; then
-    ( cd "$CLIENT_BIN" && exec nohup ./Chat ) >"$LOGDIR/client.log" 2>&1 &
-    local cpid=$!
-    echo "$cpid" >"$LOGDIR/client.pid"
-    echo "starting client (cwd=$CLIENT_BIN, pid=$cpid)"
-  else
-    echo "client binary not found; build ChatClient first" >&2
-  fi
+  ( exec "$ROOT/scripts/start_client.sh" ) >"$LOGDIR/client.log" 2>&1 &
+  cpid=$!
+  echo "$cpid" >"$LOGDIR/client.pid"
+  echo "starting client (pid=$cpid)"
 fi
 
 echo "all started; logs in $LOGDIR"
