@@ -1,0 +1,12 @@
+# 构建产物
+build/
+bin/
+
+# Node
+VerifyServer/node_modules/
+
+# 编辑器
+.vscode/
+.idea/
+*.o
+*.out
