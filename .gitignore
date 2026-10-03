@@ -2,6 +2,9 @@
 build/
 bin/
 
+# 运行日志
+logs/
+
 # Node
 VerifyServer/node_modules/
 
