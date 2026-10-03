@@ -13,11 +13,11 @@ Httpmgr::Httpmgr()
 void Httpmgr::slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mod)
 {
     if(mod == Modules::REGISTERMOD){
-           //发送信号通知指定模块http响应结束
+           //emit a signal to notify the given module that the HTTP response finished
            emit sig_reg_mod_finish(id, res, err);
        }
     if(mod == Modules::RESETMOD)
-        // 发送信号通知指定模块 http 响应结束
+        // emit a signal to notify the given module that the HTTP response finished
         emit sig_reset_mod_finish(id, res, err);
 
     if(mod == Modules::LOGINMOD)
@@ -26,33 +26,33 @@ void Httpmgr::slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mo
 
 void Httpmgr::PostHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod)
 {
-        //创建一个HTTP POST请求，并设置请求头和请求体
+        //create an HTTP POST request with headers and body
        QByteArray data = QJsonDocument(json).toJson();
 
-       //通过url构造请求
+       //build the request from the url
        QNetworkRequest request(url);
        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
        request.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(data.length()));
 
-       //发送请求，并处理响应, 获取自己的智能指针，构造伪闭包并增加智能指针引用计数
+       //send the request and handle the response; get its own shared_ptr to form a pseudo-closure and raise the refcount
        auto self = shared_from_this();
        QNetworkReply * reply = _manager.post(request, data);
 
-       //设置信号和槽等待发送完成
+       //connect signal and slot to wait for the send to finish
        QObject::connect(reply, &QNetworkReply::finished, [reply, self, req_id, mod](){
-           //处理错误的情况
+           //handle the error case
            if(reply->error() != QNetworkReply::NoError){
                qDebug() << reply->errorString();
-               //发送信号通知完成
+               //emit a signal to notify completion
                emit self->sig_http_finish(req_id, "", ErrorCodes::ERR_NETWORK, mod);
                reply->deleteLater();
                return;
            }
 
-           //无错误则读回答复
+           //if no error, read the reply
            QString res = reply->readAll();
 
-           //发送信号通知完成
+           //emit a signal to notify completion
            emit self->sig_http_finish(req_id, res, ErrorCodes::SUCCESS, mod);
            reply->deleteLater();
            return;

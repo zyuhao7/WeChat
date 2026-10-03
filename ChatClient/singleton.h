@@ -16,9 +16,9 @@ public:
         static std::once_flag s_flag;
         std::call_once(s_flag,[&](){
             // make_shared() ???
-            //单例通常用来管理全局资源，而使用 std::make_shared 时，管理对象和实例绑定在一起，可能会导致不易控制的析构顺序问题。
-            // make_shared<>() 会 申请一块连续内存，同时存储 T 对象和控制块（引用计数等）导致 T 和控制块（引用计数）绑死了
-            // 析构时，T 必须先销毁，控制块再销毁（顺序不可控)
+            //A singleton usually manages global resources; with std::make_shared the manager and instance are bound together, which can cause hard-to-control destruction-order issues.
+            // make_shared<>() allocates one contiguous block storing both the T object and the control block (refcount), tying T and the control block together
+            // on destruction T must be destroyed before the control block (order not controllable)
 
             _instance = std::shared_ptr<T>(new T);
         });

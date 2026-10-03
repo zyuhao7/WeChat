@@ -11,7 +11,7 @@ StateWidget::StateWidget(QWidget *parent)
       _curstate(ClickLbState::Normal)
 {
     setCursor(Qt::PointingHandCursor);
-    // 添加红点
+    // add the red dot
     AddRedPoint();
 }
 
@@ -61,7 +61,7 @@ void StateWidget::SetSelected(bool bselected)
 
 void StateWidget::AddRedPoint()
 {
-    // 添加红点示意图
+    // add the red-dot indicator
     _red_point = new QLabel();
     _red_point->setObjectName("red_point");
     QVBoxLayout* layout2 = new QVBoxLayout;
@@ -94,7 +94,7 @@ void StateWidget::mousePressEvent(QMouseEvent *event)
             if(_curstate == ClickLbState::Selected){
                 qDebug()<<"PressEvent , already to selected press: "<< _selected_press;
                 //emit clicked();
-                // 调用基类的mousePressEvent以保证正常的事件处理
+                // call the base-class mousePressEvent for normal event handling
                 QWidget::mousePressEvent(event);
                 return;
             }
@@ -109,7 +109,7 @@ void StateWidget::mousePressEvent(QMouseEvent *event)
 
             return;
     }
-       // 调用基类的mousePressEvent以保证正常的事件处理
+       // call the base-class mousePressEvent for normal event handling
        QWidget::mousePressEvent(event);
 }
 
@@ -131,13 +131,13 @@ void StateWidget::mouseReleaseEvent(QMouseEvent *event)
             emit clicked();
             return;
         }
-        // 调用基类的mousePressEvent以保证正常的事件处理
+        // call the base-class mousePressEvent for normal event handling
     QWidget::mousePressEvent(event);
 }
 
 void StateWidget::enterEvent(QEnterEvent *event)
 {
-        // 在这里处理鼠标悬停进入的逻辑
+        // handle mouse hover-enter logic here
        if(_curstate == ClickLbState::Normal)
        {
             //qDebug()<<"enter , change to normal hover: "<< _normal_hover;
@@ -159,7 +159,7 @@ void StateWidget::enterEvent(QEnterEvent *event)
 
 void StateWidget::leaveEvent(QEvent *event)
 {
-    // 在这里处理鼠标悬停离开的逻辑
+    // handle mouse hover-leave logic here
        if(_curstate == ClickLbState::Normal){
            // qDebug()<<"leave , change to normal : "<< _normal;
            setProperty("state",_normal);

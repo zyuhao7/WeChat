@@ -15,32 +15,32 @@
 #include "QStyle"
 
 /**
- * @brief repolish 用来刷新 qss
+ * @brief repolish used to refresh the qss
  */
 extern std::function<void(QWidget*)> repolish;
 extern std::function<QString(QString)> xorString;
 
 enum ReqId{
-       ID_GET_VERIFY_CODE = 1001, //获取验证码
-       ID_REG_USER = 1002, //注册用户
-       ID_RESET_PWD = 1003, //重置密码
-       ID_LOGIN_USER = 1004, //用户登录
-       ID_CHAT_LOGIN = 1005, //登陆聊天服务器
-       ID_CHAT_LOGIN_RSP = 1006, //登录聊天服务器回包
-       ID_SEARCH_USER_REQ = 1007, //用户搜索请求
-       ID_SEARCH_USER_RSP = 1008, //搜索用户回包
-       ID_ADD_FRIEND_REQ = 1009,  //添加好友申请
-       ID_ADD_FRIEND_RSP = 1010, //申请添加好友回复
-       ID_NOTIFY_ADD_FRIEND_REQ = 1011,  //通知用户添加好友申请
-       ID_AUTH_FRIEND_REQ = 1013,  //认证好友请求
-       ID_AUTH_FRIEND_RSP = 1014,  //认证好友回复
-       ID_NOTIFY_AUTH_FRIEND_REQ = 1015, //通知用户认证好友申请
-       ID_TEXT_CHAT_MSG_REQ  = 1017,  //文本聊天信息请求
-       ID_TEXT_CHAT_MSG_RSP  = 1018,  //文本聊天信息回复
-       ID_NOTIFY_TEXT_CHAT_MSG_REQ = 1019, //通知用户文本聊天信息
-       ID_NOTIFY_OFF_LINE_REQ = 1021, // 通知用户下线
-       ID_HEART_BEAT_REQ = 1023,     // 心跳请求
-       ID_HEART_BEAT_RSP = 1024     // 心跳回复
+       ID_GET_VERIFY_CODE = 1001, //get the verify code
+       ID_REG_USER = 1002, //register the user
+       ID_RESET_PWD = 1003, //reset the password
+       ID_LOGIN_USER = 1004, //user login
+       ID_CHAT_LOGIN = 1005, //log in to the chat server
+       ID_CHAT_LOGIN_RSP = 1006, //chat-server login reply
+       ID_SEARCH_USER_REQ = 1007, //user search request
+       ID_SEARCH_USER_RSP = 1008, //search user reply
+       ID_ADD_FRIEND_REQ = 1009,  //add the friend apply
+       ID_ADD_FRIEND_RSP = 1010, //add-friend apply reply
+       ID_NOTIFY_ADD_FRIEND_REQ = 1011,  //notify the user of the add-friend apply
+       ID_AUTH_FRIEND_REQ = 1013,  //auth friend request
+       ID_AUTH_FRIEND_RSP = 1014,  //auth friend reply
+       ID_NOTIFY_AUTH_FRIEND_REQ = 1015, //notify the user of the friend auth apply
+       ID_TEXT_CHAT_MSG_REQ  = 1017,  //text chat message request
+       ID_TEXT_CHAT_MSG_RSP  = 1018,  //text chat message reply
+       ID_NOTIFY_TEXT_CHAT_MSG_REQ = 1019, //notify the user of the text chat message
+       ID_NOTIFY_OFF_LINE_REQ = 1021, // notify the user of going offline
+       ID_HEART_BEAT_REQ = 1023,     // heartbeat request
+       ID_HEART_BEAT_RSP = 1024     // heartbeat reply
 };
 
 enum Modules{
@@ -61,8 +61,8 @@ enum TipErr{
 
 enum ErrorCodes{
     SUCCESS = 0,
-    ERR_JSON = 1,    // json 解析失败
-    ERR_NETWORK = 2, // 网络错误
+    ERR_JSON = 1,    // JSON parse failed
+    ERR_NETWORK = 2, // network error
 };
 
 enum ClickLbState{
@@ -89,30 +89,30 @@ enum class ChatRole
 
 struct MsgInfo{
     QString msgFlag; //"text,image,file"
-    QString content; //表示文件和图像的url,文本信息
-    QPixmap pixmap; //文件和图片的缩略图
+    QString content; //the url and text info of the file or image
+    QPixmap pixmap; //thumbnail of the file or image
 };
 
-//聊天界面几种模式
+//the chat page modes
 enum ChatUIMode{
-    SearchMode, //搜索模式
-    ChatMode, //聊天模式
-    ContactMode, //联系模式
+    SearchMode, //search mode
+    ChatMode, //chat mode
+    ContactMode, //contact mode
 };
 
-//自定义QListWidgetItem的几种类型
+//the custom QListWidgetItem types
 enum ListItemType{
-    CHAT_USER_ITEM, //聊天用户
-    CONTACT_USER_ITEM, //联系人用户
-    SEARCH_USER_ITEM, //搜索到的用户
-    ADD_USER_TIP_ITEM, //提示添加用户
-    INVALID_ITEM,  //不可点击条目
-    GROUP_TIP_ITEM, //分组提示条目
-    LINE_ITEM,  //分割线
-    APPLY_FRIEND_ITEM, //好友申请
+    CHAT_USER_ITEM, //chat user
+    CONTACT_USER_ITEM, //contact user
+    SEARCH_USER_ITEM, //the searched user
+    ADD_USER_TIP_ITEM, //prompt to add a user
+    INVALID_ITEM,  //non-clickable item
+    GROUP_TIP_ITEM, //group tip item
+    LINE_ITEM,  //separator line
+    APPLY_FRIEND_ITEM, //friend apply
 };
 
-//申请好友标签输入框最低长度
+//minimum length of the friend-apply label input
 const int MIN_APPLY_LABEL_ED_LEN = 40;
 
 const QString add_prefix = "添加标签 ";

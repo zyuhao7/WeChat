@@ -18,7 +18,7 @@ public:
 
 };
 
-// 请求者的信息
+// the requester's info
 class AddFriendApply {
 public:
     AddFriendApply(int from_uid, QString name, QString desc,
@@ -31,7 +31,7 @@ public:
     int     _sex;
 };
 
-//本地存储的好友申请信息, 用于管理申请记录
+//locally stored friend-apply info, used to manage apply records
 struct ApplyInfo {
     ApplyInfo(int uid, QString name, QString desc,
         QString icon, QString nick, int sex, int status)

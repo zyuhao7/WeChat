@@ -9,9 +9,9 @@ class ChatView : public QWidget
     Q_OBJECT
 public:
     ChatView(QWidget* parent = Q_NULLPTR);
-    void appendChatItem(QWidget* item); // 头插
-    void prependChatItem(QWidget* item); //尾插
-    void insertChatItem(QWidget* before, QWidget* item); // 中间插
+    void appendChatItem(QWidget* item); // head insert
+    void prependChatItem(QWidget* item); //tail insert
+    void insertChatItem(QWidget* before, QWidget* item); // middle insert
     void removeAllItem();
 protected:
     bool eventFilter(QObject* o, QEvent* e) override;
@@ -22,8 +22,8 @@ private slots:
 private:
     void initStyleSheet();
 private:
-    QVBoxLayout* m_pVl;         // 垂直布局
-    QScrollArea* m_pScrollArea; // 滚动区域
+    QVBoxLayout* m_pVl;         // vertical layout
+    QScrollArea* m_pScrollArea; // scroll area
     bool isAppended;
 };
 

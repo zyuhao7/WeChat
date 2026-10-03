@@ -12,9 +12,9 @@ public:
 protected:
     void focusOutEvent(QFocusEvent* event) override
     {
-        // 执行失去焦点时候的处理逻辑
+        // run the focus-out handling
         QLineEdit::focusOutEvent(event);
-        // 发送失去焦点的信号
+        // emit the focus-out signal
         emit sig_focus_out();
     }
 private:

@@ -15,7 +15,7 @@
  * @file       httpmgr.h
  * @brief      XXXX Function
  *
- * @author     沫羽皓
+ * @author     Moyuhao
  * @date       2025/02/09
  * @history
  *****************************************************************************/
@@ -30,7 +30,7 @@ public:
 private:
     friend class Singleton<Httpmgr>;
     Httpmgr();
-    QNetworkAccessManager _manager; // QT 原生网络管理者
+    QNetworkAccessManager _manager; // Qt native network manager
 
 
 public slots:

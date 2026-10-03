@@ -21,10 +21,10 @@ FriendInfoPage::~FriendInfoPage()
 void FriendInfoPage::SetInfo(std::shared_ptr<UserInfo> user_info)
 {
     _user_info = user_info;
-    // 加载图片
+    // load the image
     QPixmap pixmap(user_info->_icon);
 
-    // 设置图片自动缩放
+    // set the image to auto-scale
     ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_lb->setScaledContents(true);
 

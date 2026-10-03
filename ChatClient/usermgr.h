@@ -43,9 +43,9 @@ public:
 private:
     UserMgr();
     std::shared_ptr<UserInfo> _user_info;
-    std::vector<std::shared_ptr<ApplyInfo>> _apply_list; // 申请列表
-    std::vector<std::shared_ptr<FriendInfo>> _friend_list; //好友列表
-    QMap<int, std::shared_ptr<FriendInfo>> _friend_map;  // 好友映射表 ->  uid : FriendInfo
+    std::vector<std::shared_ptr<ApplyInfo>> _apply_list; // apply list
+    std::vector<std::shared_ptr<FriendInfo>> _friend_list; //friend list
+    QMap<int, std::shared_ptr<FriendInfo>> _friend_map;  // friend map -> uid : FriendInfo
     QString _token;
     int _chat_loaded;
     int _contact_loaded;

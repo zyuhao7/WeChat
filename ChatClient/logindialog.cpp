@@ -23,15 +23,15 @@ LoginDialog::LoginDialog(QWidget *parent) :
 
     initHttpHandlers();
 
-    //连接登录回包信号
+    //connect the login reply signal
        connect(Httpmgr::GetInstance().get(), &Httpmgr::sig_login_mod_finish, this,
                &LoginDialog::slot_login_mod_finish);
 
-       //连接tcp连接请求的信号和槽函数
+       //connect the tcp connect-request signal and slot
      connect(this, &LoginDialog::sig_connect_tcp, TcpMgr::GetInstance().get(), &TcpMgr::slot_tcp_connect);
-     //连接tcp管理者发出的连接成功信号
+     //connect the connect-success signal from the tcp manager
      connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_con_success, this, &LoginDialog::slot_tcp_con_finish);
-     //连接tcp管理者发出的登陆失败信号
+     //connect the login-failure signal from the tcp manager
      connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_login_failed, this, &LoginDialog::slot_login_failed);
      initHead();
 }
@@ -44,7 +44,7 @@ LoginDialog::~LoginDialog()
 
 void LoginDialog::initHttpHandlers()
 {
-    //注册获取登录回包逻辑
+    //register the login-reply logic
       _handlers.insert(ReqId::ID_LOGIN_USER, [this](QJsonObject jsonObj){
           int error = jsonObj["error"].toInt();
           if(error != ErrorCodes::SUCCESS){
@@ -54,7 +54,7 @@ void LoginDialog::initHttpHandlers()
           }
           auto email = jsonObj["email"].toString();
 
-          //发送信号通知tcpMgr发送长链接
+          //emit a signal to tell tcpMgr to open the long connection
           ServerInfo si;
           si.Uid = jsonObj["uid"].toInt();
           si.Host = jsonObj["host"].toString();
@@ -71,30 +71,30 @@ void LoginDialog::initHttpHandlers()
 
 void LoginDialog::initHead()
 {
-    // 加载图片
+    // load the image
         QPixmap originalPixmap(":/res/ice.png");
-          // 设置图片自动缩放
+          // set the image to auto-scale
         qDebug()<< originalPixmap.size() << ui->head_label->size();
         originalPixmap = originalPixmap.scaled(ui->head_label->size(),
                 Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-        // 创建一个和原始图片相同大小的QPixmap，用于绘制圆角图片
+        // create a QPixmap the same size as the original, used to draw the rounded image
         QPixmap roundedPixmap(originalPixmap.size());
-        roundedPixmap.fill(Qt::transparent); // 用透明色填充
+        roundedPixmap.fill(Qt::transparent); // fill with a transparent color
 
         QPainter painter(&roundedPixmap);
-        painter.setRenderHint(QPainter::Antialiasing); // 设置抗锯齿，使圆角更平滑
+        painter.setRenderHint(QPainter::Antialiasing); // enable antialiasing for smoother rounded corners
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-        // 使用QPainterPath设置圆角
+        // use QPainterPath to set rounded corners
         QPainterPath path;
-        path.addRoundedRect(0, 0, originalPixmap.width(), originalPixmap.height(), 10, 10); // 最后两个参数分别是x和y方向的圆角半径
+        path.addRoundedRect(0, 0, originalPixmap.width(), originalPixmap.height(), 10, 10); // the last two params are the x and y corner radii
         painter.setClipPath(path);
 
-        // 将原始图片绘制到roundedPixmap上
+        // draw the original image onto roundedPixmap
         painter.drawPixmap(0, 0, originalPixmap);
 
-        // 设置绘制好的圆角图片到QLabel上
+        // set the drawn rounded image on the QLabel
         ui->head_label->setPixmap(roundedPixmap);
 
 }
@@ -116,18 +116,18 @@ bool LoginDialog::checkPwdValid()
     auto pwd = ui->pass_edit->text();
        if(pwd.length() < 6 || pwd.length() > 15){
            qDebug() << "Pass length invalid";
-           //提示长度不准确
+           //warn that the length is invalid
            AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
            return false;
        }
 
-       // 创建一个正则表达式对象，按照上述密码要求
-       // 这个正则表达式解释：
-       // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
+       // create a regex object for the password rules above
+       // explanation of this regex:
+       // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ password at least 6 chars, letters, digits and some special chars
        QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*.]{6,15}$");
        bool match = regExp.match(pwd).hasMatch();
        if(!match){
-           //提示字符非法
+           //warn that the characters are invalid
            AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符且长度为(6~15)"));
            return false;;
        }
@@ -190,22 +190,22 @@ void LoginDialog::slot_login_mod_finish(ReqId id, QString res, ErrorCodes err)
           return;
       }
 
-      // 解析 JSON 字符串,res需转化为QByteArray
+      // parse the JSON string; res must be converted to a QByteArray
       QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
-      //json解析错误
+      //JSON parse error
       if(jsonDoc.isNull()){
           showTip(tr("json解析错误"),false);
           return;
       }
 
-      //json解析错误
+      //JSON parse error
       if(!jsonDoc.isObject()){
           showTip(tr("json解析错误"),false);
           return;
       }
 
 
-      //调用对应的逻辑,根据id回调。
+      //dispatch to the matching logic by id.
       _handlers[id](jsonDoc.object());
 
       return;
@@ -225,7 +225,7 @@ void LoginDialog::on_login_btn_clicked()
 
        auto email = ui->email_edit->text();
        auto pwd = ui->pass_edit->text();
-       //发送http请求登录
+       //send the HTTP login request
        QJsonObject json_obj;
        json_obj["email"] = email;
        json_obj["passwd"] = xorString(pwd);
@@ -245,7 +245,7 @@ void LoginDialog::slot_tcp_con_finish(bool bsuccess)
       QJsonDocument doc(jsonObj);
       QByteArray jsonData = doc.toJson(QJsonDocument::Indented);
 
-      //发送tcp请求给 chat server
+      //send the TCP request to the chat server
       emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_CHAT_LOGIN, jsonData);
 
    }else{

@@ -36,10 +36,10 @@ std::shared_ptr<UserInfo> UserMgr::GetUserInfo()
     return _user_info;
 }
 
-// 处理好友申请列表数据
+// handle the friend apply list data
 void UserMgr::AppendApplyList(QJsonArray array)
 {
-    // 遍历 QJsonArray 并输出每个元素
+    // iterate the QJsonArray and output each element
     for (const QJsonValue &value : array) {
         auto name = value["name"].toString();
         auto desc = value["desc"].toString();
@@ -54,9 +54,9 @@ void UserMgr::AppendApplyList(QJsonArray array)
     }
 }
 
-// 处理好友列表数据
+// handle the friend list data
 void UserMgr::AppendFriendList(QJsonArray array) {
-    // 遍历 QJsonArray 并输出每个元素
+    // iterate the QJsonArray and output each element
     for (const QJsonValue& value : array) {
         auto name = value["name"].toString();
         auto desc = value["desc"].toString();
@@ -69,7 +69,7 @@ void UserMgr::AppendFriendList(QJsonArray array) {
         auto info = std::make_shared<FriendInfo>(uid, name,
             nick, icon, sex, desc, back);
 
-        // Fixed 避免重复添加相同好友.
+        // Fixed avoid adding the same friend twice.
         if (!_friend_map.contains(uid))
         {
             _friend_list.push_back(info);
@@ -83,7 +83,7 @@ std::vector<std::shared_ptr<ApplyInfo> > UserMgr::GetApplyList()
     return _apply_list;
 }
 
-// 添加新的好友申请
+// add a new friend apply
 void UserMgr::AddApplyList(std::shared_ptr<ApplyInfo> app)
 {
     _apply_list.push_back(app);
@@ -100,30 +100,30 @@ bool UserMgr::AlreadyApply(int uid)
     return false;
 }
 
-// 分页获取好友聊天列表
+// page through the friend chat list
  std::vector<std::shared_ptr<FriendInfo>> UserMgr::GetChatListPerPage() {
     
     std::vector<std::shared_ptr<FriendInfo>> friend_list;
     unsigned long long begin = _chat_loaded;
     unsigned long long end = begin + CHAT_COUNT_PER_PAGE;
 
-    // 没有更多好友可加载直接返回.
+    // no more friends to load, return directly.
     if (begin >= _friend_list.size()) {
         return friend_list;
     }
 
-    // 说明剩余好友数量不足 CHAT_COUNT_PER_PAGE
+    // means fewer than CHAT_COUNT_PER_PAGE friends remain
     if (end > _friend_list.size()) {
         friend_list = std::vector<std::shared_ptr<FriendInfo>>(_friend_list.begin() + begin, _friend_list.end());
         return friend_list;
     }
 
-    // 正常分页
+    // normal paging
     friend_list = std::vector<std::shared_ptr<FriendInfo>>(_friend_list.begin() + begin, _friend_list.begin()+ end);
     return friend_list;
 }
 
-// 分页获取联系人列表
+// page through the contact list
 std::vector<std::shared_ptr<FriendInfo>> UserMgr::GetConListPerPage() {
     std::vector<std::shared_ptr<FriendInfo>> friend_list;
     unsigned long long begin = _contact_loaded;
@@ -149,13 +149,13 @@ UserMgr::UserMgr():_user_info(nullptr), _chat_loaded(0),_contact_loaded(0)
 
 }
 
-// 当收到服务器返回的好友申请处理结果时触发
+// triggered when the server returns the friend-apply result
 void UserMgr::SlotAddFriendRsp(std::shared_ptr<AuthRsp> rsp)
 {
     AddFriend(rsp);
 }
 
-// 处理好友验证信息 当我同意对方的好友请求后，服务器通知我添加用户信息条目
+// handle friend auth; after I accept a friend request, the server notifies me to add a user item
 void UserMgr::SlotAddFriendAuth(std::shared_ptr<AuthInfo> auth)
 {
     AddFriend(auth);

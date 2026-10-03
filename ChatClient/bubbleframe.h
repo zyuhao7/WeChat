@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include "global.h"
 
-class BubbleFrame : public QFrame // 类似于 QWidget
+class BubbleFrame : public QFrame // similar to a QWidget
 {
     Q_OBJECT
 public:

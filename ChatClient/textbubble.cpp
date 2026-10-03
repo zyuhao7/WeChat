@@ -36,21 +36,21 @@ bool TextBubble::eventFilter(QObject *o, QEvent *e)
 
 void TextBubble::adjustTextHeight()
 {
-        qreal doc_margin = m_pTextEdit->document()->documentMargin();    //字体到边框的距离默认为4
+        qreal doc_margin = m_pTextEdit->document()->documentMargin();    //default text-to-border distance is 4
         QTextDocument *doc = m_pTextEdit->document();
         qreal text_height = 0;
 
-        //把每一段的高度相加 = 文本高
+        //sum the segment heights = text height
         for (QTextBlock it = doc->begin(); it != doc->end(); it = it.next())
         {
             QTextLayout *pLayout = it.layout();
-            QRectF text_rect = pLayout->boundingRect();                  // 获取当前文本块的矩形区域
+            QRectF text_rect = pLayout->boundingRect();                  // get the bounding rect of the current text block
             text_height += text_rect.height();
         }
 
         int vMargin = this->layout()->contentsMargins().top();
 
-        //设置这个气泡需要的高度 文本高+文本边距+TextEdit边框到气泡边框的距离
+        //set the bubble height: text height + text margin + distance from the TextEdit border to the bubble border
         setFixedHeight(text_height + doc_margin * 2 + vMargin * 2 );
 }
 
@@ -58,7 +58,7 @@ void TextBubble::setPlainText(const QString &text)
 {
         m_pTextEdit->setPlainText(text);
 
-       //找到段落中最大宽度
+       //find the max width among the segments
        qreal doc_margin = m_pTextEdit->document()->documentMargin();
 
        int margin_left = this->layout()->contentsMargins().left();
@@ -68,15 +68,15 @@ void TextBubble::setPlainText(const QString &text)
        QTextDocument *doc = m_pTextEdit->document();
        int max_width = 0;
 
-       //遍历每一段找到 最宽的那一段
-       for (QTextBlock it = doc->begin(); it != doc->end(); it = it.next())    //字体总长
+       //iterate the segments to find the widest one
+       for (QTextBlock it = doc->begin(); it != doc->end(); it = it.next())    //total text length
        {
            int txtW = int(fm.horizontalAdvance(it.text()));
-           max_width = max_width < txtW ? txtW : max_width;                 //找到最长的那段
+           max_width = max_width < txtW ? txtW : max_width;                 //find the longest segment
        }
 
-       //设置这个气泡的最大宽度 只需要设置一次
-       setMaximumWidth(max_width + doc_margin * 2 + (margin_left + margin_right) + 10);        //设置最大宽度
+       //set this bubble's max width; only needs to be set once
+       setMaximumWidth(max_width + doc_margin * 2 + (margin_left + margin_right) + 10);        //set the max width
 }
 
 void TextBubble::initStyleSheet()

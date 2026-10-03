@@ -65,7 +65,7 @@ void ChatView::removeAllItem()
       int count = layout->count();
 
        for (int i = 0; i < count - 1; ++i) {
-           QLayoutItem *item = layout->takeAt(0); // 始终从第一个控件开始删除
+           QLayoutItem *item = layout->takeAt(0); // always delete starting from the first widget
            if (item) {
                if (QWidget *widget = item->widget()) {
                    delete widget;
@@ -98,12 +98,12 @@ void ChatView::paintEvent(QPaintEvent *event)
 
 void ChatView::onVScrollBarMoved(int min, int max)
 {
-    if(isAppended) // 添加 item 可能调用多次
+    if(isAppended) // adding an item may be called multiple times
     {
         QScrollBar* pVScrollBar = m_pScrollArea->verticalScrollBar();
         pVScrollBar->setSliderPosition(pVScrollBar->maximum());
 
-        // 500 ms 可能调用多次
+        // may fire multiple times within 500 ms
         QTimer::singleShot(500, [this](){
             isAppended = false;
         });

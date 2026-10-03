@@ -17,20 +17,20 @@ ContactUserList::ContactUserList(QWidget *parent)
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    // 安装事件过滤器
+    // install the event filter
     this->viewport()->installEventFilter(this);
 
-    // 模拟从数据库或后端传输过来的数据, 进行列表加载
+    // simulate data coming from the DB or backend to load the list
     addContactUserList();
 
-    // 连接点击的信号和槽
+    // connect the click signal and slot
     connect(this, &QListWidget::itemClicked, this, &ContactUserList::slot_item_clicked);
 
-    // 连接对端同意认证后通知的信号
+    // connect the peer's auth-accepted notification signal
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_add_auth_friend, this,
             &ContactUserList::slot_add_auth_friend);
 
-    // 连接自己点击同意认证后界面刷新
+    // connect the self accept-auth UI refresh
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_auth_rsp, this,
             &ContactUserList::slot_auth_rsp);
 
@@ -44,27 +44,27 @@ void ContactUserList::ShowRedPoint(bool bshow)
 
 bool ContactUserList::eventFilter(QObject *watched, QEvent *event)
 {
-    // 检查事件是否是鼠标悬浮进入或离开
+    // check whether the event is a mouse hover enter or leave
         if (watched == this->viewport()) {
             if (event->type() == QEvent::Enter) {
-                // 鼠标悬浮，显示滚动条
+                // on hover, show the scrollbar
                 this->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             } else if (event->type() == QEvent::Leave) {
-                // 鼠标离开，隐藏滚动条
+                // on mouse leave, hide the scrollbar
                 this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             }
         }
 
-        // 检查事件是否是鼠标滚轮事件
+        // check whether the event is a mouse wheel event
         if (watched == this->viewport() && event->type() == QEvent::Wheel) {
             QWheelEvent *wheelEvent = static_cast<QWheelEvent*>(event);
             int numDegrees = wheelEvent->angleDelta().y() / 8;
-            int numSteps = numDegrees / 15; // 计算滚动步数
+            int numSteps = numDegrees / 15; // compute the scroll steps
 
-            // 设置滚动幅度
+            // set the scroll step
             this->verticalScrollBar()->setValue(this->verticalScrollBar()->value() - numSteps);
 
-            // 检查是否滚动到底部
+            // check whether scrolled to the bottom
             QScrollBar *scrollBar = this->verticalScrollBar();
             int maxScrollValue = scrollBar->maximum();
             int currentValue = scrollBar->value();
@@ -83,14 +83,14 @@ bool ContactUserList::eventFilter(QObject *watched, QEvent *event)
                QCoreApplication::quit();
                });
 
-               // 滚动到底部, 加载新的联系人
+               // scroll to bottom to load new contacts
                qDebug()<< " Load more contact user";
 
-                // 发送信号通知聊天界面加载更多聊天内容
+                // emit a signal to ask the chat page to load more messages
                 emit sig_loading_contact_user();
              }
 
-            return true; // 停止事件传递
+            return true; // stop event propagation
         }
 
         return QListWidget::eventFilter(watched, event);
@@ -115,7 +115,7 @@ void ContactUserList::addContactUserList()
     this->addItem(add_item);
     this->setItemWidget(add_item, _add_friend_item);
 
-    // 默认设置新的朋友申请条目被选中
+    // default the new friend apply item to selected
     this->setCurrentItem(add_item);
 
     auto* groupCon = new GroupTipItem();
@@ -126,7 +126,7 @@ void ContactUserList::addContactUserList()
     this->setItemWidget(_groupitem, groupCon);
    _groupitem->setFlags(_groupitem->flags() & ~Qt::ItemIsSelectable);
 
-   // 加载后端发来的好友列表
+   // load the friend list sent by the backend
    auto con_list = UserMgr::GetInstance()->GetConListPerPage();
    for(auto& con_ele : con_list)
    {
@@ -140,9 +140,9 @@ void ContactUserList::addContactUserList()
 
    UserMgr::GetInstance()->UpdateContactLoadedCount();
 
-   // 创建QListWidgetItem，并设置自定义的widget
+   // create a QListWidgetItem and set the custom widget
     for(int i = 0; i < 13; i++){
-        int randomValue = QRandomGenerator::global()->bounded(100); // 生成0到99之间的随机整数
+        int randomValue = QRandomGenerator::global()->bounded(100); // generate a random integer between 0 and 99
         int head_i = randomValue%heads.size();
         int name_i = randomValue%names.size();
 
@@ -159,13 +159,13 @@ void ContactUserList::addContactUserList()
 
 void ContactUserList::slot_item_clicked(QListWidgetItem *item)
 {
-       QWidget *widget = this->itemWidget(item); // 获取自定义widget对象
+       QWidget *widget = this->itemWidget(item); // get the custom widget object
        if(!widget){
            qDebug()<< "slot item clicked widget is nullptr";
            return;
        }
 
-       // 对自定义widget进行操作， 将item 转化为基类ListItemBase
+       // operate on the custom widget, casting the item to the base ListItemBase
        ListItemBase *customItem = qobject_cast<ListItemBase*>(widget);
        if(!customItem){
            qDebug()<< "slot item clicked widget is nullptr";
@@ -181,21 +181,21 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
 
       if(itemType == ListItemType::APPLY_FRIEND_ITEM){
 
-          // 创建对话框，提示用户
+          // create a dialog to prompt the user
           qDebug()<< "apply friend item clicked ";
-          //跳转到好友申请界面
+          //switch to the friend apply page
           emit sig_switch_apply_friend_page();
           return;
       }
 
       if(itemType == ListItemType::CONTACT_USER_ITEM){
-          // 创建对话框，提示用户
+          // create a dialog to prompt the user
           qDebug()<< "contact user item clicked ";
 
           auto con_item = qobject_cast<ConUserItem*>(customItem);
           auto user_info = con_item->GetInfo();
 
-          //跳转到好友信息界面
+          //switch to the friend info page
           emit sig_switch_friend_info_page(user_info);
           return;
       }
@@ -208,7 +208,7 @@ void ContactUserList::slot_add_auth_friend(std::shared_ptr<AuthInfo> auth_info)
     if(isFriend)
         return;
 
-    // 在groupItem 之后插入新项
+    // insert the new item after groupItem
     auto* con_user_wid = new ConUserItem();
     con_user_wid->SetInfo(auth_info);
 

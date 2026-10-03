@@ -40,15 +40,15 @@ ChatDialog::ChatDialog(QWidget *parent) :
     ui->search_edit->addAction(searchAction, QLineEdit::LeadingPosition);
     ui->search_edit->setPlaceholderText(QStringLiteral("搜索"));
 
-    // 创建一个清除动作并设置图标
+    // create a clear action and set its icon
     QAction* clearAction = new QAction(ui->search_edit);
     clearAction->setIcon(QIcon(":/res/close_transparent.png"));
 
-    // 初始时不显示清除图标
-    // 将清除动作添加到 LineEdit 的末尾位置
+    // hide the clear icon initially
+    // add the clear action to the end of the LineEdit
     ui->search_edit->addAction(clearAction, QLineEdit::TrailingPosition);
 
-    //当需要显示清除图标时, 更改为实际的清除图标
+    //when the clear icon should show, switch to the real clear icon
     connect(ui->search_edit, &QLineEdit::textChanged, [clearAction](const QString& text){
         if(!text.isEmpty())
         {
@@ -56,32 +56,32 @@ ChatDialog::ChatDialog(QWidget *parent) :
         }
         else
         {
-            clearAction->setIcon(QIcon(":/res/close_transparent.png")); // 文本为空切换透明图标
+            clearAction->setIcon(QIcon(":/res/close_transparent.png")); // switch to a transparent icon when the text is empty
         }
     });
 
-    // 连接清除动作的触发信号到槽函数, 用于清除文本
+    // connect the clear action's triggered signal to the slot that clears the text
     connect(clearAction, &QAction::triggered, [this, clearAction](){
         ui->search_edit->clear();
         clearAction->setIcon(QIcon(":/res/close_transparent.png"));
         ui->search_edit->clearFocus();
-        // 清除按钮被按下则不显示搜索框
+        // if the clear button is pressed, hide the search box
         ShowSearch(false);
     });
 
     ui->search_edit->SetMaxLength(15);
 
-     // 连接加载信号和槽
+     // connect the load signal and slot
     connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this, &ChatDialog::slot_loading_chat_user);
     addChatUserList();
 
-     //模拟加载自己头像
+     //simulate loading the own avatar
      QString head_icon = UserMgr::GetInstance()->GetIcon();
      QPixmap pixmap(head_icon);
-     QPixmap scaledPixmap = pixmap.scaled( ui->side_head_lb->size(), Qt::KeepAspectRatio); // 将图片缩放到label的大小
+     QPixmap scaledPixmap = pixmap.scaled( ui->side_head_lb->size(), Qt::KeepAspectRatio); // scale the image to the label size
 
-    ui->side_head_lb->setPixmap(scaledPixmap); // 将缩放后的图片设置到QLabel上
-    ui->side_head_lb->setScaledContents(true); // 设置QLabel自动缩放图片内容以适应大小
+    ui->side_head_lb->setPixmap(scaledPixmap); // set the scaled image on the QLabel
+    ui->side_head_lb->setScaledContents(true); // make the QLabel scale its image to fit
 
     ui->side_chat_lb->setProperty("state","normal");
     ui->side_chat_lb->SetState("normal","hover","pressed","selected_normal","selected_hover","selected_pressed");
@@ -93,62 +93,62 @@ ChatDialog::ChatDialog(QWidget *parent) :
     connect(ui->side_chat_lb, &StateWidget::clicked, this, &ChatDialog::slot_side_chat);
     connect(ui->side_contact_lb, &StateWidget::clicked, this, &ChatDialog::slot_side_contact);
 
-    //链接搜索框输入变化
+    //connect the search box input-changed signal
     connect(ui->search_edit, &QLineEdit::textChanged, this, &ChatDialog::slot_text_changed);
 
      ShowSearch(false);
 
-    // 检测鼠标点击的位置，并判断是否清除搜索框
-    this->installEventFilter(this); // 安装事件过滤器
+    // detect the click position and decide whether to clear the search box
+    this->installEventFilter(this); // install the event filter
 
-    //设置聊天 Label 选中状态
+    //set the chat label's selected state
     ui->side_chat_lb->SetSelected(true);
 
-    // 设置选中条目
+    // set the selected item
     SetSelectChatItem();
 
-    //更新聊天界面信息
+    //update the chat page info
     SetSelectChatPage();
 
-    // 连接加载联系人的信号和槽
+    // connect the load-contacts signal and slot
     connect(ui->con_user_list, &ContactUserList::sig_loading_contact_user,
             this, &ChatDialog::slot_loading_contact_user);
 
-    // 连接联系人页面点击好友申请条目的信号
+    // connect the contacts page's friend-apply-item click signal
 	connect(ui->con_user_list, &ContactUserList::sig_switch_apply_friend_page, this, &ChatDialog::slot_switch_apply_friend_page);
 
-    // 连接清除搜索框操作
+    // connect the clear-search-box action
     connect(ui->friend_apply_page, &ApplyFriendPage::sig_show_search, this, &ChatDialog::slot_show_search);
 
-    // 为 search_list 设置 search_edit
+    // set search_edit for search_list
     ui->search_list->SetSearchEdit(ui->search_edit);
 
-    // 连接申请添加好友信号
+    // connect the add-friend-apply signal
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_friend_apply, this, &ChatDialog::slot_apply_friend);
 
-    // 连接认证添加好友信息
+    // connect the auth add-friend info
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_add_auth_friend, this, &ChatDialog::slot_add_auth_friend);
 
-    // 连接自己认证回复信号
+    // connect the self auth-reply signal
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_auth_rsp, this, &ChatDialog::slot_auth_rsp);
 
-    // 连接点击联系人 item 发出的信号和用户信息展示槽函数
+    // connect the contact-item click signal to the user-info display slot
     connect(ui->con_user_list, &ContactUserList::sig_switch_friend_info_page, this, &ChatDialog::slot_friend_info_page);
 
-    // 设置中心部件为 chatpage
+    // set the central widget to chatpage
     ui->stackedWidget->setCurrentWidget(ui->chat_page);
 
-    //连接searchlist跳转聊天信号
+    //connect the searchlist jump-to-chat signal
        connect(ui->search_list, &SearchList::sig_jump_chat_item, this, &ChatDialog::slot_jump_chat_item);
 
-   //连接好友信息界面发送的点击事件
+   //connect the click event from the friend info page
    connect(ui->friend_info_page, &FriendInfoPage::sig_jump_chat_item, this,
            &ChatDialog::slot_jump_chat_item_from_infopage);
 
-   //连接聊天列表点击信号
+   //connect the chat list click signal
    connect(ui->chat_user_list, &QListWidget::itemClicked, this, &ChatDialog::slot_item_clicked);
 
-   //连接对端消息通知
+   //connect the peer message notification
    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_text_chat_msg,
            this, &ChatDialog::slot_text_chat_msg);
 
@@ -176,7 +176,7 @@ ChatDialog::~ChatDialog()
 
 void ChatDialog::addChatUserList()
 {
-    // 先按照好友列表加载聊天记录, 等以后客户端实现聊天记录数据库之后再按照最后信息排序
+    // load chat history by friend list for now; sort by last message once the client has a chat-history DB
     auto friend_list = UserMgr::GetInstance()->GetChatListPerPage();
     if(!friend_list.empty())
     {
@@ -196,16 +196,16 @@ void ChatDialog::addChatUserList()
             ui->chat_user_list->setItemWidget(item, chat_user_wid);
             _chat_items_added.insert(e->_uid, item);
         }
-        // 更新已加载条目
+        // update the loaded items
         UserMgr::GetInstance()->UpdateChatLoadedCount();
     }
 
 
-    // 模拟测试条目
-    // 创建 QListWidgetItem, 并设置自定义的 Widget
+    // simulated test items
+    // create a QListWidgetItem and set the custom widget
     for(int i = 0; i < 13; ++i)
     {
-        int randomValue = QRandomGenerator::global()->bounded(100); // 生成 0 ~ 99 之间的随机整数
+        int randomValue = QRandomGenerator::global()->bounded(100); // generate a random integer between 0 and 99
         int str_i = randomValue % strs.size();
         int head_i = randomValue % heads.size();
         int name_i = randomValue % names.size();
@@ -242,7 +242,7 @@ void ChatDialog::loadMoreChatUser()
             ui->chat_user_list->setItemWidget(item, chat_user_wid);
             _chat_items_added.insert(e->_uid, item);
         }
-        // 更新已加载条目
+        // update the loaded items
         UserMgr::GetInstance()->UpdateChatLoadedCount();
     }
 }
@@ -291,7 +291,7 @@ void ChatDialog::SetSelectChatItem(int uid)
         QListWidgetItem* firstItem = ui->chat_user_list->item(0);
         if(!firstItem)
             return;
-        // 转为 Widget
+        // cast to Widget
         QWidget* widget = ui->chat_user_list->itemWidget(firstItem);
         if(!widget)
             return;
@@ -315,7 +315,7 @@ void ChatDialog::SetSelectChatItem(int uid)
 
 void ChatDialog::SetSelectChatPage(int uid)
 {
-    // 聊天列表为空
+    // the chat list is empty
     if( ui->chat_user_list->count() <= 0)
     {
             return;
@@ -323,7 +323,7 @@ void ChatDialog::SetSelectChatPage(int uid)
 
     if (uid == 0) {
        auto item = ui->chat_user_list->item(0);
-       //转为widget
+       //cast to widget
        QWidget* widget = ui->chat_user_list->itemWidget(item);
        if (!widget) {
            return;
@@ -334,7 +334,7 @@ void ChatDialog::SetSelectChatPage(int uid)
            return;
        }
 
-       //设置信息
+       //set the info
        auto user_info = chat_item->GetUserInfo();
        ui->chat_page->SetUserInfo(user_info);
        return;
@@ -345,14 +345,14 @@ void ChatDialog::SetSelectChatPage(int uid)
         return;
     }
 
-    //转为widget
+    //cast to widget
     QWidget *widget = ui->chat_user_list->itemWidget(find_iter.value());
     if(!widget){
         return;
     }
 
-    //判断转化为自定义的widget
-    // 对自定义widget进行操作， 将item 转化为基类ListItemBase
+    //check and cast to the custom widget
+    // operate on the custom widget, casting the item to the base ListItemBase
     ListItemBase *customItem = qobject_cast<ListItemBase*>(widget);
     if(!customItem){
         qDebug()<< "qobject_cast<ListItemBase*>(widget) is nullptr";
@@ -366,7 +366,7 @@ void ChatDialog::SetSelectChatPage(int uid)
             return;
         }
 
-        //设置信息
+        //set the info
         auto user_info = chat_item->GetUserInfo();
        ui->chat_page->SetUserInfo(user_info);
 
@@ -386,17 +386,17 @@ bool ChatDialog::eventFilter(QObject *watched, QEvent *event)
 
 void ChatDialog::handleGlobalMousePress(QMouseEvent *event)
 {
-      // 实现点击位置的判断和处理逻辑
-       // 先判断是否处于搜索模式，如果不处于搜索模式则直接返回
+      // implement the click-position check and handling
+       // check whether we are in search mode; if not, return immediately
        if( _mode != ChatUIMode::SearchMode){
            return;
        }
 
-       // 将鼠标点击位置转换为搜索列表坐标系中的位置
+       // convert the mouse click to the search list's coordinate system
        QPoint posInSearchList =(ui->search_list->mapFromGlobal(event->globalPosition())).toPoint();
-       // 判断点击位置是否在聊天列表的范围内
+       // check whether the click is within the chat list bounds
        if (!ui->search_list->rect().contains(posInSearchList)) {
-           // 如果不在聊天列表内，清空输入框
+           // if not in the chat list, clear the input box
            ui->search_edit->clear();
            ShowSearch(false);
        }
@@ -465,7 +465,7 @@ void ChatDialog::slot_loading_chat_user()
     loadingDialog->show();
     qDebug() << "add new data to list.....";
     loadMoreChatUser();
-    // 加载完成后关闭对话框
+    // close the dialog when loading completes
     loadingDialog->deleteLater();
 
     _b_loading = false;
@@ -477,7 +477,7 @@ void ChatDialog::slot_loading_chat_user()
     // loading_item->setMovie(movie);
     // loading_item->setFixedSize(250,70);
     // loading_item->setAlignment(Qt::AlignCenter);
-    // movie->setScaledSize(QSize(50,50)); // 设置固定大小为 50×50
+    // movie->setScaledSize(QSize(50,50)); // set a fixed size of 50x50
 
     // QListWidgetItem* item = new QListWidgetItem;
     // item->setSizeHint(QSize(250,70));
@@ -509,7 +509,7 @@ void ChatDialog::slot_loading_contact_user()
 
     qDebug() << "add new data to list.....";
     loadMoreConUser();
-    // 加载完成后关闭对话框
+    // close the dialog when loading completes
     loadingDialog->deleteLater();
 
     _b_loading = false;
@@ -528,7 +528,7 @@ void ChatDialog::slot_side_contact()
 {
     qDebug()<<"receive side contact clicked";
     ClearLabelState(ui->side_contact_lb);
-    //设置
+    //set
     if(_last_widget == nullptr)
     {
         ui->stackedWidget->setCurrentWidget(ui->friend_apply_page);
@@ -585,7 +585,7 @@ void ChatDialog::slot_add_auth_friend(std::shared_ptr<AuthInfo> auth_info)
     qDebug()<<"receive slot_add_auth_friend uid is"<<auth_info->_uid
            <<"name is "<<auth_info->_name<<" nick is "<<auth_info->_nick;
 
-    // 如果已经好友则跳过
+    // skip if already a friend
     auto bfriend = UserMgr::GetInstance()->CheckFriendById(auth_info->_uid);
     if(bfriend)
         return;
@@ -608,7 +608,7 @@ void ChatDialog::slot_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp)
     qDebug() << "receive slot_auth_rsp uid is " << auth_rsp->_uid
             << " name is " << auth_rsp->_name << " nick is " << auth_rsp->_nick;
 
-        //判断如果已经是好友则跳过
+        //skip if already a friend
         auto bfriend = UserMgr::GetInstance()->CheckFriendById(auth_rsp->_uid);
         if(bfriend){
             return;
@@ -721,12 +721,12 @@ void ChatDialog::slot_item_clicked(QListWidgetItem *item)
     }
     if(itemType == ListItemType::CHAT_USER_ITEM)
     {
-        //创建对话框
+        //create the dialog
         qDebug()<<"contact user item clicked";
         auto chat_wid = qobject_cast<ChatUserWid*>(customItem);
         auto user_info = chat_wid->GetUserInfo();
 
-        // //跳转到聊天界面
+        // // switch to the chat page
         ui->chat_page->SetUserInfo(user_info);
         _cur_chat_uid = user_info->_uid;
         return;
@@ -744,14 +744,14 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg)
        if(!chat_wid)
            return;
        chat_wid->UpdateLastMsg(msg->_chat_msgs);
-       // 更新当前聊天页面记录
+       // update the current chat page record
        UpdateChatMsg(msg->_chat_msgs);
        UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
-       // + 个 return 不写 else, 或者写 else.
+       // + a return, either omit else or write else.
     }
     else
     {
-        // 如果没找到, 创建插入新的 ListWidget
+        // if not found, create and insert a new ListWidget
         auto* chat_user_wid = new ChatUserWid();
         auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
         chat_user_wid->SetInfo(fri_ptr);

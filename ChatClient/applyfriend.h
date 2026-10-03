@@ -26,45 +26,45 @@ private:
     void resetLabels();
     Ui::ApplyFriend *ui;
 
-    //已经创建好的标签
+    //an already-created label
     QMap<QString, ClickedLabel*> _add_labels;
     std::vector<QString> _add_label_keys;
     QPoint _label_point;
 
-    //用来在输入框显示添加新好友的标签
+    //used to show new-friend labels in the input box
     QMap<QString, FriendLabel*> _friend_labels;
     std::vector<QString> _friend_label_keys;
     void addLabel(QString name);
-    std::vector<QString> _tip_data; // 提示框中的数据
-    QPoint _tip_cur_point;          // 当前提示框的位置
+    std::vector<QString> _tip_data; // data in the tip box
+    QPoint _tip_cur_point;          // current tip box position
     std::shared_ptr<SearchInfo> _si;
 
 public slots:
-    //显示更多label标签
+    //show more labels
     void ShowMoreLabel();
 
-    //按下回车键时，将输入的标签添加到展示区域
+    //on Enter, add the entered label to the display area
     void SlotLabelEnter();
 
-    //移除好友标签
+    //remove the friend label
     void SlotRemoveFriendLabel(QString);
 
-    //通过点击提示框来增加或减少好友标签
+    //add or remove friend labels by clicking the tip box
     void SlotChangeFriendLabelByTip(QString, ClickLbState);
 
-    // 处理输入框文本的变化，更新提示框
+    // handle input-box text changes and update the tip box
     void SlotLabelTextChange(const QString& text);
 
-    // 输入框编辑完成后触发
+    // triggered after the input box finishes editing
     void SlotLabelEditFinished();
 
-   //点击提示框内容时，添加新的好友标签
+   //on clicking the tip content, add a new friend label
     void SlotAddFirendLabelByClickTip(QString text);
 
-//    //处理确认回调
+//    // handle the confirm callback
     void SlotApplySure();
 
-//    //处理取消回调
+//    // handle the cancel callback
     void SlotApplyCancel();
 };
 

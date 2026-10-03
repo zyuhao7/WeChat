@@ -36,6 +36,6 @@ void TimerBtn::mouseReleaseEvent(QMouseEvent *e)
          _timer->start(1000);
          emit clicked();
      }
-     // 调用基类的 mouseReaseEvent 确保正常的事件处理
+     // call the base-class mouseReleaseEvent for normal event handling
      QPushButton::mouseReleaseEvent(e);
 }

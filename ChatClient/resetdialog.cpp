@@ -28,7 +28,7 @@ ResetDialog::ResetDialog(QWidget *parent) :
          checkVerifyValid();
     });
 
-    //连接reset相关信号和注册处理回调
+    //connect the reset-related signals and register callbacks
     initHandlers();
     connect(Httpmgr::GetInstance().get(), &Httpmgr::sig_reset_mod_finish, this,
             &ResetDialog::slot_reset_mod_finish);
@@ -56,7 +56,7 @@ void ResetDialog::on_verify_btn_clicked()
         return;
     }
 
-    //发送http请求获取验证码
+    //send the HTTP request to get the verify code
     QJsonObject json_obj;
     json_obj["email"] = email;
     Httpmgr::GetInstance()->PostHttpReq(QUrl(gate_url_prefix+"/get_verify_code"),
@@ -70,22 +70,22 @@ void ResetDialog::slot_reset_mod_finish(ReqId id, QString res, ErrorCodes err)
         return;
     }
 
-    // 解析 JSON 字符串,res需转化为QByteArray
+    // parse the JSON string; res must be converted to a QByteArray
     QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
-    //json解析错误
+    //JSON parse error
     if(jsonDoc.isNull()){
         showTip(tr("json解析错误"),false);
         return;
     }
 
-    //json解析错误
+    //JSON parse error
     if(!jsonDoc.isObject()){
         showTip(tr("json解析错误"),false);
         return;
     }
 
 
-    //调用对应的逻辑,根据id回调。
+    //dispatch to the matching logic by id.
     _handlers[id](jsonDoc.object());
 
     return;
@@ -108,18 +108,18 @@ bool ResetDialog::checkPassValid()
     auto pass = ui->pwd_edit->text();
 
     if(pass.length() < 6 || pass.length()>15){
-        //提示长度不准确
+        //warn that the length is invalid
         AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
 
-    // 创建一个正则表达式对象，按照上述密码要求
-    // 这个正则表达式解释：
-    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
+    // create a regex object for the password rules above
+    // explanation of this regex:
+    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ password at least 6 chars, letters, digits and some special chars
     QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*.]{6,15}$");
     bool match = regExp.match(pass).hasMatch();
     if(!match){
-        //提示字符非法
+        //warn that the characters are invalid
         AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;;
     }
@@ -133,13 +133,13 @@ bool ResetDialog::checkPassValid()
 
 bool ResetDialog::checkEmailValid()
 {
-    //验证邮箱的地址正则表达式
+    //regex for validating the email address
     auto email = ui->email_edit->text();
-    // 邮箱地址的正则表达式
+    // regex for the email address
     QRegularExpression regex(R"((\w+)(\.|_)?(\w*)@(\w+)(\.(\w+))+)");
-    bool match = regex.match(email).hasMatch(); // 执行正则表达式匹配
+    bool match = regex.match(email).hasMatch(); // run the regex match
     if(!match){
-        //提示邮箱不正确
+        //warn that the email is incorrect
         AddTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
         return false;
     }
@@ -179,7 +179,7 @@ void ResetDialog::DelTipErr(TipErr te)
 
 void ResetDialog::initHandlers()
 {
-    //注册 获取验证码回包逻辑
+    //register: get-verify-code reply logic
     _handlers.insert(ReqId::ID_GET_VERIFY_CODE, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
@@ -191,7 +191,7 @@ void ResetDialog::initHandlers()
         qDebug()<< "email is " << email ;
     });
 
-    //注册 重置用户密码回包逻辑
+    //register: reset-password reply logic
     _handlers.insert(ReqId::ID_RESET_PWD, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
@@ -240,7 +240,7 @@ void ResetDialog::on_sure_btn_clicked()
         return;
     }
 
-    //发送http重置用户密码请求
+    //send the HTTP request to reset the user password
     QJsonObject json_obj;
     json_obj["user"] = ui->user_edit->text();
     json_obj["email"] = ui->email_edit->text();

@@ -7,7 +7,7 @@
 ClickedBtn::ClickedBtn(QWidget *parent)
     : QPushButton(parent)
 {
-    setCursor(Qt::PointingHandCursor); //设置光标为小手
+    setCursor(Qt::PointingHandCursor); //set the cursor to a pointing hand
     setFocusPolicy(Qt::NoFocus);
 }
 

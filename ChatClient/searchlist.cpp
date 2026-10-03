@@ -16,14 +16,14 @@ SearchList::SearchList(QWidget *parent)
     Q_UNUSED(parent);
      this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
      this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    // 安装事件过滤器
+    // install the event filter
     this->viewport()->installEventFilter(this);
 
-    //连接点击的信号和槽
+    //connect the click signal and slot
     connect(this, &QListWidget::itemClicked, this, &SearchList::slot_item_clicked);
-    //添加条目
+    //add the item
     addTipItem();
-    //连接搜索条目
+    //connect the search item
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_user_search, this, &SearchList::slot_user_search);
 }
 
@@ -87,12 +87,12 @@ void SearchList::addTipItem()
 
 void SearchList::slot_item_clicked(QListWidgetItem *item)
 {
-    QWidget *widget = this->itemWidget(item); //获取自定义widget对象
+    QWidget *widget = this->itemWidget(item); //get the custom widget object
     if(!widget){
         qDebug()<< "slot item clicked widget is nullptr";
         return;
     }
-    // 对自定义widget进行操作， 将item 转化为基类ListItemBase
+    // operate on the custom widget, casting the item to the base ListItemBase
     ListItemBase *customItem = qobject_cast<ListItemBase*>(widget);
     if(!customItem){
         qDebug()<< "slot item clicked widget is nullptr";
@@ -124,7 +124,7 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
         return;
     }
 
-    //清除弹出框
+    //clear the popup
     CloseFindDlg();
 }
 
@@ -135,21 +135,21 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
         _find_dlg = std::make_shared<FindFailDlg>(this);
     }
     else {
-        //如果是自己，暂且先直接返回，以后看逻辑扩充
+        //if it is self, return directly for now; revisit as the logic grows
         auto self_uid = UserMgr::GetInstance()->GetUid();
         if (si->_uid == self_uid) {
             return;
         }
-        //此处分两种情况，一种是搜多到已经是自己的朋友了，一种是未添加好友
-        //查找是否已经是好友
+        //two cases here: the searched user is already a friend, or not yet added
+        //check whether already a friend
         bool bExist = UserMgr::GetInstance()->CheckFriendById(si->_uid);
         if (bExist) {
-            //此处处理已经添加的好友，实现页面跳转
-        //跳转到聊天界面指定的item中
+            //handle an already-added friend here and navigate the page
+        //switch to the given item in the chat page
             emit sig_jump_chat_item(si);
             return;
         }
-        //此处先处理为添加的好友
+        //here treat it as an added friend for now
         _find_dlg = std::make_shared<FindSuccessDlg>(this);
         std::dynamic_pointer_cast<FindSuccessDlg>(_find_dlg)->SetSearchInfo(si);
 
