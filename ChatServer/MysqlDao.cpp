@@ -23,19 +23,19 @@ int MysqlDao::RegUser(const std::string& name, const std::string& email, const s
 		if (con == nullptr) {
 			return false;
 		}
-		// 准备调用存储过程
+		// prepare to call the stored procedure
 		std::unique_ptr <sql::PreparedStatement> stmt(con->_con->prepareStatement("CALL reg_user(?,?,?,@result)"));
-		// 设置输入参数
+		// set the input parameters
 		stmt->setString(1, name);
 		stmt->setString(2, email);
 		stmt->setString(3, pwd);
 
-		// 由于PreparedStatement不直接支持注册输出参数，我们需要使用会话变量或其他方法来获取输出参数的值
+		// since PreparedStatement does not register output params directly, use a session variable or another way to fetch the output value
 
-		  // 执行存储过程
+		  // call the stored procedure
 		stmt->execute();
-		// 如果存储过程设置了会话变量或有其他方式获取输出参数的值，你可以在这里执行SELECT查询来获取它们
-	   // 例如，如果存储过程设置了一个会话变量@result来存储输出结果，可以这样获取：
+		// if the stored procedure set a session variable or the output can be fetched otherwise, run a SELECT here to read it
+	   // For example, if the stored procedure sets a session variable @result for the output, fetch it like this:
 		std::unique_ptr<sql::Statement> stmtResult(con->_con->createStatement());
 		std::unique_ptr<sql::ResultSet> res(stmtResult->executeQuery("SELECT @result AS result"));
 		if (res->next()) {
@@ -64,16 +64,16 @@ bool MysqlDao::CheckEmail(const std::string& name, const std::string& email) {
 			return false;
 		}
 
-		// 准备查询语句
+		// prepare the query statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT email FROM user WHERE name = ?"));
 
-		// 绑定参数
+		// bind parameters
 		pstmt->setString(1, name);
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			std::cout << "Check Email: " << res->getString("email") << std::endl;
 
@@ -105,14 +105,14 @@ bool MysqlDao::UpdatePwd(const std::string& name, const std::string& newpwd) {
 			return false;
 		}
 
-		// 准备查询语句
+		// prepare the query statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("UPDATE user SET pwd = ? WHERE name = ?"));
 
-		// 绑定参数
+		// bind parameters
 		pstmt->setString(2, name);
 		pstmt->setString(1, newpwd);
 
-		// 执行更新
+		// execute the update
 		int updateCount = pstmt->executeUpdate();
 
 		std::cout << "Updated rows: " << updateCount << std::endl;
@@ -140,17 +140,17 @@ bool MysqlDao::CheckPwd(const std::string& email, const std::string& pwd, UserIn
 			return false;
 		}
 
-		// 准备SQL语句
+		// prepare the SQL statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT pwd, email, uid FROM user WHERE email = ?"));
-		pstmt->setString(1, email); // 将email替换为你要查询的邮箱
+		pstmt->setString(1, email); // replace email with the one you want to query
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 		std::string origin_pwd = "";
-		// 遍历结果集
+		// iterate the result set
 		if (res->next()) {
 			origin_pwd = res->getString("pwd");
-			// 输出查询到的密码
+			// output the queried password
 			std::cout << "======================" << std::endl;
 			std::cout << "Password: " << origin_pwd << std::endl;
 			std::cout << "======================" << std::endl;
@@ -188,13 +188,13 @@ bool MysqlDao::AddFriendApply(const int& from, const int& to)
 		});
 
 	try {
-		// 准备 SQL 语句
+		// prepare the SQL statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("INSERT INTO friend_apply (from_uid, to_uid) values (?,?) "
 			"ON DUPLICATE KEY UPDATE from_uid = from_uid, to_uid = to_uid"));
 		pstmt->setInt(1, from);
 		pstmt->setInt(2, to);
 
-		// 执行更新
+		// execute the update
 		int rowAffected = pstmt->executeUpdate();
 		if (rowAffected < 0) return false;
 		return true;
@@ -252,47 +252,47 @@ bool MysqlDao::AddFriend(const int& from, const int& to, std::string back_name) 
 
 	try {
 
-		//开始事务
+		//begin the transaction
 		con->_con->setAutoCommit(false);
 
-		// 准备第一个SQL语句, 插入认证方好友数据
+		// prepare the first SQL: insert the authenticating side's friend data
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("INSERT IGNORE INTO friend(self_id, friend_id, back) "
 			"VALUES (?, ?, ?) "
 		));
-		//反过来的申请时from，验证时to
+		//for the reverse direction, from at apply time and to at verify time
 		pstmt->setInt(1, from); // from id
 		pstmt->setInt(2, to);
 		pstmt->setString(3, back_name);
-		// 执行更新
+		// execute the update
 		int rowAffected = pstmt->executeUpdate();
 		if (rowAffected < 0) {
 			con->_con->rollback();
 			return false;
 		}
 
-		//准备第二个SQL语句，插入申请方好友数据
+		//prepare the second SQL: insert the requesting side's friend data
 		std::unique_ptr<sql::PreparedStatement> pstmt2(con->_con->prepareStatement("INSERT IGNORE INTO friend(self_id, friend_id, back) "
 			"VALUES (?, ?, ?) "
 		));
-		//反过来的申请时from，验证时to
+		//for the reverse direction, from at apply time and to at verify time
 		pstmt2->setInt(1, to); // from id
 		pstmt2->setInt(2, from);
 		pstmt2->setString(3, "");
-		// 执行更新
+		// execute the update
 		int rowAffected2 = pstmt2->executeUpdate();
 		if (rowAffected2 < 0) {
 			con->_con->rollback();
 			return false;
 		}
 
-		// 提交事务
+		// commit the transaction
 		con->_con->commit();
 		std::cout << "addfriend insert friends success" << std::endl;
 
 		return true;
 	}
 	catch (sql::SQLException& e) {
-		// 如果发生错误，回滚事务
+		// on error, roll back the transaction
 		if (con) {
 			con->_con->rollback();
 		}
@@ -317,14 +317,14 @@ std::shared_ptr<UserInfo> MysqlDao::GetUser(int uid)
 		});
 
 	try {
-		// 准备SQL语句
+		// prepare the SQL statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT * FROM user WHERE uid = ?"));
-		pstmt->setInt(1, uid); // 将uid替换为你要查询的uid
+		pstmt->setInt(1, uid); // replace uid with the one you want to query
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 		std::shared_ptr<UserInfo> user_ptr = nullptr;
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			user_ptr.reset(new UserInfo);
 			user_ptr->pwd = res->getString("pwd");
@@ -359,14 +359,14 @@ std::shared_ptr<UserInfo> MysqlDao::GetUser(std::string name)
 		});
 
 	try {
-		// 准备SQL语句
+		// prepare the SQL statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT * FROM user WHERE name = ?"));
-		pstmt->setString(1, name); // 将uid替换为你要查询的uid
+		pstmt->setString(1, name); // replace uid with the one you want to query
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 		std::shared_ptr<UserInfo> user_ptr = nullptr;
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			user_ptr.reset(new UserInfo);
 			user_ptr->pwd = res->getString("pwd");
@@ -401,17 +401,17 @@ bool MysqlDao::GetApplyList(int touid, std::vector<std::shared_ptr<ApplyInfo>>& 
 
 
 	try {
-		// 准备SQL语句, 根据起始id和限制条数返回列表
+		// prepare the SQL statement: return the list by start id and limit
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("select apply.from_uid, apply.status, user.name, "
 			"user.nick, user.sex from friend_apply as apply join user on apply.from_uid = user.uid where apply.to_uid = ? "
 			"and apply.id > ? order by apply.id ASC LIMIT ? "));
 
-		pstmt->setInt(1, touid); // 将uid替换为你要查询的uid
-		pstmt->setInt(2, begin); // 起始id
-		pstmt->setInt(3, limit); //偏移量
-		// 执行查询
+		pstmt->setInt(1, touid); // replace uid with the one you want to query
+		pstmt->setInt(2, begin); // start id
+		pstmt->setInt(3, limit); //offset
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			auto name = res->getString("name");
 			auto uid = res->getInt("from_uid");
@@ -444,18 +444,18 @@ bool MysqlDao::GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>
 
 
 	try {
-		// 准备SQL语句, 根据起始id和限制条数返回列表
+		// prepare the SQL statement: return the list by start id and limit
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("select * from friend where self_id = ? "));
 
-		pstmt->setInt(1, self_id); // 将uid替换为你要查询的uid
+		pstmt->setInt(1, self_id); // replace uid with the one you want to query
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			auto friend_id = res->getInt("friend_id");
 			auto back = res->getString("back");
-			//再一次查询friend_id对应的信息
+			//query the info for friend_id once more
 			auto user_info = GetUser(friend_id);
 			if (user_info == nullptr) {
 				continue;

@@ -74,7 +74,7 @@ public:
 	std::string GetValue(const std::string& section, const std::string& key);
 private:	
 	ConfigMgr();
-	// ´æ´¢ section ºÍ key-value¶ÔµÄ map
+	// map storing sections and their key-value pairs
 	std::map<std::string, SectionInfo> _config_map;
 };
 

@@ -36,13 +36,13 @@ void CServer::StartAccept() {
 	_acceptor.async_accept(new_session->GetSocket(), std::bind(&CServer::HandleAccept, this, new_session, placeholders::_1));
 }
 
-// //根据session 的id删除 session，并移除用户和session的关联
+// // remove the session by its id and unlink the user from the session
 void CServer::ClearSession(std::string session_id) {
 	lock_guard<mutex> lock(_mutex);
 	if (_sessions.find(session_id) != _sessions.end()) {
 		auto uid = _sessions[session_id]->GetUserId();
 
-		//移除用户和session的关联
+		//unlink the user from the session
 		UserMgr::GetInstance()->RmvUserSession(uid, session_id);
 	}
 	_sessions.erase(session_id);
@@ -76,7 +76,7 @@ void CServer::on_timer(const boost::system::error_code& ec)
 	}
 	std::vector<std::shared_ptr<CSession>> _expired_sessions;
 	int session_count = 0;
-	// 加锁遍历
+	// lock and iterate
 	std::map<std::string, shared_ptr<CSession>> sessions_copy;
 	{
 		lock_guard<mutex> lock(_mutex);
@@ -89,28 +89,28 @@ void CServer::on_timer(const boost::system::error_code& ec)
 		auto b_expired = it->second->IsHeartbeatExpired(now);
 		if (b_expired)
 		{
-			// 关闭 socket, 这里也会触发 async_read 的错误处理
+			// close the socket; this also triggers the async_read error handler
 			it->second->Close();
-			// 收集过期信息
+			// collect expired info
 			_expired_sessions.push_back(it->second);
 			continue;
 		}
 		session_count++;
 	}
 
-	// 设置 session的数量
+	// set the session count
 	auto& cfg = ConfigMgr::Inst();
 	auto self_name = cfg["SelfServer"]["Name"];
 	auto count_str = std::to_string(session_count);
 	RedisMgr::GetInstance()->HSet(LOGIN_COUNT, self_name, count_str);
 
-	// 处理过期 session, 单独处理防止死锁
+	// handle expired sessions separately to avoid deadlock
 	for(auto& session : _expired_sessions)
 	{
 		session->DealExceptionSesseion();
 	}
 
-	// 再次设置下一个 60s 检测
+	// schedule the next 60s check again
 	_timer.expires_after(std::chrono::seconds(60));
 	_timer.async_wait([this](boost::system::error_code ec) {
 		on_timer(ec);
@@ -119,7 +119,7 @@ void CServer::on_timer(const boost::system::error_code& ec)
 
 void CServer::StartTimer()
 {
-	//启动定时器
+	//start the timer
 	auto self(shared_from_this());
 	_timer.async_wait([self](boost::system::error_code ec) {
 		self->on_timer(ec);

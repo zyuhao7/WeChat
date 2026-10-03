@@ -29,7 +29,7 @@ void UserMgr::RmvUserSession(int uid, const std::string& session_id)
 	{
 		std::lock_guard<std::mutex> lock(_session_mtx);
 		auto it = _uid_to_session.find(uid);
-		// 已被新会话顶替：不能删除当前有效映射
+		// replaced by a new session: do not delete the current valid mapping
 		if (it == _uid_to_session.end() || it->second->GetSessionId() != session_id)
 			return;
 		_uid_to_session.erase(it);

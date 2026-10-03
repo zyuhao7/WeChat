@@ -15,7 +15,7 @@ DistLock& DistLock::Inst()
 	return lock;
 }
 
-// 使用 Boost UUID 生成全局唯一标识符（UUID）
+// generate a globally unique identifier (UUID) with Boost UUID
 static std::string generateUUID()
 {
 	boost::uuids::uuid uuid = boost::uuids::random_generator()();
@@ -23,7 +23,7 @@ static std::string generateUUID()
 }
 
 
-// // 尝试获取锁，返回锁的唯一标识符（UUID），如果获取失败则返回空字符串
+// // try to acquire the lock, returning its unique id (UUID), or an empty string on failure
 std::string DistLock::acquireLock(redisContext* context, const std::string& lockName, int lockTimeout, int acquireTimeout)
 {
 	std::string identifier = generateUUID();
@@ -36,7 +36,7 @@ std::string DistLock::acquireLock(redisContext* context, const std::string& lock
 			lockKey.c_str(), identifier.c_str(), lockTimeout);
 		if (reply != nullptr)
 		{
-			// 判断 reply 是否为 OK
+			// check whether the reply is OK
 			if (reply->type == REDIS_REPLY_STATUS && std::string(reply->str) == "OK")
 			{
 				freeReplyObject(reply);
@@ -44,27 +44,27 @@ std::string DistLock::acquireLock(redisContext* context, const std::string& lock
 			}
 			freeReplyObject(reply);
 		}
-		// 暂停 1ms后重试, 防止忙等.
+		// sleep 1ms and retry to avoid busy-waiting.
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 	return "";
 }
 
-// 释放锁，只有锁的持有者才能释放，返回是否成功
+// release the lock; only the holder can release it, returns success
 bool DistLock::releaseLock(redisContext* context, const std::string& lockName, const std::string& identifier)
 {
 	std::string lockKey = "lock:" + lockName;
-	// Lua脚本, 判断锁标识符是否匹配, 匹配则删除锁.
+	// Lua script: check whether the lock id matches, and delete the lock if it does.
 	const char* luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then  \
                                 return redis.call('del', KEYS[1]) \
                              else \
                                 return 0 \
                              end";
-	// 调用 EVAL 命令执行 Lua 脚本，第一个参数为脚本，后面依次为 key 的数量、key 以及对应的参数
+	// run the Lua script with EVAL: first the script, then the key count, the keys, and the args
 	redisReply* reply = (redisReply*)redisCommand(context, "EVAL %s 1 %s %s", luaScript, lockKey.c_str(), identifier.c_str());
 	bool success = false;
 	if (reply != nullptr) {
-		// 当返回整数值为 1 时，表示成功删除了锁
+		// a return value of 1 means the lock was deleted successfully
 		if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1) {
 			success = true;
 		}
