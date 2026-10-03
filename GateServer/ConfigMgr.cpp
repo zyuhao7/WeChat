@@ -27,7 +27,7 @@ ConfigMgr::ConfigMgr()
 		_config_map[section_name] = sectionInfo;
 	}
 
-	// 输出所有的section 和 key-value 对  
+	// output all sections and key-value pairs  
 	for (const auto& section_entry : _config_map) {
 		const std::string& section_name = section_entry.first;
 		SectionInfo section_config = section_entry.second;

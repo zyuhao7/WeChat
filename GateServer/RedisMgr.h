@@ -21,12 +21,12 @@ public:
 			auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
 			if (reply->type == REDIS_REPLY_ERROR) {
 				std::cout << "认证失败" << std::endl;
-				//执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+				//on success, free the redisReply memory returned after redisCommand executes
 				freeReplyObject(reply);
 				continue;
 			}
 
-			//执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+			//on success, free the redisReply memory returned after redisCommand executes
 			freeReplyObject(reply);
 			std::cout << "认证成功" << std::endl;
 			connections_.push(context);
@@ -40,7 +40,7 @@ public:
 					counter_ = 0;
 				}
 
-				std::this_thread::sleep_for(std::chrono::seconds(1)); // 每隔 30 秒发送一次 PING 命令
+				std::this_thread::sleep_for(std::chrono::seconds(1)); // send a PING every 30 seconds
 			}	
 		});
 
@@ -67,7 +67,7 @@ public:
 			}
 			return !connections_.empty(); 
 			});
-		//如果停止则直接返回空指针
+		//if stopped, return a null pointer
 		if (b_stop_) {
 			return  nullptr;
 		}
@@ -125,12 +125,12 @@ private:
 				auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
 				if (reply->type == REDIS_REPLY_ERROR) {
 					std::cout << "认证失败" << std::endl;
-					//执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+					//on success, free the redisReply memory returned after redisCommand executes
 					freeReplyObject(reply);
 					continue;
 				}
 
-				//执行成功 释放redisCommand执行后返回的redisReply所占用的内存
+				//on success, free the redisReply memory returned after redisCommand executes
 				freeReplyObject(reply);
 				std::cout << "认证成功" << std::endl;
 				connections_.push(context);

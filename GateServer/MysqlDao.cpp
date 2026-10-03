@@ -23,20 +23,20 @@ int MysqlDao::RegUser(const std::string& name, const std::string& email, const s
 		if (con == nullptr) {
 			return false;
 		}
-		// 准备调用存储过程
+		// prepare to call the stored procedure
 		std::unique_ptr <sql::PreparedStatement> stmt(con->_con->prepareStatement("CALL reg_user(?,?,?,@result)"));
-		// 设置输入参数
+		// set the input parameters
 		stmt->setString(1, name);
 		stmt->setString(2, email);
 		stmt->setString(3, pwd);
 
-		// 由于PreparedStatement不直接支持注册输出参数，我们需要使用会话变量或其他方法来获取输出参数的值
+		// since PreparedStatement does not register output params directly, use a session variable or another way to fetch the output value
 
-		  // 执行存储过程
+		  // call the stored procedure
 		stmt->execute();
 
-		// 如果存储过程设置了会话变量或有其他方式获取输出参数的值，你可以在这里执行SELECT查询来获取它们
-	   // 例如，如果存储过程设置了一个会话变量@result来存储输出结果，可以这样获取：
+		// if the stored procedure set a session variable or the output can be fetched otherwise, run a SELECT here to read it
+	   // For example, if the stored procedure sets a session variable @result for the output, fetch it like this:
 
 		std::unique_ptr<sql::Statement> stmtResult(con->_con->createStatement());
 		std::unique_ptr<sql::ResultSet> res(stmtResult->executeQuery("SELECT @result AS result"));
@@ -69,16 +69,16 @@ int MysqlDao::RegUserTransaction(const std::string& name, const std::string& ema
 		});
 	try
 	{
-		// 开始事务
+		// begin the transaction
 		con->_con->setAutoCommit(false);
 
-		// 执行第一个数据库查询, 根据 email 查询用户
+		// run the first DB query: find the user by email
 		std::unique_ptr<sql::PreparedStatement> pstmt_email(con->_con->prepareStatement("select 1 from user where email = ?"));
 	
-		// 绑定参数
+		// bind parameters
 		pstmt_email->setString(1, email);
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res_email(pstmt_email->executeQuery());
 
 		auto email_exist = res_email->next();
@@ -89,7 +89,7 @@ int MysqlDao::RegUserTransaction(const std::string& name, const std::string& ema
 			return 0;
 		}
 
-		// 准备查询用户名是否重复
+		// prepare to check whether the username is duplicated
 		std::unique_ptr<sql::PreparedStatement> pstmt_name(con->_con->prepareStatement("select 1 from user where name = ?"));
 		pstmt_name->setString(1, name);
 		std::unique_ptr<sql::ResultSet> res_name(pstmt_name->executeQuery());
@@ -101,7 +101,7 @@ int MysqlDao::RegUserTransaction(const std::string& name, const std::string& ema
 			std::cout << "name " << name << " exist";
 		}
 
-		// 准备更新用户 id
+		// prepare to update the user id
 		std::unique_ptr<sql::PreparedStatement> pstmt_upid(con->_con->prepareStatement("update user_id set id = id + 1"));
 		pstmt_upid->executeUpdate();
 
@@ -119,7 +119,7 @@ int MysqlDao::RegUserTransaction(const std::string& name, const std::string& ema
 			con->_con->rollback();
 			return -1;
 		}
-		// 插入user 信息
+		// insert user info
 		std::unique_ptr<sql::PreparedStatement> pstmt_insert(con->_con->prepareStatement("insert into user(uid, name,email, pwd, nick, icon)"
 			"values(?,?,?,?,?,?)"));
 		pstmt_insert->setInt(1, newId);
@@ -128,7 +128,7 @@ int MysqlDao::RegUserTransaction(const std::string& name, const std::string& ema
 		pstmt_insert->setString(4, pwd);
 		pstmt_insert->setString(5, name);
 		pstmt_insert->setString(6, icon);
-		//插入
+		//insert
 		pstmt_insert->executeUpdate();
 		con->_con->commit();
 		std::cout << "newUser insert into user success!" << std::endl;
@@ -155,16 +155,16 @@ bool MysqlDao::CheckEmail(const std::string& name, const std::string& email) {
 			return false;
 		}
 
-		// 准备查询语句
+		// prepare the query statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT email FROM user WHERE name = ?"));
 
-		// 绑定参数
+		// bind parameters
 		pstmt->setString(1, name);
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 
-		// 遍历结果集
+		// iterate the result set
 		while (res->next()) {
 			std::cout << "Check Email: " << res->getString("email") << std::endl;
 
@@ -196,14 +196,14 @@ bool MysqlDao::UpdatePwd(const std::string& name, const std::string& newpwd) {
 			return false;
 		}
 
-		// 准备查询语句
+		// prepare the query statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("UPDATE user SET pwd = ? WHERE name = ?"));
 
-		// 绑定参数
+		// bind parameters
 		pstmt->setString(2, name);
 		pstmt->setString(1, newpwd);
 
-		// 执行更新
+		// execute the update
 		int updateCount = pstmt->executeUpdate();
 
 		std::cout << "Updated rows: " << updateCount << std::endl;
@@ -231,14 +231,14 @@ bool MysqlDao::CheckPwd(const std::string& email, const std::string& pwd, UserIn
 			return false;
 		}
 
-		// 准备SQL语句
+		// prepare the SQL statement
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("SELECT pwd, email, uid FROM user WHERE email = ?"));
-		pstmt->setString(1, email); // 将email替换为你要查询的邮箱
+		pstmt->setString(1, email); // replace email with the one you want to query
 
-		// 执行查询
+		// execute the query
 		std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 		std::string origin_pwd = "";
-		// 遍历结果集
+		// iterate the result set
 		if (res->next()) {
 			origin_pwd = res->getString("pwd");
 
