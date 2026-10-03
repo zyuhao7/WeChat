@@ -3,16 +3,16 @@
 #include <string>
 
 /**
- * @brief 分布式锁实现类
+ * @brief distributed lock implementation class
  */
 class DistLock
 {
 public:
 	static DistLock& Inst();
 	~DistLock() = default;
-	//  lockTimeout 锁释放的超时时间.   acquireTime获取锁的等待时间.
+	//  lockTimeout is the lock release timeout. acquireTime is the wait time to acquire the lock.
 	std::string acquireLock(redisContext* context, const std::string& lockName, int lockTimeout, int acquireTimeout);
-	// identifier标识符，用于标识哪个客户端持有锁
+	// identifier, identifies which client holds the lock
 	bool releaseLock(redisContext* context, const std::string& lockName, const std::string& identifier);
 private:
 	DistLock() = default;

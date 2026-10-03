@@ -38,10 +38,10 @@ public:
 	void AsyncReadBody(int length);
 	void AsyncReadHead(int total_len);
 
-	void NotifyOffline(int uid); // 通知用户下线
-	bool IsHeartbeatExpired(std::time_t& now); // 判断是否心跳过期
-	void UpdateHeartbeat(); // 更新心跳
-	void DealExceptionSesseion(); // 处理异常连接
+	void NotifyOffline(int uid); // notify the user of going offline
+	bool IsHeartbeatExpired(std::time_t& now); // check whether the heartbeat expired
+	void UpdateHeartbeat(); // update the heartbeat
+	void DealExceptionSesseion(); // handle the exception connection
 
 private:
 	void AsyncReadFull(std::size_t maxLength, std::function<void(const boost::system::error_code&, std::size_t)> handler);
@@ -57,15 +57,15 @@ private:
 	bool _b_close;
 	std::queue<shared_ptr<SendNode>> _send_que;
 	std::mutex _send_lock;
-	// 收到的消息结构
+	// received message structure
 	std::shared_ptr<RecvNode> _recv_msg_node;
 	bool _b_head_parse;
-	//收到的头部结构
+	//received header structure
 	std::shared_ptr<MsgNode> _recv_head_node;
 	int _user_uid;
-	// 上次接收数据的时间
+	// time of the last received data
 	std::atomic<time_t> _last_heartbeat;
-	// session 锁
+	// session lock
 	std::mutex _session_mtx;
 };
 
