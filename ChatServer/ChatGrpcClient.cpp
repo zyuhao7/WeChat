@@ -98,6 +98,7 @@ bool ChatGrpcClient::GetBaseInfo(std::string base_key, int uid, std::shared_ptr<
 		RedisMgr::GetInstance()->Set(base_key, redis_root.toStyledString());
 	}
 
+	return true;
 }
 
 AuthFriendRsp ChatGrpcClient::NotifyAuthFriend(std::string server_ip, const AuthFriendReq& req)

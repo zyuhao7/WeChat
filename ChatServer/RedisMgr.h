@@ -4,6 +4,8 @@
 #include <queue>
 #include <atomic>
 #include <mutex>
+#include <thread>
+#include <chrono>
 #include "Singleton.h"
 
 class RedisConPool {
