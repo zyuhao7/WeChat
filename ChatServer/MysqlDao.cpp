@@ -247,6 +247,11 @@ bool MysqlDao::AddFriend(const int& from, const int& to, std::string back_name) 
 	}
 
 	Defer defer([this, &con]() {
+		// restore autocommit so the pooled connection is not left in
+		// manual-commit mode (which would poison the next borrower)
+		if (con && con->_con) {
+			try { con->_con->setAutoCommit(true); } catch (...) {}
+		}
 		pool_->returnConnection(std::move(con));
 		});
 
