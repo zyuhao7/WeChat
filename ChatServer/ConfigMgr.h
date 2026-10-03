@@ -69,6 +69,7 @@ public:
 	{
 		if (&src == this) return *this;
 		this->_config_map = src._config_map;
+		return *this;
 	}
 	std::string GetValue(const std::string& section, const std::string& key);
 private:	
