@@ -17,17 +17,17 @@ void CServer::Start()
 
 	_acceptor.async_accept(new_con->GetSocket(), [self, new_con](beast::error_code ec) {
 		try{
-			// 出错放弃连接, 继续监听其他连接
+			// on error drop the connection and keep accepting others
 			if (ec)
 			{
 				self->Start();
 				return;
 			}
-			// 创建新连接, 并且创建 HttpConnection类管理这个连接
+			// create a new connection and an HttpConnection to manage it
 			//std::make_shared<HttpConnection>(std::move(self->_socket))->Start();
 			new_con->Start();
 			// 
-			// 继续监听
+			// keep listening
 			self->Start();
 		}
 		catch (std::exception& ep)

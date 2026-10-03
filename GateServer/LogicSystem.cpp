@@ -35,7 +35,7 @@ LogicSystem::LogicSystem()
         std::cout << "receive body is " << body_str << std::endl;
         connection->_response.set(http::field::content_type, "text/json");
 
-		//解析json数据
+		//parse the JSON data
         Json::Value root;
         Json::Reader reader;
         Json::Value src_root;
@@ -98,7 +98,7 @@ LogicSystem::LogicSystem()
             return true;
         }
 
-        //先查找redis中email对应的验证码是否合理
+        //first check the verify code for the email in redis
         std::string  verify_code;
         bool b_get_verify = RedisMgr::GetInstance()->Get(CODEPREFIX + src_root["email"].asString(), verify_code);
         if (!b_get_verify) {
@@ -117,7 +117,7 @@ LogicSystem::LogicSystem()
             return true;
         }
 
-        //查找数据库判断用户是否存在
+        //query the DB to check whether the user exists
         int uid = MysqlMgr::GetInstance()->RegUser(name, email, pwd, icon);
         if (uid == 0 || uid == -1) {
             std::cout << " user or email exist" << std::endl;
@@ -139,7 +139,7 @@ LogicSystem::LogicSystem()
         return true;
         });
 
-    //重置回调逻辑
+    //reset the callback logic
     RegPost("/reset_pwd", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "reset_pwd" << std::endl;
         auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
@@ -161,7 +161,7 @@ LogicSystem::LogicSystem()
         auto name = src_root["user"].asString();
         auto pwd = src_root["passwd"].asString();
 
-        //先查找redis中email对应的验证码是否合理
+        //first check the verify code for the email in redis
         std::string  verify_code;
         bool b_get_verify = RedisMgr::GetInstance()->Get(CODEPREFIX + src_root["email"].asString(), verify_code);
         if (!b_get_verify) {
@@ -179,7 +179,7 @@ LogicSystem::LogicSystem()
             beast::ostream(connection->_response.body()) << jsonstr;
             return true;
         }
-        //查询数据库判断用户名和邮箱是否匹配
+        //query the DB to check whether the name and email match
         bool email_valid = MysqlMgr::GetInstance()->CheckEmail(name, email);
         if (!email_valid) {
             std::cout << " user email not match" << std::endl;
@@ -189,7 +189,7 @@ LogicSystem::LogicSystem()
             return true;
         }
 
-        //更新密码为最新密码
+        //update the password to the latest
         bool b_up = MysqlMgr::GetInstance()->UpdatePwd(name, pwd);
         if (!b_up) {
             std::cout << " update pwd failed" << std::endl;
@@ -210,7 +210,7 @@ LogicSystem::LogicSystem()
         return true;
         });
 
-    //用户登录逻辑
+    //user login logic
     RegPost("/user_login", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "receive user login message" << std::endl;
         auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
@@ -232,7 +232,7 @@ LogicSystem::LogicSystem()
         auto pwd = src_root["passwd"].asString();
 		std::cout << "eamil is " << email << " pwd is " << pwd << std::endl;
         UserInfo userInfo;
-        //查询数据库判断用户名和密码是否匹配
+        //query the DB to check whether the name and password match
         bool pwd_valid = MysqlMgr::GetInstance()->CheckPwd(email, pwd, userInfo);
         if (!pwd_valid) {
             std::cout << " user pwd not match" << std::endl;
@@ -243,7 +243,7 @@ LogicSystem::LogicSystem()
         }
         std::cout << "查询数据库成功" << std::endl;
 
-        //查询StatusServer找到合适的连接
+        //query StatusServer to find a suitable connection
         auto reply = StatusGrpcClient::GetInstance()->GetChatServer(userInfo.uid);
         if (reply.error()) {
             std::cout << " grpc get chat server failed, error is " << reply.error() << std::endl;

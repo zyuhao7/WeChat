@@ -15,15 +15,15 @@ public:
 		: url_(url), user_(user), pass_(pass), schema_(schema), poolSize_(poolSize), b_stop_(false) {
 		try {
 			for (int i = 0; i < poolSize_; ++i) {
-				// Mysql 驱动对象
+				// MySQL driver object
 				sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-				// 创建连接
+				// create the connection
 				auto* con = driver->connect(url_, user_, pass_);
-				// 设置使用的数据库 schema
+				// set the database schema to use
 				con->setSchema(schema_);
-				// 获取当前时间戳
+				// get the current timestamp
 				auto currentTime = std::chrono::system_clock::now().time_since_epoch();
-				// 将时间戳转换为秒
+				// convert the timestamp to seconds
 				long long timestamp = std::chrono::duration_cast<std::chrono::seconds>(currentTime).count();
 				pool_.push(std::make_unique<SqlConnection>(con, timestamp));
 			}
@@ -38,7 +38,7 @@ public:
 			_check_thread.detach();
 		}
 		catch (sql::SQLException& e) {
-			// 处理异常
+			// handle the exception
 			std::cout << "mysql pool init failed, error is " << e.what() << std::endl;
 		}
 	}
@@ -46,9 +46,9 @@ public:
 	void checkConnection() {
 		std::lock_guard<std::mutex> guard(mutex_);
 		int poolsize = pool_.size();
-		// 获取当前时间戳
+		// get the current timestamp
 		auto currentTime = std::chrono::system_clock::now().time_since_epoch();
-		// 将时间戳转换为秒
+		// convert the timestamp to seconds
 		long long timestamp = std::chrono::duration_cast<std::chrono::seconds>(currentTime).count();
 		for (int i = 0; i < poolsize; i++) {
 			auto con = std::move(pool_.front());
@@ -69,7 +69,7 @@ public:
 			}
 			catch (sql::SQLException& e) {
 				std::cout << "Error keeping connection alive: " << e.what() << std::endl;
-				// 重新创建连接并替换旧的连接
+				// recreate the connection and replace the old one
 				sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
 				auto* newcon = driver->connect(url_, user_, pass_);
 				newcon->setSchema(schema_);
