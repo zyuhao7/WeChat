@@ -83,6 +83,9 @@ bool MysqlDao::CheckEmail(const std::string& name, const std::string& email) {
 			pool_->returnConnection(std::move(con));
 			return true;
 		}
+
+		pool_->returnConnection(std::move(con));
+		return false;
 	}
 	catch (sql::SQLException& e) {
 		pool_->returnConnection(std::move(con));
