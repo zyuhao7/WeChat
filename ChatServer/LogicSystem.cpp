@@ -237,6 +237,11 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 		UserMgr::GetInstance()->SetUserSession(uid, session);
 		std::string uid_session_key = USER_SESSION_PREFIX + uid_str;
 		RedisMgr::GetInstance()->Set(uid_session_key, session->GetSessionId());
+
+		// reflect this login immediately so StatusServer's load balancer
+		// can spread the next client across nodes without waiting for the
+		// periodic reconcile timer
+		RedisMgr::GetInstance()->IncreaseCount(server_name);
 	}
 	
 	return;
