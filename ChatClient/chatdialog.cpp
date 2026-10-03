@@ -16,6 +16,8 @@
 #include <QAction>
 #include <QMouseEvent>
 #include <QRandomGenerator>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMovie>
 #include <QTimer>
 #include <QDebug>
