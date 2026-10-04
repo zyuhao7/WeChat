@@ -86,7 +86,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="user_edit">
+            <widget class="ElaLineEdit" name="user_edit">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -125,7 +125,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="email_edit">
+            <widget class="ElaLineEdit" name="email_edit">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -164,7 +164,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="pass_edit">
+            <widget class="ElaLineEdit" name="pass_edit">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -222,7 +222,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="confirm_edit">
+            <widget class="ElaLineEdit" name="confirm_edit">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -280,7 +280,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="verify_edit">
+            <widget class="ElaLineEdit" name="verify_edit">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -332,7 +332,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">
            <item>
-            <widget class="QPushButton" name="confirm_btn">
+            <widget class="ElaPushButton" name="confirm_btn">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -351,7 +351,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="cancel_btn">
+            <widget class="ElaPushButton" name="cancel_btn">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -451,7 +451,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="return_btn">
+             <widget class="ElaPushButton" name="return_btn">
               <property name="minimumSize">
                <size>
                 <width>0</width>
@@ -516,6 +516,16 @@
    <class>TimerBtn</class>
    <extends>QPushButton</extends>
    <header>timerbtn.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ElaLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaPushButton</class>
+   <extends>QPushButton</extends>
+   <header>ElaPushButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
