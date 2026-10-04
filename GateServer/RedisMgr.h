@@ -24,7 +24,7 @@ public:
 
 			auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
 			if (reply->type == REDIS_REPLY_ERROR) {
-				std::cout << "认证失败" << std::endl;
+				std::cout << "AUTH failed" << std::endl;
 				//on success, free the redisReply memory returned after redisCommand executes
 				freeReplyObject(reply);
 				continue;
@@ -32,7 +32,7 @@ public:
 
 			//on success, free the redisReply memory returned after redisCommand executes
 			freeReplyObject(reply);
-			std::cout << "认证成功" << std::endl;
+			std::cout << "AUTH succeeded" << std::endl;
 			connections_.push(context);
 		}
 
@@ -128,7 +128,7 @@ private:
 
 				auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
 				if (reply->type == REDIS_REPLY_ERROR) {
-					std::cout << "认证失败" << std::endl;
+					std::cout << "AUTH failed" << std::endl;
 					//on success, free the redisReply memory returned after redisCommand executes
 					freeReplyObject(reply);
 					continue;
@@ -136,7 +136,7 @@ private:
 
 				//on success, free the redisReply memory returned after redisCommand executes
 				freeReplyObject(reply);
-				std::cout << "认证成功" << std::endl;
+				std::cout << "AUTH succeeded" << std::endl;
 				connections_.push(context);
 			}
 		}

@@ -24,7 +24,7 @@ public:
 
             auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
             if (reply->type == REDIS_REPLY_ERROR) {
-                std::cout << "��֤ʧ��" << std::endl;
+                std::cout << "AUTH failed" << std::endl;
                 //on success, free the redisReply memory returned after redisCommand executes
                 freeReplyObject(reply);
                 continue;
@@ -32,7 +32,7 @@ public:
 
             //on success, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
-            std::cout << "��֤�ɹ�" << std::endl;
+            std::cout << "AUTH succeeded" << std::endl;
             connections_.push(context);
         }
 
@@ -127,7 +127,7 @@ private:
         auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
         if (reply->type == REDIS_REPLY_ERROR)
         {
-            std::cout << "������֤ʧ��!" << std::endl;
+            std::cout << "connection AUTH failed!" << std::endl;
             // on failure, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
             redisFree(context);
@@ -135,7 +135,7 @@ private:
         }
         // on success, free the redisReply memory returned after redisCommand executes
         freeReplyObject(reply);
-        std::cout << "������֤�ɹ�!" << std::endl;
+        std::cout << "connection AUTH succeeded!" << std::endl;
         // hand the context to the recycle function.
         returnConnection(context);
         return true;
@@ -245,12 +245,12 @@ private:
                 auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
                 if (reply->type == REDIS_REPLY_ERROR)
                 {
-                    std::cout << "��֤ʧ��! " << std::endl;
+                    std::cout << "AUTH failed! " << std::endl;
                     freeReplyObject(reply);
                     continue;
                 }
                 freeReplyObject(reply);
-                std::cout << "��֤�ɹ�! " << std::endl;
+                std::cout << "AUTH succeeded! " << std::endl;
                 connections_.push(context);
             }
         }
