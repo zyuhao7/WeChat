@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Start all WeChat backend services.
 #
-# Order matters: VerifyServer (code mail) -> StatusServer (token/least-loaded
-# pick) -> ChatServer instances -> GateServer (HTTP entry). Extra ChatServer
-# instances are auto-detected from run/chatserver*/config.ini; each instance
-# reads config.ini from its own working directory.
+# Order matters: Redis (state store) -> VerifyServer (code mail) ->
+# StatusServer (token/least-loaded pick) -> ChatServer instances -> GateServer
+# (HTTP entry). Extra ChatServer instances are auto-detected from
+# run/chatserver*/config.ini; each instance reads config.ini from its own
+# working directory.
 #
 # Logs and PIDs are written to logs/. Pass --client to also launch the Qt GUI.
 set -euo pipefail
@@ -30,6 +31,23 @@ start() {
   echo "$pid" >"$LOGDIR/$name.pid"
   echo "starting $name (cwd=$dir, pid=$pid)"
 }
+
+# Redis is a hard dependency: ChatServer and VerifyServer both connect on :6380.
+# Start a local instance if nothing is already answering, so the stack comes up
+# in one command. Existing instances (e.g. system redis) are left untouched.
+REDIS_PORT=6380
+REDIS_PASS=123456
+redis_up() {
+  redis-cli -p "$REDIS_PORT" -a "$REDIS_PASS" --no-auth-warning PING 2>&1 | grep -q PONG
+}
+if redis_up; then
+  echo "redis already up on :$REDIS_PORT"
+elif command -v redis-server >/dev/null 2>&1; then
+  start redis "$ROOT" redis-server --port "$REDIS_PORT" --requirepass "$REDIS_PASS" \
+    --save "" --appendonly no --dir "$LOGDIR"
+else
+  echo "redis-server not found; start Redis on :$REDIS_PORT yourself" >&2
+fi
 
 start verify "$ROOT/VerifyServer" node server.js
 start status "$ROOT/StatusServer" "$BUILD/StatusServer"
