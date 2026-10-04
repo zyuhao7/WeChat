@@ -72,6 +72,9 @@ ChatDialog::ChatDialog(QWidget *parent) :
     });
 
     ui->search_edit->SetMaxLength(15);
+    // ElaLineEdit ships its own clear button; the search box already manages a
+    // trailing clear QAction, so disable the built-in one to avoid a duplicate.
+    ui->search_edit->setIsClearButtonEnable(false);
 
      // connect the load signal and slot
     connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this, &ChatDialog::slot_loading_chat_user);
