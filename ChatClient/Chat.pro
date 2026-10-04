@@ -2,7 +2,10 @@ QT     += core gui  network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++17
+
+# Modern Fluent UI toolkit (ElaWidgetTools), compiled directly into the app.
+include(third_party/ElaWidgetTools/ElaWidgetTools.pri)
 
 
 # The following define makes your compiler emit warnings if you use
@@ -123,7 +126,6 @@ FORMS += \
     grouptipitem.ui \
     loadingdlg.ui \
     logindialog.ui \
-    mainwindow.ui \
     registdialog.ui \
     resetdialog.ui
 
