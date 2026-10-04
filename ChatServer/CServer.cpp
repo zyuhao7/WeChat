@@ -6,9 +6,16 @@
 #include "ConfigMgr.h"
 
 CServer::CServer(boost::asio::io_context& io_context, short port) :_io_context(io_context), _port(port),
-		_acceptor(io_context, tcp::endpoint(tcp::v4(), port)),
+		_acceptor(io_context),
 		_timer(_io_context, std::chrono::seconds(60))
 {
+	// set SO_REUSEADDR before binding so a quick restart is not blocked by
+	// lingering connections from the previous instance
+	boost::system::error_code ec;
+	_acceptor.open(tcp::v4(), ec);
+	_acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
+	_acceptor.bind(tcp::endpoint(tcp::v4(), port), ec);
+	_acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
 	cout << "Server start success, listen on port : " << _port << endl;
 	StartAccept();
 }
