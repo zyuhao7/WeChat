@@ -1,7 +1,7 @@
 -- database schema required to run the project (inferred from the SQL in MysqlDao)
 -- usage: mysql -uroot -p123456 < sql/db01.sql
 
-CREATE DATABASE IF NOT EXISTS db01 DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS db01 DEFAULT CHARSET utf8mb4;
 USE db01;
 
 CREATE TABLE IF NOT EXISTS user (

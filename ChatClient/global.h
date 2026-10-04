@@ -131,7 +131,10 @@ const std::vector<QString> heads = {
     ":/res/head_2.jpg",
     ":/res/head_3.jpg",
     ":/res/head_4.jpg",
-    ":/res/head_5.jpg"
+    ":/res/head_5.jpg",
+    ":/res/head_6.jpg",
+    ":/res/head_7.jpg",
+    ":/res/head_8.jpg"
 };
 
 const std::vector<QString> names = {

@@ -1,24 +1,17 @@
 #include "mainwindow.h"
 
 #include <QApplication>
-#include <QFile>
-#include <QDebug>
+
+#include "ElaApplication.h"
+#include "ElaTheme.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QFile qss(":/style/stylesheet.qss");
-    if(qss.open(QFile::ReadOnly))
-    {
-        qDebug("open success !");
-        QString style = QLatin1String(qss.readAll());
-        a.setStyleSheet(style);
-        qss.close();
-    }
-    else
-    {
-        qDebug("Open Failed!");
-    }
+
+    // Initialize the Fluent (ElaWidgetTools) framework: registers its resources
+    // and applies the base font/attributes used by all Ela widgets.
+    eApp->init();
 
     QString fileName = "config.ini";
     QString app_path = QCoreApplication::applicationDirPath();

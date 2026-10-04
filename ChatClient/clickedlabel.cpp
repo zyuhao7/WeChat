@@ -1,9 +1,11 @@
 #include "clickedlabel.h"
+#include "ElaIcon.h"
 #include <QMouseEvent>
 
 ClickedLabel::ClickedLabel(QWidget *parent)
     :QLabel(parent),
-      _curstate(ClickLbState::Normal)
+      _curstate(ClickLbState::Normal),
+      _has_icons(false)
 {
     this->setCursor(Qt::PointingHandCursor);
 }
@@ -33,6 +35,7 @@ void ClickedLabel::mousePressEvent(QMouseEvent *event)
                 update();
             }
             //  return after handling the left-click logic to avoid further event propagation
+            ApplyIcon();
             return;
       }
 
@@ -58,6 +61,7 @@ void ClickedLabel::mouseReleaseEvent(QMouseEvent *event)
                 repolish(this);
                 update();
             }
+            ApplyIcon();
             emit clicked(this->text(), _curstate);
             return;
      }
@@ -81,6 +85,7 @@ void ClickedLabel::enterEvent(QEnterEvent *event)
             repolish(this);
             update();
         }
+        ApplyIcon();
         QLabel::enterEvent(event);
 }
 
@@ -99,6 +104,7 @@ void ClickedLabel::leaveEvent(QEvent *event)
             repolish(this);
             update();
         }
+        ApplyIcon();
         QLabel::leaveEvent(event);
 }
 
@@ -114,6 +120,32 @@ void ClickedLabel::SetState(QString normal, QString hover, QString press, QStrin
 
        setProperty("state",normal);
        repolish(this);
+       ApplyIcon();
+}
+
+void ClickedLabel::SetIcons(ElaIconType::IconName normal,
+                            ElaIconType::IconName selected,
+                            int pixelSize)
+{
+    int box = qMin(minimumWidth() > 1 ? minimumWidth() : 24,
+                   minimumHeight() > 1 ? minimumHeight() : 24);
+    int size = pixelSize > 0 ? pixelSize : qBound(14, box, 24);
+
+    _pix_normal   = ElaIcon::getInstance()->getElaIcon(normal, size).pixmap(size, size);
+    _pix_selected = ElaIcon::getInstance()->getElaIcon(selected, size).pixmap(size, size);
+    _has_icons = true;
+
+    setAlignment(Qt::AlignCenter);
+    ApplyIcon();
+}
+
+void ClickedLabel::ApplyIcon()
+{
+    if(!_has_icons)
+    {
+        return;
+    }
+    setPixmap(_curstate == ClickLbState::Selected ? _pix_selected : _pix_normal);
 }
 
 ClickLbState ClickedLabel::GetCurState()
@@ -134,6 +166,7 @@ bool ClickedLabel::SetCurState(ClickLbState state)
         setProperty("state", _selected);
         repolish(this);
     }
+    ApplyIcon();
     return true;
 }
 
@@ -143,5 +176,6 @@ void ClickedLabel::ResetNormalState()
     _curstate = ClickLbState::Normal;
     setProperty("state", _normal);
     repolish(this);
+    ApplyIcon();
 }
 

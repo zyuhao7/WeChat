@@ -5,6 +5,7 @@
 #include <grpcpp/grpcpp.h>
 #include "message.grpc.pb.h"
 #include "const.h"
+#include <queue>
 #include "Singleton.h"
 #include "ConfigMgr.h"
 using grpc::Channel;

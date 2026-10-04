@@ -1,13 +1,11 @@
 #include "CSession.h"
 #include "CServer.h"
 #include <iostream>
-#include <sstream>
 #include <json/json.h>
 #include <json/value.h>
 #include <json/reader.h>
 #include "LogicSystem.h"
 #include "RedisMgr.h"
-#include "ConfigMgr.h"
 using namespace std;
 
 CSession::CSession(boost::asio::io_context& ioc, CServer* server)
@@ -227,7 +225,7 @@ void CSession::NotifyOffline(int uid)
 bool CSession::IsHeartbeatExpired(std::time_t& now)
 {
 	double diff_sec = std::difftime(now, _last_heartbeat);
-	if (diff_sec > 60) {
+	if (diff_sec > 300) {
 		std::cout << "heartbeat expired, session id is  " << _session_id << endl;
 		return true;
 	}

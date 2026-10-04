@@ -1,39 +1,25 @@
 #pragma once
-#include <boost/beast/http.hpp>
-#include <boost/beast.hpp>
-#include <boost/asio.hpp>
-#include <memory>
-#include<iostream>
-#include <vector>
-#include<string>
-#include<functional>
-#include <map>
-#include <unordered_map>
+#include <jdbc/cppconn/exception.h>
+#include <jdbc/cppconn/prepared_statement.h>
+#include <jdbc/cppconn/resultset.h>
+#include <jdbc/cppconn/statement.h>
+#include <jdbc/mysql_connection.h>
+#include <jdbc/mysql_driver.h>
 #include <json/json.h>
-#include <json/value.h>
 #include <json/reader.h>
+#include <json/value.h>
+#include <boost/asio.hpp>
+#include <boost/beast.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-#include<atomic>
-#include<queue>
-#include<mutex>
-#include<condition_variable>
-#include<cassert>
-#include<thread>
-#include<jdbc/mysql_connection.h>
-#include<jdbc/mysql_driver.h>
-#include<jdbc/cppconn/prepared_statement.h>
-#include<jdbc/cppconn/resultset.h>
-#include<jdbc/cppconn/statement.h>
-#include<jdbc/cppconn/exception.h>
-#include<boost/uuid/uuid.hpp>
-#include<boost/uuid/uuid_generators.hpp>
-#include<boost/uuid/uuid_io.hpp>
-#include "hiredis.h"
-#include "Singleton.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <cassert>
+#include <functional>
 
- 
 enum ErrorCodes
 {
 	Success = 0,

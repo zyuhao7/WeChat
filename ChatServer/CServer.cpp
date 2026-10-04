@@ -6,9 +6,16 @@
 #include "ConfigMgr.h"
 
 CServer::CServer(boost::asio::io_context& io_context, short port) :_io_context(io_context), _port(port),
-		_acceptor(io_context, tcp::endpoint(tcp::v4(), port)),
+		_acceptor(io_context),
 		_timer(_io_context, std::chrono::seconds(60))
 {
+	// set SO_REUSEADDR before binding so a quick restart is not blocked by
+	// lingering connections from the previous instance
+	boost::system::error_code ec;
+	 _acceptor.open(tcp::v4(), ec);
+	_acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
+	_acceptor.bind(tcp::endpoint(tcp::v4(), port), ec);
+	_acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
 	cout << "Server start success, listen on port : " << _port << endl;
 	StartAccept();
 }
@@ -39,14 +46,21 @@ void CServer::StartAccept() {
 // // remove the session by its id and unlink the user from the session
 void CServer::ClearSession(std::string session_id) {
 	lock_guard<mutex> lock(_mutex);
-	if (_sessions.find(session_id) != _sessions.end()) {
-		auto uid = _sessions[session_id]->GetUserId();
-
-		//unlink the user from the session
-		UserMgr::GetInstance()->RmvUserSession(uid, session_id);
+	auto it = _sessions.find(session_id);
+	if (it == _sessions.end()) {
+		return;
 	}
-	_sessions.erase(session_id);
+	auto uid = it->second->GetUserId();
 
+	//unlink the user from the session
+	UserMgr::GetInstance()->RmvUserSession(uid, session_id);
+
+	// a logged-in session leaving frees up one slot on this node
+	if (uid != 0) {
+		auto self_name = ConfigMgr::Inst()["SelfServer"]["Name"];
+		RedisMgr::GetInstance()->DecreaseCount(self_name);
+	}
+	_sessions.erase(it);
 }
 
 shared_ptr<CSession> CServer::GetSession(std::string uid)

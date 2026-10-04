@@ -26,6 +26,8 @@ ChatPage::ChatPage(QWidget *parent) :
     // set the icon style
     ui->emo_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
     ui->file_lb->SetState("normal", "hover", "press", "normal", "hover", "press");
+    ui->emo_lb->SetIcons(ElaIconType::FaceSmile, ElaIconType::FaceSmile, 20);
+    ui->file_lb->SetIcons(ElaIconType::Paperclip, ElaIconType::Paperclip, 20);
 
     // add the Enter-to-send-message signal
     connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);

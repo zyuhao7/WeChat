@@ -579,3 +579,109 @@ persistence` → `day38 resumable transfer` → `day39 multimedia` → `day40 di
 
 > Note: day37 is the watershed. Messages are currently not persisted — purely online forwarding.
 > Chat-history storage must be added before multimedia and video work.
+
+---
+
+## 13. Feature Verification & Mock Accounts (standard.txt item 6)
+
+### 13.1 Mock accounts: bypassing real email verification
+
+The registration path (`/get_verify_code` → email → `/user_register`) depends on a real mailbox and
+cannot be closed locally. New `scripts/mock_accounts.sh` addresses this:
+
+```bash
+scripts/mock_accounts.sh [count]     # default 5, creates mock1..mock5
+```
+
+- Calls the `reg_user` stored procedure directly; idempotent (reuses existing accounts); password is
+  always `123456`.
+- Also writes `code_<email> = 1234` (EX 600) into Redis, so `/user_register` can be driven end-to-end
+  with `verifycode=1234` without receiving an actual email.
+- Currently seeded: mock1=uid2, mock2=uid5, mock3=uid6, mock4=uid7, mock5=uid8, mock6=uid9.
+
+### 13.2 End-to-end verification
+
+`scripts/tcp_e2e.py` (`uv run scripts/tcp_e2e.py`) drives the full protocol over raw TCP; requires the
+stack running and mock accounts seeded:
+
+| Step | Message ID | Assertion |
+|------|-----------|-----------|
+| TCP login | 1005/1006 | `error=0`, returned `name` correct |
+| Search user by name | 1007/1008 | peer uid + name matched |
+| Add-friend apply | 1009/1010 + notify 1011 | applicant `error=0`; peer gets `applyuid` |
+| Friend auth | 1013/1014 + notify 1015 | approver `error=0`; applicant gets `fromuid` |
+| Text chat | 1017/1018 + notify 1019 | sender `error=0`; peer gets `content` |
+
+The script deliberately logs mock1 in first, then fetches mock2's rendezvous server, so the two land
+on **different ChatServers** (prints `cross-node: True`) and the cross-node gRPC notify path is really
+exercised. Result: **11/11 passed**.
+
+### 13.3 Problems found and fixed during this verification
+
+1. **Collation mismatch silently broke registration** — `db01.sql` created the DB with
+   `COLLATE utf8mb4_unicode_ci` while InnoDB tables defaulted to `utf8mb4_0900_ai_ci`. The stored
+   procedure's parameters inherit the DB collation, so `CALL reg_user(...)` failed with
+   `ERROR 1267 Illegal mix of collations`; the `EXIT HANDLER` swallowed it and returned -1. Fix:
+   dropped the DB-level `COLLATE` from `sql/db01.sql`, ran `ALTER DATABASE db01 COLLATE
+   utf8mb4_0900_ai_ci`, and recreated `reg_user`. Register and login recovered immediately.
+
+2. **Connection-pool transaction leak (autocommit never restored)** — `AddFriend` in
+   `ChatServer/MysqlDao.cpp` and `RegUserTransaction` in `GateServer/MysqlDao.cpp` both call
+   `setAutoCommit(false)` to start a transaction but never restore it before the connection goes back
+   to the pool. The connection is returned by its `Defer` still in manual-commit mode; the next
+   borrower then runs inside a stale open transaction and blocks on row locks — the symptom was an
+   intermittent hang at the "friend auth" step of the TCP E2E test. Fix: restore `setAutoCommit(true)`
+   (guarded) inside both `Defer` blocks before returning the connection.
+
+3. **Load-balancing counter never updated (`logincount` only refreshed by the 60s timer)** —
+   `RedisMgr::IncreaseCount/DecreaseCount` existed but were **called from nowhere in the project**;
+   `logincount` was only written by the 60s reconcile timer with the actual live session count. For the
+   first minute after startup every client reads count 0, so StatusServer's least-connections pick
+   collapses to whichever node is first in its `unordered_map` — all clients pile onto one ChatServer
+   and the cross-node gRPC path is never reached. Fix: call `IncreaseCount` on successful login in
+   `LogicSystem::LoginHandler`, and `DecreaseCount` for a logged-in session in `CServer::ClearSession`
+   (the timer keeps reconciling to the absolute value). After the fix the two E2E users split across
+   8090/8091 and `cross-node: True`.
+
+4. **Redis not managed by the start scripts** — Redis (:6380) is a hard dependency of both
+   ChatServer and VerifyServer, yet nothing started it. Without it the stack came up half-dead:
+   ChatServer blocked on connect, VerifyServer crashed on startup, and only Gate+Status survived.
+   Fix: `start_all.sh` probes :6380 and launches a local instance if nothing answers (port/password
+   taken from the configs); `stop_all.sh` shuts it down too.
+
+5. **Acceptor hit `Address already in use` on restart** — the `CServer` of ChatServer/GateServer
+   bound the port directly in the constructor initializer list, leaving no chance to set
+   `SO_REUSEADDR`. On a quick restart the previous instance's lingering connections made the rebind
+   fail (chatserver2 refused to start on :8091). Fix: open, set the reuse option, bind and listen
+   explicitly.
+
+### 13.4 Commands that need sudo (not run here — run manually)
+
+```bash
+# Install DBeaver (GUI client for MySQL/Redis; .deb downloaded to /tmp/dbeaver-ce.deb)
+sudo apt install -y /tmp/dbeaver-ce.deb
+
+# If system libraries are missing (Qt6 runtime/build, Boost, hiredis, mysql-client, etc., per errors)
+sudo apt install -y libboost-all-dev libhiredis-dev default-libmysqlclient-dev \
+                    mysql-client redis-tools qt6-base-dev qt6-base-dev-tools
+```
+
+### 13.5 Qt UI polish: reusable frameworks / themes
+
+The UI is Qt Widgets + QSS (`ChatClient/resource/stylesheet.qss`), so theming is a QSS swap rather
+than a widget rewrite. Options:
+
+- **QDarkStyleSheet** (easiest): a mature dark theme for Qt Widgets — `pip install qdarkstyle`, or
+  just take its `style.qss`; one line `app.setStyleSheet(qdarkstyle.load_stylesheet())` reskins the
+  app and stays fully compatible with this project's QSS mechanism.
+- **Qt-Material**: Material Design theme (`qt-material`), light/dark plus accent colors, also for Qt
+  Widgets.
+- **QFluentWidgets / ElaWidgetTools**: modern Win11/Mica-style component libraries — best look but
+  require re-basing some widgets, the largest change.
+- **Hand-edit QSS**: recolor/round/spacing on the existing `stylesheet.qss`, zero dependencies, fine
+  for visual tweaks only.
+
+**Editing**: `.ui` files are plain XML — edit them in any WSL editor or in Qt Creator's Design mode;
+the two are equivalent and Design mode is only a visual preview. QSS can be edited anywhere; after
+editing, launch the client via `./scripts/start_client.sh` to see it (WSLg shows the window directly).
+**Recommendation**: start with QDarkStyleSheet for a quick reskin, then tweak QSS locally as needed.
