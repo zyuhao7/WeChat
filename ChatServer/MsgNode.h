@@ -1,5 +1,4 @@
 #pragma once
-#include<string>
 #include<iostream>
 #include<boost/asio.hpp>
 #include "const.h"

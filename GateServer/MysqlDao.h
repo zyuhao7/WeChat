@@ -1,5 +1,6 @@
 #pragma once
 #include "const.h"
+#include <queue>
 #include <thread>
 
 class SqlConnection {

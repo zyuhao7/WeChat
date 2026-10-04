@@ -1,6 +1,7 @@
 #pragma once
 #include "const.h"
 #include "MysqlDao.h"
+#include "Singleton.h"
 class MysqlMgr : public Singleton<MysqlMgr>
 {
     friend class Singleton<MysqlMgr>;

@@ -2,6 +2,7 @@
 #include "MysqlMgr.h"
 #include "const.h"
 #include "RedisMgr.h"
+#include "ConfigMgr.h"
 #include "UserMgr.h"
 #include "CServer.h"
 #include "ChatGrpcClient.h"

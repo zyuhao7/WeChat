@@ -12,7 +12,7 @@ CServer::CServer(boost::asio::io_context& io_context, short port) :_io_context(i
 	// set SO_REUSEADDR before binding so a quick restart is not blocked by
 	// lingering connections from the previous instance
 	boost::system::error_code ec;
-	_acceptor.open(tcp::v4(), ec);
+	 _acceptor.open(tcp::v4(), ec);
 	_acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
 	_acceptor.bind(tcp::endpoint(tcp::v4(), port), ec);
 	_acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
