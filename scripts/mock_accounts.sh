@@ -54,9 +54,11 @@ PWD_HEX="$(xor_hex "$PWD_VALUE")"
 for i in $(seq 1 "$COUNT"); do
   name="mock$i"
   email="mock$i@test.com"
+  # cycle through the bundled avatar resources (ChatClient/res/head_*.jpg)
+  head=":/res/head_$(( (i - 1) % 8 + 1 )).jpg"
   uid="$(mysql_cmd -N -e "CALL reg_user('$name','$email',0x$PWD_HEX,@r); SELECT uid FROM user WHERE email='$email';" | tail -n1)"
-  # keep the stored password in sync even when the row already existed
-  mysql_cmd -e "UPDATE user SET pwd = 0x$PWD_HEX WHERE email = '$email';"
+  # keep the stored password/avatar in sync even when the row already existed
+  mysql_cmd -e "UPDATE user SET pwd = 0x$PWD_HEX, icon = '$head' WHERE email = '$email';"
   redis_cmd SET "code_$email" "$VERIFY_CODE" EX 600 >/dev/null
   echo "$name -> uid=$uid email=$email pwd=$PWD_VALUE verifycode=$VERIFY_CODE"
 done
