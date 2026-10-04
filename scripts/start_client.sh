@@ -35,5 +35,12 @@ if [ -S "$wslg_runtime/wayland-0" ]; then
 fi
 export DISPLAY="${DISPLAY:-:0}"
 
+# WSLg exposes both XWayland and a Wayland socket, but its Wayland EGL path is
+# broken (no /dev/dri access -> "failed to create dri2 screen"), so a Qt app
+# that auto-selects the wayland platform backend never paints a window. Force
+# XWayland + software GL, the path verified to work here.
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
+export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"
+
 cd "$BIN"
 exec ./Chat "$@"
