@@ -1,0 +1,4 @@
+# Point clangd at the CMake-generated compilation database so IDE diagnostics
+# resolve the real include paths (Boost, gRPC, jsoncpp, hiredis, generated proto).
+CompileFlags:
+  CompilationDatabase: build
