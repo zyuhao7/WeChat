@@ -72,7 +72,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="user_edit">
+       <widget class="ElaLineEdit" name="user_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -113,7 +113,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="email_edit">
+       <widget class="ElaLineEdit" name="email_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -154,7 +154,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="verify_edit">
+       <widget class="ElaLineEdit" name="verify_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -214,7 +214,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="pwd_edit">
+       <widget class="ElaLineEdit" name="pwd_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -249,7 +249,7 @@
     <widget class="QWidget" name="widget_5" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QPushButton" name="sure_btn">
+       <widget class="ElaPushButton" name="sure_btn">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -268,7 +268,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="return_btn">
+       <widget class="ElaPushButton" name="return_btn">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -309,6 +309,16 @@
    <class>TimerBtn</class>
    <extends>QPushButton</extends>
    <header>timerbtn.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ElaLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaPushButton</class>
+   <extends>QPushButton</extends>
+   <header>ElaPushButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -1,7 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QWidget>
+#include "ElaWindow.h"
 #include "logindialog.h"
 #include "registdialog.h"
 #include "resetdialog.h"
@@ -18,7 +19,7 @@
  *****************************************************************************/
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+class QVBoxLayout;
 QT_END_NAMESPACE
 
 enum UIStatus{
@@ -28,7 +29,10 @@ enum UIStatus{
     CHAT_UI
 };
 
-class MainWindow : public QMainWindow
+// Fluent (ElaWidgetTools) frameless window that hosts the swappable pages.
+// Login / register / reset / chat all live as pages in the central custom
+// widget so the whole app keeps its original single-window flow.
+class MainWindow : public ElaWindow
 {
     Q_OBJECT
 
@@ -46,7 +50,13 @@ public slots:
     void SlotExcepConOffline();
 private:
     void offlineLogin();
-    Ui::MainWindow *ui;
+    void setPage(QWidget* page);
+    void applyLoginSize();   // fixed 300x500 content
+    void applyChatSize();    // resizable 1050x900 content
+
+    QWidget* _page_container;
+    QVBoxLayout* _page_layout;
+
     LoginDialog* _login_dlg;
     RegistDialog* _reg_dlg;
     ResetDialog* _reset_dlg;

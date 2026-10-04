@@ -1,10 +1,10 @@
 #pragma once
+#include <grpcpp/grpcpp.h>
+#include <queue>
 #include "const.h"
-#include "Singleton.h"
-#include "ConfigMgr.h"
-#include <grpcpp/grpcpp.h> 
 #include "message.grpc.pb.h"
 #include "message.pb.h"
+#include "Singleton.h"
 
 using grpc::Channel;
 using grpc::Status;

@@ -131,18 +131,21 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="email_edit">
+        <widget class="ElaLineEdit" name="email_edit">
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>25</height>
+           <height>36</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>25</height>
+           <height>36</height>
           </size>
+         </property>
+         <property name="placeholderText">
+          <string>邮箱</string>
          </property>
         </widget>
        </item>
@@ -170,18 +173,21 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="pass_edit">
+        <widget class="ElaLineEdit" name="pass_edit">
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>25</height>
+           <height>36</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>25</height>
+           <height>36</height>
           </size>
+         </property>
+         <property name="placeholderText">
+          <string>密码</string>
          </property>
         </widget>
        </item>
@@ -252,17 +258,17 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="login_btn">
+        <widget class="ElaPushButton" name="login_btn">
          <property name="minimumSize">
           <size>
            <width>80</width>
-           <height>30</height>
+           <height>36</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>80</width>
-           <height>30</height>
+           <height>36</height>
           </size>
          </property>
          <property name="styleSheet">
@@ -304,17 +310,17 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="reg_btn">
+        <widget class="ElaPushButton" name="reg_btn">
          <property name="minimumSize">
           <size>
            <width>80</width>
-           <height>30</height>
+           <height>36</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>120</width>
-           <height>30</height>
+           <height>36</height>
           </size>
          </property>
          <property name="styleSheet">
@@ -349,6 +355,16 @@
    <class>ClickedLabel</class>
    <extends>QLabel</extends>
    <header>clickedlabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ElaLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElaPushButton</class>
+   <extends>QPushButton</extends>
+   <header>ElaPushButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

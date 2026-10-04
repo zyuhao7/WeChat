@@ -99,9 +99,6 @@
           <height>15</height>
          </size>
         </property>
-        <property name="styleSheet">
-         <string notr="true">border-image: url(:/res/tipclose.png);</string>
-        </property>
         <property name="text">
          <string/>
         </property>

@@ -2,12 +2,7 @@
 #include <json/json.h>
 #include <json/value.h>
 #include <json/reader.h>
-#include "const.h"
 #include "ConfigMgr.h"
-#include "hiredis.h"
-#include "RedisMgr.h"
-#include "MysqlMgr.h"
-#include "AsioIOServicePool.h"
 #include <memory>
 #include <string>
 #include <thread>

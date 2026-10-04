@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "const.h"
 #include "MysqlDao.h"
 #include "Singleton.h"
 class MysqlMgr : public Singleton<MysqlMgr>

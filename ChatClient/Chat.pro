@@ -2,7 +2,10 @@ QT     += core gui  network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++17
+
+# Modern Fluent UI toolkit (ElaWidgetTools), compiled directly into the app.
+include(third_party/ElaWidgetTools/ElaWidgetTools.pri)
 
 
 # The following define makes your compiler emit warnings if you use
@@ -123,7 +126,6 @@ FORMS += \
     grouptipitem.ui \
     loadingdlg.ui \
     logindialog.ui \
-    mainwindow.ui \
     registdialog.ui \
     resetdialog.ui
 
@@ -136,8 +138,7 @@ RESOURCES += \
     rc.qrc
 
 DISTFILES += \
-    config.ini \
-    style/stylesheet.qss
+    config.ini
 
 CONFIG(debug, debug|release) {
         #debug
@@ -150,8 +151,8 @@ CONFIG(debug, debug|release) {
     #replace "/" in the output dir with "\"
     OutputDir =  $${OUT_PWD}/$${DESTDIR}
     OutputDir = $$replace(OutputDir, /, \\)
-    //run the copy command
-    QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\" &
+    #run the copy command
+    win32: QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\" &
 
     # First, define the path of the static folder
     StaticDir = $${PWD}/static
@@ -159,9 +160,9 @@ CONFIG(debug, debug|release) {
     StaticDir = $$replace(StaticDir, /, \\)
     #message($${StaticDir})
     # use the xcopy command to copy the folder; /E copies subdirs and their contents including empty ones, /I creates the target dir if missing, /Y overwrites without prompting.
-     QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
+    win32: QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
 }else{
-      #release
+    #release
     message("release mode")
     #the dir to copy is all dll/lib files under the project's release dir, e.g. project at D:\QT\Test
     #PWD is D:/QT/Test, DllFile = D:/QT/Test/release/*.dll
@@ -172,7 +173,7 @@ CONFIG(debug, debug|release) {
     OutputDir =  $${OUT_PWD}/$${DESTDIR}
     OutputDir = $$replace(OutputDir, /, \\)
     #run the copy command
-    QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\"
+    win32: QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\"
 
     # First, define the path of the static folder
     StaticDir = $${PWD}/static
@@ -180,7 +181,7 @@ CONFIG(debug, debug|release) {
     StaticDir = $$replace(StaticDir, /, \\)
     #message($${StaticDir})
     # use the xcopy command to copy the folder; /E copies subdirs and their contents including empty ones, /I creates the target dir if missing, /Y overwrites without prompting.
-     QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
+    win32: QMAKE_POST_LINK += xcopy /Y /E /I \"$$StaticDir\" \"$$OutputDir\\static\\\"
 }
 
 win32-msvc*:QMAKE_CXXFLAGS += /wd"4819" /utf-8

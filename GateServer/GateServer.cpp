@@ -5,7 +5,6 @@
 #include "CServer.h"
 #include "ConfigMgr.h"
 #include "RedisMgr.h"
-#include "const.h"
 
 void TestRedis() {
     //redis must be running before connecting

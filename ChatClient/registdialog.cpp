@@ -52,6 +52,9 @@ RegistDialog::RegistDialog(QWidget *parent) :
     ui->confirm_visible->SetState("unvisible","unvisible_hover","","visible",
                                     "visible_hover","");
 
+    ui->pass_visible->SetIcons(ElaIconType::EyeSlash, ElaIconType::Eye);
+    ui->confirm_visible->SetIcons(ElaIconType::EyeSlash, ElaIconType::Eye);
+
     //connect the click event
 
     connect(ui->pass_visible, &ClickedLabel::clicked, this, [this]() {

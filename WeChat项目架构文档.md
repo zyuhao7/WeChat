@@ -521,3 +521,67 @@ WeChat/
 **后续待办顺序**：`day31 文件传输` → `day36 头像裁剪` → `day37 聊天记录持久化` → `day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
 > 注意：day37 是分水岭。当前消息不落库、纯在线转发；做多媒体与视频前需先补齐聊天记录存储。
+
+---
+
+## 13. 功能验证与 Mock 账户（standard.txt 第 6 条）
+
+### 13.1 Mock 账户：绕开真实邮箱验证码
+
+注册链路（`/get_verify_code` → 邮件 → `/user_register`）依赖真实邮箱，本地无法闭环。为完整验证功能，新增 `scripts/mock_accounts.sh`：
+
+```bash
+scripts/mock_accounts.sh [count]     # 默认 5，生成 mock1..mock5
+```
+
+- 直接调用存储过程 `reg_user` 建号，幂等（已存在则复用），密码统一 `123456`。
+- 同时往 Redis 写入 `code_<email> = 1234`（EX 600），使 `/user_register` 也能用 `verifycode=1234` 走通完整注册链路，无需真的收邮件。
+- 当前已建：mock1=uid2、mock2=uid5、mock3=uid6、mock4=uid7、mock5=uid8、mock6=uid9。
+
+### 13.2 端到端功能验证
+
+`scripts/tcp_e2e.py`（`uv run scripts/tcp_e2e.py`）用裸 TCP 走完整协议，要求服务已启动 + mock 账户已建：
+
+| 步骤 | 消息 ID | 断言 |
+|------|---------|------|
+| TCP 登录 | 1005/1006 | `error=0`，回包 `name` 正确 |
+| 按名搜索用户 | 1007/1008 | 命中对方 uid + name |
+| 加好友申请 | 1009/1010 + 通知 1011 | 申请方 `error=0`，对方收到 `applyuid` |
+| 好友认证 | 1013/1014 + 通知 1015 | 认证方 `error=0`，申请方收到 `fromuid` |
+| 文本聊天 | 1017/1018 + 通知 1019 | 发送方 `error=0`，对方收到 `content` |
+
+脚本特意让 mock1 先登录、再去取 mock2 的渲染服务器，使二者落在**不同 ChatServer**（打印 `cross-node: True`），从而真正走通跨节点 gRPC 通知路径。最终结果 **11/11 通过**。
+
+### 13.3 本轮验证发现并修复的问题
+
+1. **MySQL 排序规则不一致导致注册静默失败**：`db01.sql` 建库用 `COLLATE utf8mb4_unicode_ci`，而 InnoDB 表默认 `utf8mb4_0900_ai_ci`；存储过程入参继承库级排序规则，`CALL reg_user(...)` 报 `ERROR 1267 Illegal mix of collations`，被 `EXIT HANDLER` 吞掉后返回 -1。修复：`sql/db01.sql` 去掉库级 `COLLATE`，并 `ALTER DATABASE db01 COLLATE utf8mb4_0900_ai_ci`，重建 `reg_user`。注册、登录随即恢复。
+
+2. **连接池事务状态泄漏（autocommit 未复位）**：`ChatServer/MysqlDao.cpp` 的 `AddFriend` 与 `GateServer/MysqlDao.cpp` 的 `RegUserTransaction` 都调用了 `setAutoCommit(false)` 开启事务，但归还连接到池之前从未复位。连接被 `Defer` 原样放回后仍处手动提交模式，下一个借用者会落在一个陈旧未提交事务里、拿锁阻塞——表现为 TCP E2E 的「好友认证」偶发卡死。修复：在两个 `Defer` 归还连接前加 `setAutoCommit(true)`（含异常保护）。
+
+3. **负载均衡计数从不更新（`logincount` 只在 60s 定时器里刷新）**：`RedisMgr::IncreaseCount/DecreaseCount` 有定义但**全工程无任何调用**，`logincount` 仅由每 60s 的巡检定时器写入实际在线数。服务刚起的头一分钟内所有客户端读到的计数都是 0，StatusServer 的「最少连接」退化成永远选 `unordered_map` 里的第一个节点——所有客户端挤到同一台 ChatServer，跨节点 gRPC 路径根本走不到。修复：登录成功处 `LogicSystem::LoginHandler` 调用 `IncreaseCount`，会话清理处 `CServer::ClearSession` 对已登录会话 `DecreaseCount`（定时器继续做绝对值对账）。修复后 E2E 中两名用户稳定分散到 8090/8091，`cross-node: True`。
+
+4. **Redis 未被纳入启动脚本**：Redis（:6380）是 ChatServer 与 VerifyServer 的硬依赖，但没有任何脚本启动它。Redis 不在时整套服务「看似起来了」实则半死：ChatServer 阻塞在连接、VerifyServer 直接崩溃、只剩 Gate+Status。修复：`start_all.sh` 在启动前探测 6380，未响应则拉起本地实例（端口/密码取自各配置）；`stop_all.sh` 会一并关停。
+
+5. **重启时 acceptor 报 `Address already in use`**：ChatServer/GateServer 的 `CServer` 在构造函数初始化列表里直接 bind 端口，没机会设置 `SO_REUSEADDR`。快速重启时上一实例残留的连接会让新 bind 失败（表现为 chatserver2 起不来，`:8091` 拒绝连接）。修复：改为显式 `open → set_option(reuse_address) → bind → listen`。
+
+### 13.4 需要 sudo 的指令（暂未执行，请手动运行）
+
+```bash
+# 安装 DBeaver（MySQL/Redis 图形客户端；.deb 已下载到 /tmp/dbeaver-ce.deb）
+sudo apt install -y /tmp/dbeaver-ce.deb
+
+# 若缺少系统库（Qt6 运行/构建、Boost、hiredis、mysql-client 等按报错补齐）
+sudo apt install -y libboost-all-dev libhiredis-dev default-libmysqlclient-dev \
+                    mysql-client redis-tools qt6-base-dev qt6-base-dev-tools
+```
+
+### 13.5 Qt UI 美化：可复用的框架/主题
+
+当前 UI 是 Qt Widgets + QSS（`ChatClient/resource/stylesheet.qss`），改主题只需替换 QSS，不必重写控件。可选方案：
+
+- **QDarkStyleSheet**（最省事）：成熟的 Qt Widgets 暗色主题，`pip install qdarkstyle` 或直接取 `qdarkstyle/style.qss`，一行 `app.setStyleSheet(qdarkstyle.load_stylesheet())` 即可换肤，与本项目 QSS 机制完全兼容。
+- **Qt-Material**：Material Design 主题（`qt-material`），支持明/暗与多主色，同样面向 Qt Widgets。
+- **QFluentWidgets / ElaWidgetTools**：现代 Win11/云母风格组件库，观感最好但需替换部分控件基类，改动量最大。
+- **手改 QSS**：在现有 `stylesheet.qss` 基础上重配色/圆角/间距，零依赖，适合只做视觉微调。
+
+**编辑方式**：`.ui` 文件是纯 XML，在 WSL 里用任意编辑器改或在 Qt Creator 的 Design 模式改都行——两者等价，Design 模式只是可视化预览。QSS 本身任何编辑器可改，改完直接在 WSL 里以 `./scripts/start_client.sh` 起客户端看效果（WSLg 可直接出窗口）。**建议**先上 QDarkStyleSheet 快速换肤，再按需局部调 QSS。

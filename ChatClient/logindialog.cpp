@@ -8,6 +8,20 @@
 #include <QPainterPath>
 #include <QRegularExpression>
 
+namespace {
+// translate the server's error code into a specific login message,
+// instead of collapsing every failure into one generic tip
+QString loginErrText(int code)
+{
+    switch (code) {
+    case 1001: return QStringLiteral("请求参数错误");
+    case 1002: return QStringLiteral("服务异常，请稍后重试");
+    case 1009: return QStringLiteral("邮箱或密码错误");
+    case 1011: return QStringLiteral("用户不存在或无效");
+    default:   return QStringLiteral("登录失败 (错误码 %1)").arg(code);
+    }
+}
+} // namespace
 
 LoginDialog::LoginDialog(QWidget *parent) :
     QDialog(parent),
@@ -48,7 +62,7 @@ void LoginDialog::initHttpHandlers()
       _handlers.insert(ReqId::ID_LOGIN_USER, [this](QJsonObject jsonObj){
           int error = jsonObj["error"].toInt();
           if(error != ErrorCodes::SUCCESS){
-              showTip(tr("参数错误"),false);
+              showTip(loginErrText(error),false);
               enableBtn(true);
               return;
           }

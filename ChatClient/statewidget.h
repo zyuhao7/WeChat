@@ -2,6 +2,8 @@
 #define STATEWIDGET_H
 #include <QLabel>
 #include <QEnterEvent>
+#include <QPixmap>
+#include "ElaWidgetToolsDef.h"
 #include "global.h"
 
 class StateWidget : public QWidget
@@ -12,6 +14,12 @@ public:
 
       void SetState(QString normal="", QString hover="", QString press="",
                     QString select="", QString select_hover="", QString select_press="");
+
+      // Draw a real icon (Ela icon font) for the normal / selected states,
+      // replacing the removed QSS border-image.
+      void SetIcons(ElaIconType::IconName normal,
+                    ElaIconType::IconName selected,
+                    int pixelSize = 0);
 
       ClickLbState GetCurState();
       void ClearState();
@@ -40,6 +48,10 @@ public:
 
       ClickLbState _curstate;
       QLabel * _red_point;
+
+      bool    _has_icons;
+      QPixmap _pix_normal;
+      QPixmap _pix_selected;
 
   signals:
       void clicked(void);
