@@ -1,5 +1,4 @@
 #include "VerifyGrpcClient.h"
-#include "const.h"
 
 VerifyGrpcClient::VerifyGrpcClient() {
 	auto& gCfgMgr = ConfigMgr::Inst();
