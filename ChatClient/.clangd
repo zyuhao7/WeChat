@@ -1,0 +1,5 @@
+# ChatClient builds with qmake, not CMake, so it is absent from build/
+# compile_commands.json. Point clangd at the ChatClient-local database
+# (generated from the qmake Makefile flags) so Qt headers resolve.
+CompileFlags:
+  CompilationDatabase: .
