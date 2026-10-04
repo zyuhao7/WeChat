@@ -11,6 +11,9 @@ FriendInfoPage::FriendInfoPage(QWidget *parent) :
     ui->msg_chat->SetState("normal","hover","press");
     ui->video_chat->SetState("normal","hover","press");
     ui->voice_chat->SetState("normal","hover","press");
+    ui->msg_chat->SetIcons(ElaIconType::Message, ElaIconType::Message, ElaIconType::Message, 26);
+    ui->voice_chat->SetIcons(ElaIconType::Phone, ElaIconType::Phone, ElaIconType::Phone, 26);
+    ui->video_chat->SetIcons(ElaIconType::Video, ElaIconType::Video, ElaIconType::Video, 26);
 }
 
 FriendInfoPage::~FriendInfoPage()

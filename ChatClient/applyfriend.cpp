@@ -2,6 +2,7 @@
 #include "ui_applyfriend.h"
 #include "clickedlabel.h"
 #include "friendlabel.h"
+#include "ElaIcon.h"
 #include <QScrollBar>
 #include <QJsonDocument>
 #include "usermgr.h"
@@ -34,6 +35,8 @@ ApplyFriend::ApplyFriend(QWidget *parent) :
         "同学", "朋友", "家人", "亲戚", "老师", "师傅", "陪玩", "主包", "Leader", "学妹"
     };
     connect(ui->more_lb, &ClickedOnceLabel::clicked, this, &ApplyFriend::ShowMoreLabel);
+    ui->more_lb->setPixmap(ElaIcon::getInstance()->getElaIcon(ElaIconType::ChevronDown, 18).pixmap(18, 18));
+    ui->more_lb->setAlignment(Qt::AlignCenter);
     InitTipLbs();
     //connect the input label Enter event
     connect(ui->lb_ed, &CustomizeEdit::returnPressed, this, &ApplyFriend::SlotLabelEnter);

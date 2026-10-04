@@ -1,4 +1,5 @@
 #include "statewidget.h"
+#include "ElaIcon.h"
 #include <QPaintEvent>
 #include <QStyleOption>
 #include <QPainter>
@@ -8,11 +9,26 @@
 
 StateWidget::StateWidget(QWidget *parent)
     :QWidget(parent),
-      _curstate(ClickLbState::Normal)
+      _curstate(ClickLbState::Normal),
+      _has_icons(false)
 {
     setCursor(Qt::PointingHandCursor);
     // add the red dot
     AddRedPoint();
+}
+
+void StateWidget::SetIcons(ElaIconType::IconName normal,
+                           ElaIconType::IconName selected,
+                           int pixelSize)
+{
+    int box = qMin(minimumWidth() > 1 ? minimumWidth() : 24,
+                   minimumHeight() > 1 ? minimumHeight() : 24);
+    int size = pixelSize > 0 ? pixelSize : qBound(16, box, 24);
+
+    _pix_normal   = ElaIcon::getInstance()->getElaIcon(normal, size).pixmap(size, size);
+    _pix_selected = ElaIcon::getInstance()->getElaIcon(selected, size).pixmap(size, size);
+    _has_icons = true;
+    update();
 }
 
 void StateWidget::SetState(QString normal, QString hover, QString press, QString select, QString select_hover, QString select_press)
@@ -64,6 +80,8 @@ void StateWidget::AddRedPoint()
     // add the red-dot indicator
     _red_point = new QLabel();
     _red_point->setObjectName("red_point");
+    _red_point->setPixmap(QPixmap(":/res/red_point.png"));
+    _red_point->setScaledContents(true);
     QVBoxLayout* layout2 = new QVBoxLayout;
     _red_point->setAlignment(Qt::AlignCenter);
     layout2->addWidget(_red_point);
@@ -85,6 +103,11 @@ void StateWidget::paintEvent(QPaintEvent *event)
     opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+    if(_has_icons){
+        const QPixmap& pm = (_curstate == ClickLbState::Selected) ? _pix_selected : _pix_normal;
+        QRect target(QPoint((width() - pm.width()) / 2, (height() - pm.height()) / 2), pm.size());
+        p.drawPixmap(target, pm);
+    }
     return;
 }
 
