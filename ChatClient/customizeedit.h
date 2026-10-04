@@ -1,9 +1,12 @@
 #ifndef CUSTOMIZEEDIT_H
 #define CUSTOMIZEEDIT_H
-#include <QLineEdit>
 #include <QDebug>
+#include "ElaLineEdit.h"
 
-class CustomizeEdit : public QLineEdit
+// Extends the Fluent ElaLineEdit so the friend-apply inputs and the chat
+// search box render in the Ela style while keeping the custom max-length
+// and focus-out signal this app relies on.
+class CustomizeEdit : public ElaLineEdit
 {
     Q_OBJECT
 public:
@@ -12,8 +15,8 @@ public:
 protected:
     void focusOutEvent(QFocusEvent* event) override
     {
-        // run the focus-out handling
-        QLineEdit::focusOutEvent(event);
+        // run the Ela focus-out handling (hides the clear button, animates the mark)
+        ElaLineEdit::focusOutEvent(event);
         // emit the focus-out signal
         emit sig_focus_out();
     }

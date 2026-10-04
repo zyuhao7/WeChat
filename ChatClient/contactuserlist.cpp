@@ -8,12 +8,16 @@
 #include <QRandomGenerator>
 #include <QCoreApplication>
 #include <QTimer>
+#include "ElaScrollBar.h"
 
 ContactUserList::ContactUserList(QWidget *parent)
     : _load_pending(false),
       _add_friend_item(nullptr)
 {
     Q_UNUSED(parent);
+    // Fluent scrollbars; the viewportEnter/Leave filter below still toggles the policy.
+    this->setVerticalScrollBar(new ElaScrollBar(this));
+    this->setHorizontalScrollBar(new ElaScrollBar(Qt::Horizontal, this));
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
