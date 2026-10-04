@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>res/ice.png</file>
-        <file>style/stylesheet.qss</file>
         <file>res/add_friend.png</file>
         <file>res/add_friend_hover.png</file>
         <file>res/add_friend_normal.png</file>
