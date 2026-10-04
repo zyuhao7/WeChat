@@ -2,11 +2,15 @@
 #include <QWheelEvent>
 #include <QScrollBar>
 #include "listitembase.h"
+#include "ElaScrollBar.h"
 
 
 ApplyFriendList::ApplyFriendList(QWidget *parent)
 {
     Q_UNUSED(parent);
+    // Fluent scrollbars; the viewportEnter/Leave filter below still toggles the policy.
+    this->setVerticalScrollBar(new ElaScrollBar(this));
+    this->setHorizontalScrollBar(new ElaScrollBar(Qt::Horizontal, this));
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
