@@ -3,6 +3,7 @@
 #include "usermgr.h"
 #include <QTimer>
 #include <QCoreApplication>
+#include "ElaScrollBar.h"
 
 
 ChatUserList::ChatUserList(QWidget *parent)
@@ -10,6 +11,9 @@ ChatUserList::ChatUserList(QWidget *parent)
       _load_pending(false)
 {
     Q_UNUSED(parent);
+    // Fluent scrollbars; the viewportEnter/Leave filter below still toggles the policy.
+    this->setVerticalScrollBar(new ElaScrollBar(this));
+    this->setHorizontalScrollBar(new ElaScrollBar(Qt::Horizontal, this));
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
