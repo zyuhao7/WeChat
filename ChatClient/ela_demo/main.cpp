@@ -7,6 +7,7 @@
 #include <QFont>
 
 #include "ElaApplication.h"
+#include "ElaTheme.h"
 #include "ElaWidget.h"
 #include "ElaText.h"
 #include "ElaLineEdit.h"
@@ -19,6 +20,12 @@ int main(int argc, char* argv[])
     // Enable Ela framework (theme + frameless window plumbing)
     eApp->init();
     eApp->setFontPixelSize(15);
+
+    // Optional dark theme for demoing: ELA_DARK=1
+    if (qEnvironmentVariableIsSet("ELA_DARK"))
+    {
+        eTheme->setThemeMode(ElaThemeType::Dark);
+    }
 
     ElaWidget w;
     w.setWindowTitle("Chat");
