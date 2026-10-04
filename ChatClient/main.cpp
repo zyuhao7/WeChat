@@ -4,9 +4,17 @@
 #include <QFile>
 #include <QDebug>
 
+#include "ElaApplication.h"
+#include "ElaTheme.h"
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // Initialize the Fluent (ElaWidgetTools) framework: registers its resources
+    // and applies the base font/attributes used by all Ela widgets.
+    eApp->init();
+
     QFile qss(":/style/stylesheet.qss");
     if(qss.open(QFile::ReadOnly))
     {
