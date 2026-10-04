@@ -13,6 +13,9 @@
 #include "grouptipitem.h"
 #include "conuseritem.h"
 
+#include "ElaTheme.h"
+#include "ElaWidgetToolsDef.h"
+
 #include <QAction>
 #include <QMouseEvent>
 #include <QRandomGenerator>
@@ -35,6 +38,20 @@ ChatDialog::ChatDialog(QWidget *parent) :
     ui->setupUi(this);
     ui->add_btn->SetState("normal", "hover", "press");
 	ui->add_btn->setProperty("state", "normal");
+    ui->add_btn->SetIcons(ElaIconType::UserPlus, ElaIconType::UserPlus, ElaIconType::UserPlus);
+
+    // Theme the list selection/hover with the current Ela accent instead of the
+    // platform default (which showed as a flat Windows-blue highlight).
+    const QString listQss = QString(
+        "QListWidget::item{border:none;}"
+        "QListWidget::item:hover{background:%3;border:none;}"
+        "QListWidget::item:selected{background:%1;color:%2;border:none;}")
+        .arg(ElaThemeColor(ElaThemeType::Light, PrimaryNormal).name(),
+             ElaThemeColor(ElaThemeType::Light, BasicTextInvert).name(),
+             ElaThemeColor(ElaThemeType::Light, BasicHover).name());
+    ui->chat_user_list->setStyleSheet(listQss);
+    ui->con_user_list->setStyleSheet(listQss);
+    ui->search_list->setStyleSheet(listQss);
 
     QAction* searchAction = new QAction(ui->search_edit);
     searchAction->setIcon(QIcon(":/res/search.png"));
@@ -91,6 +108,8 @@ ChatDialog::ChatDialog(QWidget *parent) :
     ui->side_chat_lb->setProperty("state","normal");
     ui->side_chat_lb->SetState("normal","hover","pressed","selected_normal","selected_hover","selected_pressed");
     ui->side_contact_lb->SetState("normal","hover","pressed","selected_normal","selected_hover","selected_pressed");
+    ui->side_chat_lb->SetIcons(ElaIconType::Message, ElaIconType::Message);
+    ui->side_contact_lb->SetIcons(ElaIconType::Person, ElaIconType::Person);
 
     AddLBGroup(ui->side_chat_lb);
     AddLBGroup(ui->side_contact_lb);

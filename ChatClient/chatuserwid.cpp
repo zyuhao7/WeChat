@@ -8,6 +8,8 @@ ChatUserWid::ChatUserWid(QWidget *parent) :
     ui->setupUi(this);
     SetItemType(ListItemType::CHAT_USER_ITEM);
    ui->red_point->raise();
+   ui->red_point->setPixmap(QPixmap(":/res/red_point.png"));
+   ui->red_point->setScaledContents(true);
    ShowRedPoint(false);
 }
 

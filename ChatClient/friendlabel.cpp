@@ -10,6 +10,7 @@ FriendLabel::FriendLabel(QWidget *parent) :
     ui->setupUi(this);
     ui->close_lb->SetState("normal","hover","pressed",
                              "selected_normal","selected_hover","selected_pressed");
+    ui->close_lb->SetIcons(ElaIconType::Xmark, ElaIconType::Xmark);
 
       connect(ui->close_lb, &ClickedLabel::clicked, this, &FriendLabel::slot_close);
 }
