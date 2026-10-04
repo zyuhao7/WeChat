@@ -643,6 +643,18 @@ exercised. Result: **11/11 passed**.
    (the timer keeps reconciling to the absolute value). After the fix the two E2E users split across
    8090/8091 and `cross-node: True`.
 
+4. **Redis not managed by the start scripts** — Redis (:6380) is a hard dependency of both
+   ChatServer and VerifyServer, yet nothing started it. Without it the stack came up half-dead:
+   ChatServer blocked on connect, VerifyServer crashed on startup, and only Gate+Status survived.
+   Fix: `start_all.sh` probes :6380 and launches a local instance if nothing answers (port/password
+   taken from the configs); `stop_all.sh` shuts it down too.
+
+5. **Acceptor hit `Address already in use` on restart** — the `CServer` of ChatServer/GateServer
+   bound the port directly in the constructor initializer list, leaving no chance to set
+   `SO_REUSEADDR`. On a quick restart the previous instance's lingering connections made the rebind
+   fail (chatserver2 refused to start on :8091). Fix: open, set the reuse option, bind and listen
+   explicitly.
+
 ### 13.4 Commands that need sudo (not run here — run manually)
 
 ```bash

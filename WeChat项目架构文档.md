@@ -560,6 +560,10 @@ scripts/mock_accounts.sh [count]     # 默认 5，生成 mock1..mock5
 
 3. **负载均衡计数从不更新（`logincount` 只在 60s 定时器里刷新）**：`RedisMgr::IncreaseCount/DecreaseCount` 有定义但**全工程无任何调用**，`logincount` 仅由每 60s 的巡检定时器写入实际在线数。服务刚起的头一分钟内所有客户端读到的计数都是 0，StatusServer 的「最少连接」退化成永远选 `unordered_map` 里的第一个节点——所有客户端挤到同一台 ChatServer，跨节点 gRPC 路径根本走不到。修复：登录成功处 `LogicSystem::LoginHandler` 调用 `IncreaseCount`，会话清理处 `CServer::ClearSession` 对已登录会话 `DecreaseCount`（定时器继续做绝对值对账）。修复后 E2E 中两名用户稳定分散到 8090/8091，`cross-node: True`。
 
+4. **Redis 未被纳入启动脚本**：Redis（:6380）是 ChatServer 与 VerifyServer 的硬依赖，但没有任何脚本启动它。Redis 不在时整套服务「看似起来了」实则半死：ChatServer 阻塞在连接、VerifyServer 直接崩溃、只剩 Gate+Status。修复：`start_all.sh` 在启动前探测 6380，未响应则拉起本地实例（端口/密码取自各配置）；`stop_all.sh` 会一并关停。
+
+5. **重启时 acceptor 报 `Address already in use`**：ChatServer/GateServer 的 `CServer` 在构造函数初始化列表里直接 bind 端口，没机会设置 `SO_REUSEADDR`。快速重启时上一实例残留的连接会让新 bind 失败（表现为 chatserver2 起不来，`:8091` 拒绝连接）。修复：改为显式 `open → set_option(reuse_address) → bind → listen`。
+
 ### 13.4 需要 sudo 的指令（暂未执行，请手动运行）
 
 ```bash
