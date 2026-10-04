@@ -1,9 +1,8 @@
 #include "ChatGrpcClient.h"
+#include <iostream>
 #include "RedisMgr.h"
 #include "ConfigMgr.h"
-#include "UserMgr.h"
 
-#include "CSession.h"
 #include "MysqlMgr.h"
 
 ChatGrpcClient::ChatGrpcClient()
@@ -73,7 +72,7 @@ bool ChatGrpcClient::GetBaseInfo(std::string base_key, int uid, std::shared_ptr<
 		userinfo->sex = root["sex"].asInt();
 		userinfo->icon = root["icon"].asString();
 		std::cout << "user login uid is  " << userinfo->uid << " name  is "
-			<< userinfo->name << " pwd is " << userinfo->pwd << " email is " << userinfo->email << endl;
+			<< userinfo->name << " pwd is " << userinfo->pwd << " email is " << userinfo->email << std::endl;
 	}
 	else {
 		//if not in redis, query mysql

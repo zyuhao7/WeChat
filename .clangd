@@ -2,9 +2,3 @@
 # resolve the real include paths (Boost, gRPC, jsoncpp, hiredis, generated proto).
 CompileFlags:
   CompilationDatabase: build
-
-# Many headers are pulled in transitively (const.h, AsioIOServicePool.h, ...).
-# Turn off the "included header is not used directly" hint so those includes
-# are not flagged.
-Diagnostics:
-  UnusedIncludes: None
