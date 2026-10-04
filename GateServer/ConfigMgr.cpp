@@ -1,4 +1,5 @@
 #include "ConfigMgr.h"
+#include <iostream>
 
 ConfigMgr::ConfigMgr()
 {

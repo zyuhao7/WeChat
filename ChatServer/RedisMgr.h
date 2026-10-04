@@ -1,9 +1,10 @@
 #pragma once
-#include "const.h"
 #include "hiredis.h"
 #include <queue>
 #include <atomic>
 #include <mutex>
+#include <iostream>
+#include <condition_variable>
 #include <thread>
 #include <chrono>
 #include "Singleton.h"
@@ -23,7 +24,7 @@ public:
 
             auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
             if (reply->type == REDIS_REPLY_ERROR) {
-                std::cout << "ÈÏÖ¤Ê§°Ü" << std::endl;
+                std::cout << "ï¿½ï¿½Ö¤Ê§ï¿½ï¿½" << std::endl;
                 //on success, free the redisReply memory returned after redisCommand executes
                 freeReplyObject(reply);
                 continue;
@@ -31,7 +32,7 @@ public:
 
             //on success, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
-            std::cout << "ÈÏÖ¤³É¹¦" << std::endl;
+            std::cout << "ï¿½ï¿½Ö¤ï¿½É¹ï¿½" << std::endl;
             connections_.push(context);
         }
 
@@ -126,7 +127,7 @@ private:
         auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
         if (reply->type == REDIS_REPLY_ERROR)
         {
-            std::cout << "ÖØÁ¬ÈÏÖ¤Ê§°Ü!" << std::endl;
+            std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤Ê§ï¿½ï¿½!" << std::endl;
             // on failure, free the redisReply memory returned after redisCommand executes
             freeReplyObject(reply);
             redisFree(context);
@@ -134,7 +135,7 @@ private:
         }
         // on success, free the redisReply memory returned after redisCommand executes
         freeReplyObject(reply);
-        std::cout << "ÖØÁ¬ÈÏÖ¤³É¹¦!" << std::endl;
+        std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½É¹ï¿½!" << std::endl;
         // hand the context to the recycle function.
         returnConnection(context);
         return true;
@@ -244,12 +245,12 @@ private:
                 auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
                 if (reply->type == REDIS_REPLY_ERROR)
                 {
-                    std::cout << "ÈÏÖ¤Ê§°Ü! " << std::endl;
+                    std::cout << "ï¿½ï¿½Ö¤Ê§ï¿½ï¿½! " << std::endl;
                     freeReplyObject(reply);
                     continue;
                 }
                 freeReplyObject(reply);
-                std::cout << "ÈÏÖ¤³É¹¦! " << std::endl;
+                std::cout << "ï¿½ï¿½Ö¤ï¿½É¹ï¿½! " << std::endl;
                 connections_.push(context);
             }
         }

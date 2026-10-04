@@ -1,6 +1,6 @@
 #pragma once
 #include "const.h"
-
+#include "Singleton.h"
 class HttpConnection;
 typedef std::function<void(std::shared_ptr<HttpConnection>)> HttpHandler;
 

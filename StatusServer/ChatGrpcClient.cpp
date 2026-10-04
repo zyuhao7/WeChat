@@ -1,4 +1,5 @@
 #include "ChatGrpcClient.h"
+#include "ConfigMgr.h"
 
 
 ChatGrpcClient::ChatGrpcClient()
