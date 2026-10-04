@@ -5,6 +5,14 @@ bin/
 # 运行日志
 logs/
 
+# Qt in-source build artifacts (qmake run inside ChatClient/)
+ChatClient/Makefile
+ChatClient/.qmake.stash
+ChatClient/moc_*.cpp
+ChatClient/moc_predefs.h
+ChatClient/qrc_*.cpp
+ChatClient/ui_*.h
+
 # Node
 VerifyServer/node_modules/
 
