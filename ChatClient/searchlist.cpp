@@ -9,11 +9,15 @@
 #include <QJsonDocument>
 #include "findfaildlg.h"
 #include <QScrollBar>
+#include "ElaScrollBar.h"
 
 SearchList::SearchList(QWidget *parent)
 	:QListWidget(parent), _send_pending(false), _find_dlg(nullptr), _search_edit(nullptr), _loadingDialog(nullptr)
 {
     Q_UNUSED(parent);
+     // Fluent scrollbars; the viewportEnter/Leave filter below still toggles the policy.
+     this->setVerticalScrollBar(new ElaScrollBar(this));
+     this->setHorizontalScrollBar(new ElaScrollBar(Qt::Horizontal, this));
      this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
      this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     // install the event filter
