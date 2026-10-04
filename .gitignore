@@ -20,5 +20,6 @@ VerifyServer/node_modules/
 # 编辑器
 .vscode/
 .idea/
+.cache/
 *.o
 *.out
