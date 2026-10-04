@@ -10,7 +10,7 @@ TcpMgr::~TcpMgr()
 
 void TcpMgr::CloseConnection()
 {
-    _socket.close();
+    _socket.abort();
 }
 
 TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_message_len(0)
@@ -131,6 +131,11 @@ TcpMgr::TcpMgr():_host(""),_port(0),_b_recv_pending(false),_message_id(0),_messa
         // handle the disconnection
         QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
             qDebug() << "Disconnected from server.";
+            // drop any half-parsed frame so the next session starts clean
+            _buffer.clear();
+            _b_recv_pending = false;
+            _message_id = 0;
+            _message_len = 0;
             // emit a signal to notify the UI
             emit sig_connection_closed();
         });
@@ -488,6 +493,15 @@ void TcpMgr::slot_tcp_connect(ServerInfo si)
       qDebug() << "Connecting to server...";
       _host = si.Host;
       _port = static_cast<uint16_t>(si.Port.toUInt());
+      // a stale socket (still closing after a heartbeat timeout, or mid
+      // lookup for a previous host) turns connectToHost into a no-op.
+      if (_socket.state() != QAbstractSocket::UnconnectedState) {
+          _socket.abort();
+      }
+      _buffer.clear();
+      _b_recv_pending = false;
+      _message_id = 0;
+      _message_len = 0;
       _socket.connectToHost(si.Host, _port);
 }
 

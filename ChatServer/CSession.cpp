@@ -225,7 +225,7 @@ void CSession::NotifyOffline(int uid)
 bool CSession::IsHeartbeatExpired(std::time_t& now)
 {
 	double diff_sec = std::difftime(now, _last_heartbeat);
-	if (diff_sec > 60) {
+	if (diff_sec > 300) {
 		std::cout << "heartbeat expired, session id is  " << _session_id << endl;
 		return true;
 	}

@@ -189,7 +189,7 @@ ChatDialog::ChatDialog(QWidget *parent) :
        emit TcpMgr::GetInstance()->sig_send_data(ReqId::ID_HEART_BEAT_REQ, jsonData);
    });
 
-   _timer->start(10000);
+   _timer->start(5000);
 }
 
 ChatDialog::~ChatDialog()
