@@ -138,8 +138,7 @@ RESOURCES += \
     rc.qrc
 
 DISTFILES += \
-    config.ini \
-    style/stylesheet.qss
+    config.ini
 
 CONFIG(debug, debug|release) {
         #debug
