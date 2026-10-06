@@ -16,18 +16,29 @@ void UserMgr::SetToken(QString token)
     _token = token;
 }
 
+// _user_info is null until the login response arrives, so the accessors answer with an
+// empty identity rather than dereferencing it.
 int UserMgr::GetUid()
 {
+    if (!_user_info)
+        return 0;
+
     return _user_info->_uid;
 }
 
 QString UserMgr::GetName()
 {
+    if (!_user_info)
+        return QString();
+
     return _user_info->_name;
 }
 
 QString UserMgr::GetIcon()
 {
+    if (!_user_info)
+        return QString();
+
     return _user_info->_icon;
 }
 

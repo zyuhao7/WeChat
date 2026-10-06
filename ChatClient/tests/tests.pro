@@ -20,7 +20,8 @@ INCLUDEPATH += $$CLIENT_DIR
 CLIENT_SOURCES = $$files($$CLIENT_DIR/*.cpp)
 CLIENT_SOURCES -= $$files($$CLIENT_DIR/main.cpp)
 
-SOURCES += test_user_list_loading.cpp \
+SOURCES += test_usermgr.cpp \
+           test_user_list_loading.cpp \
            test_chat_dialog.cpp \
            test_chat_text_msg.cpp \
            tests_main.cpp \
