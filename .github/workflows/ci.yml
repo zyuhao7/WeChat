@@ -27,13 +27,17 @@ jobs:
             libboost-system-dev libboost-filesystem-dev \
             libprotobuf-dev protobuf-compiler \
             libgrpc++-dev protobuf-compiler-grpc \
-            libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev
+            libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev \
+            libgtest-dev
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --parallel "$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
   client:
     name: Client (Qt6 / qmake)
