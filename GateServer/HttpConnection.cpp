@@ -1,5 +1,6 @@
 #include "HttpConnection.h"
 #include "LogicSystem.h"
+#include "UrlCodec.h"
 
 HttpConnection::HttpConnection(boost::asio::io_context& ioc)
 	:_socket(ioc)
@@ -25,74 +26,6 @@ void HttpConnection::Start()
 		}
 		});
 }
-
-//convert char to hex
-unsigned char ToHex(unsigned char x)
-{
-	return  x > 9 ? x + 55 : x + 48;
-}
-
-//convert hex to char
-unsigned char FromHex(unsigned char x)
-{
-	unsigned char y;
-	if (x >= 'A' && x <= 'Z') y = x - 'A' + 10;
-	else if (x >= 'a' && x <= 'z') y = x - 'a' + 10;
-	else if (x >= '0' && x <= '9') y = x - '0';
-	else assert(0);
-	return y;
-}
-
-
-std::string UrlEncode(const std::string& str)
-{
-	std::string strTemp = "";
-	size_t length = str.length();
-	for (size_t i = 0; i < length; i++)
-	{
-		//check whether it consists only of digits and letters
-		if (isalnum((unsigned char)str[i]) ||
-			(str[i] == '-') ||
-			(str[i] == '_') ||
-			(str[i] == '.') ||
-			(str[i] == '~'))
-			strTemp += str[i];
-		else if (str[i] == ' ') //empty character
-			strTemp += "+";
-		else
-		{
-			//other chars need a leading % and their high and low nibbles converted to hex
-			strTemp += '%';
-			strTemp += ToHex((unsigned char)str[i] >> 4);
-			strTemp += ToHex((unsigned char)str[i] & 0x0F);
-		}
-	}
-	return strTemp;
-}
-
-
-
-std::string UrlDecode(const std::string& str)
-{
-	std::string strTemp = "";
-	size_t length = str.length();
-	for (size_t i = 0; i < length; i++)
-	{
-		//restore + to empty
-		if (str[i] == '+') strTemp += ' ';
-		//on %, convert the next two hex chars to a char and append
-		else if (str[i] == '%')
-		{
-			assert(i + 2 < length);
-			unsigned char high = FromHex((unsigned char)str[++i]);
-			unsigned char low = FromHex((unsigned char)str[++i]);
-			strTemp += high * 16 + low;
-		}
-		else strTemp += str[i];
-	}
-	return strTemp;
-}
-
 
 void HttpConnection::PreParseGetParam() {
 	// extract the URI, e.g. get_test?name=123&age=456
