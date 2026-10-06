@@ -21,8 +21,11 @@ CLIENT_SOURCES = $$files($$CLIENT_DIR/*.cpp)
 CLIENT_SOURCES -= $$files($$CLIENT_DIR/main.cpp)
 
 SOURCES += test_user_list_loading.cpp \
+           test_chat_dialog.cpp \
+           tests_main.cpp \
            $$CLIENT_SOURCES
 
-HEADERS += $$files($$CLIENT_DIR/*.h)
+HEADERS += test_suites.h \
+           $$files($$CLIENT_DIR/*.h)
 FORMS += $$files($$CLIENT_DIR/*.ui)
 RESOURCES += $$CLIENT_DIR/rc.qrc
