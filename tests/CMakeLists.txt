@@ -82,3 +82,18 @@ target_link_libraries(test_chat_service PRIVATE
 
 add_test(NAME chat_service COMMAND test_chat_service)
 
+# UrlCodec is deliberately dependency-free, so this target needs neither protobuf nor gRPC.
+add_executable(test_url_codec
+  test_url_codec.cpp
+  "${CMAKE_SOURCE_DIR}/GateServer/UrlCodec.cpp"
+)
+target_include_directories(test_url_codec PRIVATE "${CMAKE_SOURCE_DIR}/GateServer")
+target_link_libraries(test_url_codec PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+  Threads::Threads
+)
+
+add_test(NAME url_codec COMMAND test_url_codec)
+
+
