@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master, dev_xh]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (C++ / CMake)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake g++ pkg-config \
+            libboost-system-dev libboost-filesystem-dev \
+            libprotobuf-dev protobuf-compiler \
+            libgrpc++-dev protobuf-compiler-grpc \
+            libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+  client:
+    name: Client (Qt6 / qmake)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
+
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          qmake6 ../ChatClient/Chat.pro
+          make -j"$(nproc)"
