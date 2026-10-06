@@ -115,5 +115,24 @@ target_link_libraries(test_msg_header PRIVATE
 
 add_test(NAME msg_header COMMAND test_msg_header)
 
+# MsgNode.cpp is boost/asio-only, so like msg_header this needs the include paths but no
+# service library at link time.
+add_executable(test_msg_node test_msg_node.cpp "${CMAKE_SOURCE_DIR}/ChatServer/MsgNode.cpp")
+target_include_directories(test_msg_node PRIVATE
+  "${CMAKE_SOURCE_DIR}/ChatServer"
+  "${MYSQL_SHIM}"
+  ${Protobuf_INCLUDE_DIRS}
+  ${HIREDIS_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+)
+target_link_libraries(test_msg_node PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+  JsonCpp::JsonCpp
+  Threads::Threads
+)
+
+add_test(NAME msg_node COMMAND test_msg_node)
+
 
 
