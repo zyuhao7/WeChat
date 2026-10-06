@@ -36,6 +36,8 @@ int main()
 		//define a GrpcServer
 		std::string server_address(cfg["SelfServer"]["Host"] + ":" + cfg["SelfServer"]["RPCPort"]);
 		ChatServiceImpl service;
+		// the kick RPC clears sessions through the server, so wire it up before serving
+		service.RegisterServer(pointer_server);
 		grpc::ServerBuilder builder;
 		// listen on the port and add the service
 		builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());

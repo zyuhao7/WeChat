@@ -38,3 +38,47 @@ target_link_libraries(test_gate_proto PRIVATE
 )
 
 add_test(NAME gate_proto COMMAND test_gate_proto)
+
+# ChatServer's own protobuf, regenerated for the same reason as above.
+set(CHAT_GEN_DIR "${CMAKE_BINARY_DIR}/gen/tests/ChatServer")
+file(MAKE_DIRECTORY "${CHAT_GEN_DIR}")
+
+add_custom_command(
+  OUTPUT "${CHAT_GEN_DIR}/message.pb.cc" "${CHAT_GEN_DIR}/message.pb.h"
+         "${CHAT_GEN_DIR}/message.grpc.pb.cc" "${CHAT_GEN_DIR}/message.grpc.pb.h"
+  COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+          --proto_path="${CMAKE_SOURCE_DIR}/ChatServer"
+          --cpp_out="${CHAT_GEN_DIR}"
+          --grpc_out="${CHAT_GEN_DIR}"
+          --plugin=protoc-gen-grpc="${GRPC_CPP_PLUGIN}"
+          "${CMAKE_SOURCE_DIR}/ChatServer/message.proto"
+  DEPENDS "${CMAKE_SOURCE_DIR}/ChatServer/message.proto"
+  COMMENT "protoc tests/ChatServer/message.proto"
+)
+
+# Every ChatServer translation unit except the one holding main().
+file(GLOB CHAT_SERVER_SOURCES "${CMAKE_SOURCE_DIR}/ChatServer/*.cpp")
+list(REMOVE_ITEM CHAT_SERVER_SOURCES "${CMAKE_SOURCE_DIR}/ChatServer/ChatServer.cpp")
+
+add_executable(test_chat_service
+  test_chat_service.cpp
+  ${CHAT_SERVER_SOURCES}
+  "${CHAT_GEN_DIR}/message.pb.cc"
+  "${CHAT_GEN_DIR}/message.grpc.pb.cc"
+)
+target_include_directories(test_chat_service PRIVATE
+  "${CHAT_GEN_DIR}"
+  "${CMAKE_SOURCE_DIR}/ChatServer"
+  "${MYSQL_SHIM}"
+  ${Protobuf_INCLUDE_DIRS}
+  ${HIREDIS_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+)
+target_link_libraries(test_chat_service PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+  ${COMMON_LIBS}
+)
+
+add_test(NAME chat_service COMMAND test_chat_service)
+
