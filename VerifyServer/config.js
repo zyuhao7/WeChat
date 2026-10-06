@@ -1,5 +1,9 @@
 
 const fs = require('fs');
+
+if (!fs.existsSync('config.json')) {
+  throw new Error('config.json not found; copy config.example.json to config.json and fill in your credentials');
+}
 let config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 let email_user = config.email.user;
 let email_pass = config.email.pass;

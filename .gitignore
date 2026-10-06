@@ -17,6 +17,9 @@ ChatClient/ui_*.h
 # Node
 VerifyServer/node_modules/
 
+# VerifyServer credentials: copy config.example.json to config.json and fill in
+VerifyServer/config.json
+
 # 编辑器
 .vscode/
 .idea/
