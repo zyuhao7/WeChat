@@ -174,6 +174,14 @@ Status ChatServiceImpl::NotifyKickUser(::grpc::ServerContext* context, const Kic
 {
 	// check whether the user is on this server
 	auto uid = req->uid();
+
+	// an unwired service must report an error rather than clear a session through a null server
+	if (_p_server == nullptr) {
+		reply->set_error(ErrorCodes::RPCFailed);
+		reply->set_uid(uid);
+		return Status::OK;
+	}
+
 	auto session = UserMgr::GetInstance()->GetSession(uid);
 
 	Defer defer([req, reply]() {

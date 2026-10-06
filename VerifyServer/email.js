@@ -5,7 +5,7 @@ const config_module = require("./config")
  * create the mail-sending transport
  */
 let transport = nodemailer.createTransport({
-    host: 'smtp.163.com',
+    host: config_module.email_host,
     port: 465,
     secure: true,
     auth: {

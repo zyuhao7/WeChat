@@ -2,6 +2,7 @@
 const grpc = require('@grpc/grpc-js')
 const message_proto = require('./proto')
 const const_module = require('./const')
+const config_module = require('./config')
 const { v4: uuidv4 } = require('uuid');
 const emailModule = require('./email');
 const redis_module = require('./redis')
@@ -39,7 +40,7 @@ async function GetVerifyCode(call, callback) {
         let text_str =  '您的验证码为'+ uniqueId +'请三分钟内完成注册'
         //send the mail
         let mailOptions = {
-            from: 'secondtonone1@163.com',
+            from: config_module.email_user,
             to: call.request.email,
             subject: '验证码',
             text: text_str,
