@@ -14,67 +14,6 @@ bool bstop = false;
 std::condition_variable cond_quit;
 std::mutex mutex_quit;
 
-//#include "DistLock.h"
-//#include <iostream>
-//#include <chrono>
-//#include <windows.h>
-//#include <hiredis.h>
-//using namespace std;
-//
-//int TestDisLock() {
-//    // connect to the Redis server (adjust host and port as needed)
-//    redisContext* context = redisConnect("81.68.86.146", 6380);
-//    if (context == nullptr || context->err) {
-//        if (context) {
-//            std::cerr << "connection error: " << context->errstr << std::endl;
-//            redisFree(context);
-//        }
-//        else {
-//            std::cerr << "failed to allocate redis context" << std::endl;
-//        }
-//        return 1;
-//    }
-//
-//    std::string redis_password = "123456";
-//    redisReply* r = (redisReply*)redisCommand(context, "AUTH %s", redis_password.c_str());
-//    if (r->type == REDIS_REPLY_ERROR) {
-//        printf("Redis auth failed!\n");
-//    }
-//    else {
-//        printf("Redis auth succeeded!\n");
-//    }
-//
-//    // try to acquire the lock (10s lease, 5s acquire timeout)
-//    std::string lockId = DistLock::Inst().acquireLock(context, "my_resource", 10, 5);
-//
-//    if (!lockId.empty()) {
-//        std::cout << "child process " << GetCurrentProcessId() << " acquired the lock, lock ID: " << lockId << std::endl;
-//        // execute the critical section that needs protection
-//        std::this_thread::sleep_for(std::chrono::seconds(2));
-//
-//        // release the lock
-//        if (DistLock::Inst().releaseLock(context, "my_resource", lockId)) {
-//            std::cout << "child process " << GetCurrentProcessId() << " released the lock" << std::endl;
-//        }
-//        else {
-//            std::cout << "child process " << GetCurrentProcessId() << " failed to release the lock" << std::endl;
-//        }
-//    }
-//    else {
-//        std::cout << "child process " << GetCurrentProcessId() << " failed to acquire the lock" << std::endl;
-//    }
-//
-//    // release the Redis connection
-//    redisFree(context);
-//}
-
-
-//int main() {
-//
-//    TestDisLock();
-//
-//}
-
 int main()
 {
 
