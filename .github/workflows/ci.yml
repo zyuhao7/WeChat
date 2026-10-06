@@ -57,3 +57,13 @@ jobs:
           cd build
           qmake6 ../ChatClient/Chat.pro
           make -j"$(nproc)"
+
+      - name: Build tests
+        run: |
+          mkdir -p build/client-tests
+          cd build/client-tests
+          qmake6 ../../ChatClient/tests/tests.pro
+          make -j"$(nproc)"
+
+      - name: Test
+        run: QT_QPA_PLATFORM=offscreen ./build/client-tests/client_tests
