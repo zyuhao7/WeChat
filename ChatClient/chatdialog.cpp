@@ -594,6 +594,12 @@ void ChatDialog::slot_switch_apply_friend_page()
 
 void ChatDialog::slot_apply_friend(std::shared_ptr<AddFriendApply> apply)
 {
+    // tcpmgr emits a null apply when the notify-add-friend reply is malformed or failed
+    if (!apply) {
+        qDebug() << "receive empty apply friend notice, dropped";
+        return;
+    }
+
     qDebug() <<"receive apply friend slot, applyuid is "<< apply->_from_uid <<" name is "<<apply->_name <<" desc is "<<apply->_desc;
     bool b_already = UserMgr::GetInstance()->AlreadyApply(apply->_from_uid);
     if(b_already) return;

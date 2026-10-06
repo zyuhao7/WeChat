@@ -89,5 +89,9 @@ private slots:
     }
 };
 
-QTEST_MAIN(UserListLoadingTest)
+QObject *createUserListLoadingTest()
+{
+    return new UserListLoadingTest;
+}
+
 #include "test_user_list_loading.moc"
