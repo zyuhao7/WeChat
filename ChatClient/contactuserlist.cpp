@@ -6,7 +6,6 @@
 #include "conuseritem.h"
 #include "usermgr.h"
 #include <QRandomGenerator>
-#include <QCoreApplication>
 #include <QTimer>
 #include "ElaScrollBar.h"
 
@@ -84,7 +83,6 @@ bool ContactUserList::eventFilter(QObject *watched, QEvent *event)
 
                QTimer::singleShot(100, [this](){
                _load_pending = false;
-               QCoreApplication::quit();
                });
 
                // scroll to bottom to load new contacts

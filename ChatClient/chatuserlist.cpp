@@ -2,7 +2,6 @@
 #include<QScrollBar>
 #include "usermgr.h"
 #include <QTimer>
-#include <QCoreApplication>
 #include "ElaScrollBar.h"
 
 
@@ -64,7 +63,6 @@ bool ChatUserList::eventFilter(QObject *watched, QEvent *event)
             _load_pending = true;
             QTimer::singleShot(100, [this](){
                 _load_pending = false;
-                QCoreApplication::quit();
             });
 
             // emit a signal to ask the chat page to load more messages
