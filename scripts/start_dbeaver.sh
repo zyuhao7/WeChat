@@ -44,4 +44,13 @@ export DISPLAY="${DISPLAY:-:0}"
 export GDK_BACKEND="${GDK_BACKEND:-x11}"
 export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"
 
+# fcitx5 gives GTK/SWT apps Chinese input under WSLg; see scripts/setup_ime.sh.
+# wayland/waylandim stay off: WSLg denies the input-method protocol and the
+# fatal Wayland error would take the daemon down.
+if command -v fcitx5 >/dev/null 2>&1; then
+  pgrep -x fcitx5 >/dev/null 2>&1 || fcitx5 -d --disable wayland,waylandim >/dev/null 2>&1 || true
+  export GTK_IM_MODULE="${GTK_IM_MODULE:-fcitx}"
+  export XMODIFIERS="${XMODIFIERS:-@im=fcitx}"
+fi
+
 exec dbeaver "$@"
