@@ -42,5 +42,18 @@ export DISPLAY="${DISPLAY:-:0}"
 export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
 export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"
 
+# WSLg ships no input method, so Chinese text could never reach the Qt input
+# widgets. If fcitx5 is installed, make sure its daemon is up and point the
+# toolkits at it (Qt/GTK read these; XMODIFIERS covers the XIM fallback).
+# wayland/waylandim are disabled: WSLg's compositor denies the input-method
+# protocol and the resulting fatal Wayland error kills the whole daemon.
+if command -v fcitx5 >/dev/null 2>&1; then
+  pgrep -x fcitx5 >/dev/null 2>&1 || fcitx5 -d --disable wayland,waylandim >/dev/null 2>&1 || true
+  export QT_IM_MODULE="${QT_IM_MODULE:-fcitx}"
+  export GTK_IM_MODULE="${GTK_IM_MODULE:-fcitx}"
+  export XMODIFIERS="${XMODIFIERS:-@im=fcitx}"
+  export SDL_IM_MODULE="${SDL_IM_MODULE:-fcitx}"
+fi
+
 cd "$BIN"
 exec ./Chat "$@"
