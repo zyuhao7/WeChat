@@ -1,5 +1,6 @@
 {
   "email": {
+    "host": "smtp.example.com",
     "user": "you@example.com",
     "pass": "smtp-authorization-code"
   },
