@@ -96,4 +96,24 @@ target_link_libraries(test_url_codec PRIVATE
 
 add_test(NAME url_codec COMMAND test_url_codec)
 
+# MsgHeader.h is a header-only boundary check; const.h pulls in the backend headers, so
+# this needs the include paths but none of the service libraries at link time.
+add_executable(test_msg_header test_msg_header.cpp)
+target_include_directories(test_msg_header PRIVATE
+  "${CMAKE_SOURCE_DIR}/ChatServer"
+  "${MYSQL_SHIM}"
+  ${Protobuf_INCLUDE_DIRS}
+  ${HIREDIS_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+)
+target_link_libraries(test_msg_header PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+  JsonCpp::JsonCpp
+  Threads::Threads
+)
+
+add_test(NAME msg_header COMMAND test_msg_header)
+
+
 

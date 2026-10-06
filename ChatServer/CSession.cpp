@@ -1,4 +1,5 @@
 #include "CSession.h"
+#include "MsgHeader.h"
 #include "CServer.h"
 #include <iostream>
 #include <json/json.h>
@@ -180,12 +181,6 @@ void CSession::AsyncReadHead(int total_len)
 			//convert network byte order to host byte order
 			msg_id = boost::asio::detail::socket_ops::network_to_host_short(msg_id);
 			std::cout << "msg_id is " << msg_id << endl;
-			//invalid id
-			if (msg_id > MAX_LENGTH) {
-				std::cout << "invalid msg_id is " << msg_id << endl;
-				_server->ClearSession(_session_id);
-				return;
-			}
 			short msg_len = 0;
 			memcpy(&msg_len, _recv_head_node->_data + HEAD_ID_LEN, HEAD_DATA_LEN);
 
@@ -193,9 +188,9 @@ void CSession::AsyncReadHead(int total_len)
 			msg_len = boost::asio::detail::socket_ops::network_to_host_short(msg_len);
 			std::cout << "msg_len is " << msg_len << endl;
 
-			//invalid id
-			if (msg_len > MAX_LENGTH) {
-				std::cout << "invalid data length is " << msg_len << endl;
+			//both fields index into buffers downstream, so reject a high-bit value as well
+			if (!IsValidMsgHeader(msg_id, msg_len)) {
+				std::cout << "invalid msg header, id [" << msg_id << "] len [" << msg_len << "]" << endl;
 				_server->ClearSession(_session_id);
 				return;
 			}
