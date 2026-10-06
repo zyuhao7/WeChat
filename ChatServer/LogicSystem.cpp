@@ -220,9 +220,16 @@ void LogicSystem::LoginHandler(shared_ptr<CSession> session, const short& msg_id
 			}
 			else
 			{
-				// if not this server, notify the other server via grpc to kick.
-				// send the notification
-				
+				// the previous login lives on another node; the redis value is that
+				// node's name, which is also how ChatGrpcClient keys its pools
+				KickUserReq kick_req;
+				kick_req.set_uid(uid);
+				auto kick_rsp = ChatGrpcClient::GetInstance()->NotifyKickUser(uid_ip_value, kick_req);
+				if (kick_rsp.error() != ErrorCodes::Success)
+				{
+					std::cout << "kick uid " << uid << " on server " << uid_ip_value
+						<< " failed, error is " << kick_rsp.error() << std::endl;
+				}
 			}
 		}
 

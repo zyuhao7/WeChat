@@ -175,8 +175,13 @@ KickUserRsp ChatGrpcClient::NotifyKickUser(std::string server_ip, const KickUser
 		});
 
 	auto it = _pools.find(server_ip);
-	if (it == _pools.end()) 
+	if (it == _pools.end())
+	{
+		// no channel to that node, so the kick is silently dropped: say so, because
+		// the caller cannot tell this apart from a delivered kick by the reply alone
+		std::cout << "no grpc channel to server " << server_ip << ", kick not delivered" << std::endl;
 		return rsp;
+	}
 
 	auto& pool = it->second;
 	ClientContext context;
