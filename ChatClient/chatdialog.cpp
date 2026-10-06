@@ -781,9 +781,16 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg)
     }
     else
     {
+        // the peer need not be in the friend map yet, e.g. a message that arrives
+        // before the friend list is loaded; there is no name or icon to show then
+        auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
+        if (!fri_ptr) {
+            qDebug() << "text chat msg from an unknown friend, dropped:" << msg->_from_uid;
+            return;
+        }
+
         // if not found, create and insert a new ListWidget
         auto* chat_user_wid = new ChatUserWid();
-        auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
         chat_user_wid->SetInfo(fri_ptr);
 
         QListWidgetItem* item = new QListWidgetItem;
