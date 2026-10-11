@@ -81,5 +81,6 @@ void TextBubble::setPlainText(const QString &text)
 
 void TextBubble::initStyleSheet()
 {
-    m_pTextEdit->setStyleSheet("QTextEdit{background:transparent;border:none}");
+    const QString ink = role() == ChatRole::Self ? "#FFFFFF" : "#1C1C1E";
+    m_pTextEdit->setStyleSheet(QString("QTextEdit{background:transparent;border:none;color:%1}").arg(ink));
 }

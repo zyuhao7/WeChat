@@ -36,16 +36,16 @@
        <number>0</number>
       </property>
       <property name="leftMargin">
-       <number>0</number>
+       <number>16</number>
       </property>
       <property name="topMargin">
        <number>0</number>
       </property>
       <property name="rightMargin">
-       <number>0</number>
+       <number>16</number>
       </property>
       <property name="bottomMargin">
-       <number>0</number>
+       <number>6</number>
       </property>
       <item>
        <widget class="QWidget" name="title_wid" native="true">
@@ -284,17 +284,17 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedBtn" name="receive_btn">
+          <widget class="GlassButton" name="receive_btn">
            <property name="minimumSize">
             <size>
-             <width>100</width>
-             <height>35</height>
+             <width>112</width>
+             <height>48</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>100</width>
-             <height>35</height>
+             <width>112</width>
+             <height>48</height>
             </size>
            </property>
            <property name="text">
@@ -319,17 +319,17 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedBtn" name="send_btn">
+          <widget class="GlassButton" name="send_btn">
            <property name="minimumSize">
             <size>
-             <width>100</width>
-             <height>35</height>
+             <width>112</width>
+             <height>48</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>100</width>
-             <height>35</height>
+             <width>112</width>
+             <height>48</height>
             </size>
            </property>
            <property name="text">
@@ -368,9 +368,9 @@
    <header>clickedlabel.h</header>
   </customwidget>
   <customwidget>
-   <class>ClickedBtn</class>
+   <class>GlassButton</class>
    <extends>QPushButton</extends>
-   <header>clickedbtn.h</header>
+   <header>liquidglass.h</header>
   </customwidget>
   <customwidget>
    <class>ChatView</class>

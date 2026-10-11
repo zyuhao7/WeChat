@@ -18,7 +18,6 @@ ChatView::ChatView(QWidget *parent)
 
     QWidget* w = new QWidget(this);
     w->setObjectName("chat_bg");
-    w->setAutoFillBackground(true);
 
     QVBoxLayout* pVLayout_1 = new QVBoxLayout();
     pVLayout_1->addWidget(new QWidget(), 10000);
@@ -112,5 +111,7 @@ void ChatView::onVScrollBarMoved(int min, int max)
 
 void ChatView::initStyleSheet()
 {
-
+    m_pScrollArea->setFrameShape(QFrame::NoFrame);
+    m_pScrollArea->setStyleSheet("QScrollArea#chat_area, QWidget#chat_bg { background: transparent; }");
+    m_pScrollArea->viewport()->setAutoFillBackground(false);
 }

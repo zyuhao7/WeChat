@@ -1,5 +1,6 @@
 #include "conuseritem.h"
 #include "ui_conuseritem.h"
+#include "liquidglass.h"
 
 
 
@@ -32,7 +33,7 @@ void ConUserItem::SetInfo(std::shared_ptr<AuthInfo> auto_info)
     QPixmap pixmap(_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_info->_name);
@@ -45,7 +46,7 @@ void ConUserItem::SetInfo(std::shared_ptr<AuthRsp> auth_rsp)
     QPixmap pixmap(_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_info->_name);
@@ -58,7 +59,7 @@ void ConUserItem::SetInfo(int uid, QString name, QString icon)
     QPixmap pixmap(_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_info->_name);

@@ -113,6 +113,33 @@ GlassBackdrop::GlassBackdrop(QWidget* parent)
     _clock.start();
 }
 
+QPixmap roundedPixmap(const QPixmap& source, const QSize& size, qreal radius)
+{
+    const QPixmap scaled = source.scaled(size, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+    QPixmap out(size);
+    out.fill(Qt::transparent);
+    QPainter p(&out);
+    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    QPainterPath clip;
+    clip.addRoundedRect(QRectF(QPointF(0, 0), size), radius, radius);
+    p.setClipPath(clip);
+    p.drawPixmap((size.width() - scaled.width()) / 2, (size.height() - scaled.height()) / 2, scaled);
+    return out;
+}
+
+void GlassBackdrop::setAnimated(bool animated)
+{
+    _animated = animated;
+    if (animated && isVisible())
+    {
+        _tick.start();
+    }
+    else
+    {
+        _tick.stop();
+    }
+}
+
 void GlassBackdrop::renderFrame()
 {
     if (size().isEmpty())
@@ -192,7 +219,10 @@ void GlassBackdrop::resizeEvent(QResizeEvent* event)
 
 void GlassBackdrop::showEvent(QShowEvent* event)
 {
-    _tick.start();
+    if (_animated)
+    {
+        _tick.start();
+    }
     QWidget::showEvent(event);
 }
 

@@ -26,7 +26,7 @@ void StateWidget::SetIcons(ElaIconType::IconName normal,
     int size = pixelSize > 0 ? pixelSize : qBound(16, box, 24);
 
     _pix_normal   = ElaIcon::getInstance()->getElaIcon(normal, size).pixmap(size, size);
-    _pix_selected = ElaIcon::getInstance()->getElaIcon(selected, size).pixmap(size, size);
+    _pix_selected = ElaIcon::getInstance()->getElaIcon(selected, size, QColor(0x0A, 0x84, 0xFF)).pixmap(size, size);
     _has_icons = true;
     update();
 }

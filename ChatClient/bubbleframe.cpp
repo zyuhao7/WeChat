@@ -1,19 +1,14 @@
 #include "bubbleframe.h"
 #include <QPainter>
-#include <QDebug>
-const int  WIDTH_TRIANGLE = 8; //triangle width
+#include <QPainterPath>
 
 BubbleFrame::BubbleFrame(ChatRole role, QWidget *parent)
     : QFrame(parent),
       m_role(role),
-      m_margin(3)
+      m_margin(4)
 {
     m_pHLayout = new QHBoxLayout();
-    if(m_role == ChatRole::Self)
-        m_pHLayout->setContentsMargins(m_margin, m_margin, WIDTH_TRIANGLE + m_margin, m_margin);
-    else
-        m_pHLayout->setContentsMargins(WIDTH_TRIANGLE + m_margin, m_margin,  m_margin, m_margin);
-
+    m_pHLayout->setContentsMargins(m_margin + 6, m_margin, m_margin + 6, m_margin);
     this->setLayout(m_pHLayout);
 }
 
@@ -31,46 +26,36 @@ void BubbleFrame::setWidget(QWidget *w)
         m_pHLayout->addWidget(w);
 }
 
-void BubbleFrame::paintEvent(QPaintEvent *e)
+ChatRole BubbleFrame::role() const
 {
-       QPainter painter(this);
-       painter.setPen(Qt::NoPen); // no pen, no border
-
-       if(m_role == ChatRole::Other)
-       {
-           //draw the bubble
-           QColor bk_color(Qt::white);
-           painter.setBrush(QBrush(bk_color));
-           // the rounded-rect body used to draw the bubble
-           QRect bk_rect = QRect(WIDTH_TRIANGLE, 0, this->width() - WIDTH_TRIANGLE, this->height());
-           painter.drawRoundedRect(bk_rect,5,5);
-           //draw the small triangle
-           QPointF points[3] = {
-               QPointF(bk_rect.x(), 12),
-               QPointF(bk_rect.x(), 10 + WIDTH_TRIANGLE + 2),
-               QPointF(bk_rect.x()- WIDTH_TRIANGLE, 10 + WIDTH_TRIANGLE-WIDTH_TRIANGLE / 2),
-           };
-           painter.drawPolygon(points, 3);
-       }
-       else
-       {
-           QColor bk_color(158,234,106);
-           painter.setBrush(QBrush(bk_color));
-           //draw the bubble
-           QRect bk_rect = QRect(0, 0, this->width()- WIDTH_TRIANGLE, this->height());
-           painter.drawRoundedRect(bk_rect,5,5);
-           //draw the triangle
-           QPointF points[3] = {
-               QPointF(bk_rect.x()+bk_rect.width(), 12),
-               QPointF(bk_rect.x()+bk_rect.width(), 12 + WIDTH_TRIANGLE + 2),
-               QPointF(bk_rect.x()+bk_rect.width()+ WIDTH_TRIANGLE, 10 + WIDTH_TRIANGLE - WIDTH_TRIANGLE / 2),
-           };
-           painter.drawPolygon(points, 3);
-
-       }
-
-       return QFrame::paintEvent(e);
+    return m_role;
 }
 
+void BubbleFrame::paintEvent(QPaintEvent *e)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
+    const QRectF body = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+    const qreal radius = qMin<qreal>(16, body.height() / 2);
+    QPainterPath shape;
+    shape.addRoundedRect(body, radius, radius);
 
+    if(m_role == ChatRole::Self)
+    {
+        QLinearGradient fill(body.topLeft(), body.bottomLeft());
+        fill.setColorAt(0.0, QColor(0x3D, 0x9C, 0xFF));
+        fill.setColorAt(1.0, QColor(0x0A, 0x84, 0xFF));
+        painter.fillPath(shape, fill);
+        painter.setPen(QPen(QColor(255, 255, 255, 90), 1));
+    }
+    else
+    {
+        painter.fillPath(shape, QColor(255, 255, 255, 215));
+        painter.setPen(QPen(QColor(255, 255, 255, 240), 1));
+    }
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(shape);
+
+    QFrame::paintEvent(e);
+}
