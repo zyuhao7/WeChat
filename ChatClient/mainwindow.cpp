@@ -96,7 +96,7 @@ void MainWindow::setPage(QWidget* page)
     _page_layout->addWidget(page);
     page->show();
 
-    const bool glass = qobject_cast<LoginDialog*>(page) != nullptr;
+    const bool glass = qobject_cast<ChatDialog*>(page) == nullptr;
     _backdrop->setVisible(glass);
     setIsCentralStackedWidgetTransparent(glass);
 }

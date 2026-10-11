@@ -10,6 +10,9 @@
 
 class QVariantAnimation;
 
+// Stylesheet for a form page laid out on glass: title, tip line and translucent fields.
+QString glassFormStyleSheet();
+
 // Slowly drifting pastel background. Glass surfaces above it sample its blurred copy, so
 // it must sit underneath them in the same window.
 class GlassBackdrop : public QWidget

@@ -78,6 +78,28 @@ void paintSheen(QPainter& p, const QPainterPath& shape, const QRectF& rect, int 
 
 } // namespace
 
+QString glassFormStyleSheet()
+{
+    return QStringLiteral(R"(
+        QLabel#title_label { color: #1C1C1E; font-size: 22px; font-weight: 600; }
+        QLabel#err_tip { color: #2F9E5B; font-size: 12px; }
+        QLabel#err_tip[state="err"] { color: #E5484D; }
+        QLineEdit {
+            background: rgba(255, 255, 255, 150);
+            border: 1px solid rgba(255, 255, 255, 230);
+            border-radius: 14px;
+            padding: 0 14px;
+            color: #1C1C1E;
+            font-size: 14px;
+            selection-background-color: #0A84FF;
+        }
+        QLineEdit:focus {
+            background: rgba(255, 255, 255, 200);
+            border: 1px solid rgba(10, 132, 255, 140);
+        }
+    )");
+}
+
 GlassBackdrop::GlassBackdrop(QWidget* parent)
     : QWidget(parent)
 {
