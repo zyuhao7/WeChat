@@ -1,5 +1,6 @@
 #include "friendinfopage.h"
 #include "ui_friendinfopage.h"
+#include "liquidglass.h"
 #include <QDebug>
 
 FriendInfoPage::FriendInfoPage(QWidget *parent) :
@@ -28,7 +29,7 @@ void FriendInfoPage::SetInfo(std::shared_ptr<UserInfo> user_info)
     QPixmap pixmap(user_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->name_lb->setText(user_info->_name);

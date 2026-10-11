@@ -1,5 +1,6 @@
 #include "applyfrienditem.h"
 #include "ui_applyfrienditem.h"
+#include "liquidglass.h"
 
 ApplyFriendItem::ApplyFriendItem(QWidget *parent) :
     ListItemBase(parent),
@@ -27,7 +28,7 @@ void ApplyFriendItem::SetInfo(std::shared_ptr<ApplyInfo> apply_info)
     QPixmap pixmap(_apply_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_apply_info->_name);

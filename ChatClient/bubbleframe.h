@@ -11,6 +11,7 @@ public:
     BubbleFrame(ChatRole role, QWidget* parent = nullptr);
     void setMargin(int margin);
     void setWidget(QWidget* w);
+    ChatRole role() const;
 
 protected:
     void paintEvent(QPaintEvent *e);

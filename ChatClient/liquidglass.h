@@ -13,6 +13,9 @@ class QVariantAnimation;
 // Stylesheet for a form page laid out on glass: title, tip line and translucent fields.
 QString glassFormStyleSheet();
 
+// `source` cropped to fill `size`, with rounded corners.
+QPixmap roundedPixmap(const QPixmap& source, const QSize& size, qreal radius);
+
 // Slowly drifting pastel background. Glass surfaces above it sample its blurred copy, so
 // it must sit underneath them in the same window.
 class GlassBackdrop : public QWidget
@@ -21,6 +24,9 @@ class GlassBackdrop : public QWidget
 
 public:
     explicit GlassBackdrop(QWidget* parent = nullptr);
+
+    // A still backdrop spares busy pages from repainting every frame.
+    void setAnimated(bool animated);
 
     // Paints the frosted backdrop region under `target` (a rect in `surface` coordinates).
     static void paintFrosted(QPainter& painter, const QWidget* surface, const QRectF& target);
@@ -38,6 +44,7 @@ private:
     QImage _blurred;
     QTimer _tick;
     QElapsedTimer _clock;
+    bool _animated = true;
 };
 
 // Rounded frosted-glass card. The outer shadow is drawn inside the widget's own bounds, so

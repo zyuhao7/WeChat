@@ -19,9 +19,7 @@ ChatPage::ChatPage(QWidget *parent) :
     ui(new Ui::ChatPage)
 {
     ui->setupUi(this);
-    // set the button style
-    ui->receive_btn->SetState("normal", "hover","press");
-    ui->send_btn->SetState("normal", "hover", "press");
+    ui->send_btn->setAccent(QColor(0x0A, 0x84, 0xFF));
 
     // set the icon style
     ui->emo_lb->SetState("normal", "hover", "press", "normal", "hover", "press");

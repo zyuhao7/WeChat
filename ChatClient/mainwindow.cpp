@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     _backdrop = new GlassBackdrop(this);
     _backdrop->setGeometry(rect());
     _backdrop->lower();
+    setIsCentralStackedWidgetTransparent(true);
 
     _login_dlg = new LoginDialog(this);
     setPage(_login_dlg);
@@ -96,9 +97,7 @@ void MainWindow::setPage(QWidget* page)
     _page_layout->addWidget(page);
     page->show();
 
-    const bool glass = qobject_cast<ChatDialog*>(page) == nullptr;
-    _backdrop->setVisible(glass);
-    setIsCentralStackedWidgetTransparent(glass);
+    _backdrop->setAnimated(qobject_cast<ChatDialog*>(page) == nullptr);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)

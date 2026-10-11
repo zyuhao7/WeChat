@@ -1,4 +1,5 @@
 #include "chatitembase.h"
+#include "liquidglass.h"
 
 ChatItemBase::ChatItemBase(ChatRole role, QWidget *parent)
     :QWidget(parent),
@@ -53,7 +54,7 @@ void ChatItemBase::setUserName(const QString &name)
 
 void ChatItemBase::setUserIcon(const QPixmap &icon)
 {
-    m_pIconLabel->setPixmap(icon);
+    m_pIconLabel->setPixmap(roundedPixmap(icon, m_pIconLabel->size(), 12));
 }
 
 void ChatItemBase::setWidget(QWidget *w)

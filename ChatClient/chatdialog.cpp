@@ -13,7 +13,7 @@
 #include "grouptipitem.h"
 #include "conuseritem.h"
 
-#include "ElaTheme.h"
+#include "liquidglass.h"
 #include "ElaWidgetToolsDef.h"
 
 #include <QAction>
@@ -40,18 +40,46 @@ ChatDialog::ChatDialog(QWidget *parent) :
 	ui->add_btn->setProperty("state", "normal");
     ui->add_btn->SetIcons(ElaIconType::UserPlus, ElaIconType::UserPlus, ElaIconType::UserPlus);
 
-    // Theme the list selection/hover with the current Ela accent instead of the
-    // platform default (which showed as a flat Windows-blue highlight).
-    const QString listQss = QString(
-        "QListWidget::item{border:none;}"
-        "QListWidget::item:hover{background:%3;border:none;}"
-        "QListWidget::item:selected{background:%1;color:%2;border:none;}")
-        .arg(ElaThemeColor(ElaThemeType::Light, PrimaryNormal).name(),
-             ElaThemeColor(ElaThemeType::Light, BasicTextInvert).name(),
-             ElaThemeColor(ElaThemeType::Light, BasicHover).name());
-    ui->chat_user_list->setStyleSheet(listQss);
-    ui->con_user_list->setStyleSheet(listQss);
-    ui->search_list->setStyleSheet(listQss);
+    setStyleSheet(QStringLiteral(R"(
+        QWidget#side_bar, QWidget#widget, QWidget#search_wid, QStackedWidget#stackedWidget,
+        QWidget#chat_data_wid, QWidget#title_wid, QWidget#widget_2, QWidget#tool_wid,
+        QWidget#send_wid { background: transparent; }
+        QWidget#side_chat_lb, QWidget#side_contact_lb { border-radius: 12px; }
+        QWidget#side_chat_lb[state="hover"], QWidget#side_contact_lb[state="hover"],
+        QWidget#side_chat_lb[state="pressed"], QWidget#side_contact_lb[state="pressed"] {
+            background: rgba(255, 255, 255, 110);
+        }
+        QWidget#side_chat_lb[state^="selected"], QWidget#side_contact_lb[state^="selected"] {
+            background: rgba(255, 255, 255, 210);
+        }
+        QListWidget { background: transparent; border: none; outline: none; }
+        QListWidget::item { border: none; border-radius: 12px; margin: 1px 0; }
+        QListWidget::item:hover { background: rgba(255, 255, 255, 130); }
+        QListWidget::item:selected { background: rgba(10, 132, 255, 46); color: #1C1C1E; }
+        QScrollBar:vertical { background: transparent; width: 6px; margin: 6px 0; }
+        QScrollBar::handle:vertical { background: rgba(60, 60, 67, 60); border-radius: 3px; min-height: 32px; }
+        QScrollBar::handle:vertical:hover { background: rgba(60, 60, 67, 110); }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
+        QLabel#user_name_lb { color: #1C1C1E; font-size: 14px; font-weight: 600; }
+        QLabel#user_chat_lb { color: #6E6E73; font-size: 12px; }
+        QLabel#time_lb { color: #8E8E93; font-size: 11px; }
+        QLabel#title_lb { color: #1C1C1E; font-size: 17px; font-weight: 600; }
+        QLabel#chat_user_name { color: #6E6E73; }
+        QTextEdit#chatEdit {
+            background: rgba(255, 255, 255, 140);
+            border: 1px solid rgba(255, 255, 255, 220);
+            border-radius: 16px;
+            padding: 6px 8px;
+            color: #1C1C1E;
+            font-size: 14px;
+            selection-background-color: #0A84FF;
+        }
+        QTextEdit#chatEdit:focus {
+            background: rgba(255, 255, 255, 200);
+            border: 1px solid rgba(10, 132, 255, 140);
+        }
+    )"));
 
     QAction* searchAction = new QAction(ui->search_edit);
     searchAction->setIcon(QIcon(":/res/search.png"));
@@ -92,18 +120,15 @@ ChatDialog::ChatDialog(QWidget *parent) :
     // ElaLineEdit ships its own clear button; the search box already manages a
     // trailing clear QAction, so disable the built-in one to avoid a duplicate.
     ui->search_edit->setIsClearButtonEnable(false);
+    ui->search_edit->setBorderRadius(12);
 
      // connect the load signal and slot
     connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this, &ChatDialog::slot_loading_chat_user);
     addChatUserList();
 
      //simulate loading the own avatar
-     QString head_icon = UserMgr::GetInstance()->GetIcon();
-     QPixmap pixmap(head_icon);
-     QPixmap scaledPixmap = pixmap.scaled( ui->side_head_lb->size(), Qt::KeepAspectRatio); // scale the image to the label size
-
-    ui->side_head_lb->setPixmap(scaledPixmap); // set the scaled image on the QLabel
-    ui->side_head_lb->setScaledContents(true); // make the QLabel scale its image to fit
+    ui->side_head_lb->setPixmap(roundedPixmap(QPixmap(UserMgr::GetInstance()->GetIcon()),
+                                              ui->side_head_lb->size(), 12));
 
     ui->side_chat_lb->setProperty("state","normal");
     ui->side_chat_lb->SetState("normal","hover","pressed","selected_normal","selected_hover","selected_pressed");

@@ -1,4 +1,5 @@
 #include "chatuserwid.h"
+#include "liquidglass.h"
 #include "ui_chatuserwid.h"
 
 ChatUserWid::ChatUserWid(QWidget *parent) :
@@ -30,7 +31,7 @@ void ChatUserWid::SetInfo(std::shared_ptr<UserInfo> user_info)
     QPixmap pixmap(_user_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_user_info->_name);
@@ -44,7 +45,7 @@ void ChatUserWid::SetInfo(std::shared_ptr<FriendInfo> friend_info)
     QPixmap pixmap(_user_info->_icon);
 
     // set the image to auto-scale
-    ui->icon_lb->setPixmap(pixmap.scaled(ui->icon_lb->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_lb->setPixmap(roundedPixmap(pixmap, ui->icon_lb->size(), 12));
     ui->icon_lb->setScaledContents(true);
 
     ui->user_name_lb->setText(_user_info->_name);
