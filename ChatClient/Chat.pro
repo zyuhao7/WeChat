@@ -48,6 +48,7 @@ SOURCES += \
     global.cpp \
     grouptipitem.cpp \
     httpmgr.cpp \
+    liquidglass.cpp \
     listitembase.cpp \
     loadingdlg.cpp \
     logindialog.cpp \
@@ -92,6 +93,7 @@ HEADERS += \
     global.h \
     grouptipitem.h \
     httpmgr.h \
+    liquidglass.h \
     listitembase.h \
     loadingdlg.h \
     logindialog.h \

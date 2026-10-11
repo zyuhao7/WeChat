@@ -47,6 +47,7 @@ LoginDialog::LoginDialog(QWidget *parent) :
      connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_con_success, this, &LoginDialog::slot_tcp_con_finish);
      //connect the login-failure signal from the tcp manager
      connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_login_failed, this, &LoginDialog::slot_login_failed);
+     initStyle();
      initHead();
 }
 
@@ -83,34 +84,54 @@ void LoginDialog::initHttpHandlers()
       });
 }
 
+void LoginDialog::initStyle()
+{
+    ui->login_btn->setAccent(QColor(0x0A, 0x84, 0xFF));
+    setStyleSheet(QStringLiteral(R"(
+        QLabel#title_label { color: #1C1C1E; font-size: 22px; font-weight: 600; }
+        QLabel#err_tip { color: #2F9E5B; font-size: 12px; }
+        QLabel#err_tip[state="err"] { color: #E5484D; }
+        QLabel#forget_label { color: #0A84FF; font-size: 13px; }
+        QLabel#forget_label[state="hover"] { color: #3FA0FF; }
+        QLineEdit {
+            background: rgba(255, 255, 255, 150);
+            border: 1px solid rgba(255, 255, 255, 230);
+            border-radius: 14px;
+            padding: 0 14px;
+            color: #1C1C1E;
+            font-size: 14px;
+            selection-background-color: #0A84FF;
+        }
+        QLineEdit:focus {
+            background: rgba(255, 255, 255, 200);
+            border: 1px solid rgba(10, 132, 255, 140);
+        }
+    )"));
+}
+
 void LoginDialog::initHead()
 {
-    // load the image
-        QPixmap originalPixmap(":/res/ice.png");
-          // set the image to auto-scale
-        qDebug()<< originalPixmap.size() << ui->head_label->size();
-        originalPixmap = originalPixmap.scaled(ui->head_label->size(),
-                Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    const int side = ui->head_label->width();
+    constexpr qreal ring = 3;
+    const QRectF face(ring, ring, side - 2 * ring, side - 2 * ring);
+    const QPixmap source = QPixmap(":/res/ice.png").scaled(face.size().toSize(),
+            Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
 
-        // create a QPixmap the same size as the original, used to draw the rounded image
-        QPixmap roundedPixmap(originalPixmap.size());
-        roundedPixmap.fill(Qt::transparent); // fill with a transparent color
+    QPixmap avatar(side, side);
+    avatar.fill(Qt::transparent);
+    QPainter painter(&avatar);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-        QPainter painter(&roundedPixmap);
-        painter.setRenderHint(QPainter::Antialiasing); // enable antialiasing for smoother rounded corners
-        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, 210));
+    painter.drawEllipse(QRectF(0, 0, side, side));
 
-        // use QPainterPath to set rounded corners
-        QPainterPath path;
-        path.addRoundedRect(0, 0, originalPixmap.width(), originalPixmap.height(), 10, 10); // the last two params are the x and y corner radii
-        painter.setClipPath(path);
+    QPainterPath clip;
+    clip.addEllipse(face);
+    painter.setClipPath(clip);
+    painter.drawPixmap(face.center() - QRectF(source.rect()).center(), source);
 
-        // draw the original image onto roundedPixmap
-        painter.drawPixmap(0, 0, originalPixmap);
-
-        // set the drawn rounded image on the QLabel
-        ui->head_label->setPixmap(roundedPixmap);
-
+    ui->head_label->setPixmap(avatar);
 }
 
 bool LoginDialog::checkUserValid()
