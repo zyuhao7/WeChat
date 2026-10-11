@@ -13,6 +13,7 @@ static const int kAppBarHeight = 48;
 
 MainWindow::MainWindow(QWidget *parent)
     : ElaWindow(parent)
+    , _backdrop(nullptr)
     , _page_container(nullptr)
     , _page_layout(nullptr)
     , _login_dlg(nullptr)
@@ -47,6 +48,11 @@ MainWindow::MainWindow(QWidget *parent)
             stack->hide();
         }
     }
+
+    // Spans the whole window, title bar included, beneath every other child.
+    _backdrop = new GlassBackdrop(this);
+    _backdrop->setGeometry(rect());
+    _backdrop->lower();
 
     _login_dlg = new LoginDialog(this);
     setPage(_login_dlg);
@@ -89,6 +95,16 @@ void MainWindow::setPage(QWidget* page)
     page->setWindowFlags(Qt::Widget);
     _page_layout->addWidget(page);
     page->show();
+
+    const bool glass = qobject_cast<ChatDialog*>(page) == nullptr;
+    _backdrop->setVisible(glass);
+    setIsCentralStackedWidgetTransparent(glass);
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    ElaWindow::resizeEvent(event);
+    _backdrop->setGeometry(rect());
 }
 
 void MainWindow::applyLoginSize()

@@ -6,43 +6,57 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>354</width>
-    <height>538</height>
+    <width>300</width>
+    <height>500</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>300</width>
+    <height>500</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>300</width>
+    <height>500</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="page_layout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>4</number>
+   </property>
+   <property name="topMargin">
+    <number>8</number>
+   </property>
+   <property name="rightMargin">
+    <number>4</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QLabel" name="err_tip">
+    <widget class="QLabel" name="title_label">
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>25</height>
+       <height>56</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>25</height>
+       <height>56</height>
       </size>
      </property>
      <property name="text">
-      <string/>
+      <string>重置密码</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -50,216 +64,159 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="widget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout">
+    <widget class="GlassPanel" name="card" native="true">
+     <layout class="QVBoxLayout" name="card_layout">
+      <property name="spacing">
+       <number>8</number>
+      </property>
+      <property name="leftMargin">
+       <number>14</number>
+      </property>
+      <property name="topMargin">
+       <number>6</number>
+      </property>
+      <property name="rightMargin">
+       <number>14</number>
+      </property>
+      <property name="bottomMargin">
+       <number>8</number>
+      </property>
       <item>
-       <widget class="QLabel" name="user_lb">
+       <widget class="QLabel" name="err_tip">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>25</height>
+          <height>20</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>25</height>
+          <height>20</height>
          </size>
         </property>
         <property name="text">
-         <string>用户名：</string>
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="ElaLineEdit" name="user_edit">
+       <widget class="QLineEdit" name="user_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>25</height>
+          <height>40</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>25</height>
+          <height>40</height>
          </size>
+        </property>
+        <property name="placeholderText">
+         <string>用户名</string>
         </property>
        </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="widget_2" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QLabel" name="email_lb">
+       <widget class="QLineEdit" name="email_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>25</height>
+          <height>40</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>25</height>
+          <height>40</height>
          </size>
         </property>
-        <property name="text">
-         <string>邮箱:     </string>
+        <property name="placeholderText">
+         <string>邮箱</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="ElaLineEdit" name="email_edit">
+       <layout class="QHBoxLayout" name="verify_row">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+        <item>
+         <widget class="QLineEdit" name="verify_edit">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="placeholderText">
+           <string>验证码</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="TimerBtn" name="verify_btn">
+          <property name="minimumSize">
+           <size>
+            <width>84</width>
+            <height>52</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>84</width>
+            <height>52</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>获取</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="pwd_edit">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>25</height>
+          <height>40</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>25</height>
+          <height>40</height>
          </size>
+        </property>
+        <property name="placeholderText">
+         <string>新密码</string>
         </property>
        </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="widget_3" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QLabel" name="verify_lb">
+       <widget class="GlassButton" name="sure_btn">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>25</height>
+          <height>54</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>验证码：</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="ElaLineEdit" name="verify_edit">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>25</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="TimerBtn" name="verify_btn">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>获取</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="widget_4" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <widget class="QLabel" name="pwd_lb">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>新密码：</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="ElaLineEdit" name="pwd_edit">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>25</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>25</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QWidget" name="widget_5" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <widget class="ElaPushButton" name="sure_btn">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>30</height>
+          <height>54</height>
          </size>
         </property>
         <property name="text">
@@ -267,58 +224,59 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="ElaPushButton" name="return_btn">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>返回</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer_3">
+    <spacer name="form_spacer">
      <property name="orientation">
       <enum>Qt::Orientation::Vertical</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>8</height>
       </size>
      </property>
     </spacer>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="GlassButton" name="return_btn">
+     <property name="minimumSize">
+      <size>
+       <width>160</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>160</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>返回</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
+   <class>GlassPanel</class>
+   <extends>QWidget</extends>
+   <header>liquidglass.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GlassButton</class>
+   <extends>QPushButton</extends>
+   <header>liquidglass.h</header>
+  </customwidget>
+  <customwidget>
    <class>TimerBtn</class>
    <extends>QPushButton</extends>
    <header>timerbtn.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ElaLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>ElaLineEdit.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ElaPushButton</class>
-   <extends>QPushButton</extends>
-   <header>ElaPushButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

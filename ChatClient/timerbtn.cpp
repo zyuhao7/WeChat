@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 
 TimerBtn::TimerBtn(QWidget *parent)
-    :QPushButton(parent),
+    :GlassButton(parent),
       _counter(10)
 {
     _timer = new QTimer(this);
@@ -36,6 +36,5 @@ void TimerBtn::mouseReleaseEvent(QMouseEvent *e)
          _timer->start(1000);
          emit clicked();
      }
-     // call the base-class mouseReleaseEvent for normal event handling
-     QPushButton::mouseReleaseEvent(e);
+     GlassButton::mouseReleaseEvent(e);
 }

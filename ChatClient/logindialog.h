@@ -17,6 +17,7 @@ public:
 
 private:
     void initHttpHandlers();
+    void initStyle();
     void initHead();
     bool checkUserValid();
     bool checkPwdValid();

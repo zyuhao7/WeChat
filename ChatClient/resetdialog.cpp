@@ -4,12 +4,15 @@
 #include <QRegularExpression>
 #include "global.h"
 #include "httpmgr.h"
+#include "liquidglass.h"
 
 ResetDialog::ResetDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ResetDialog)
 {
     ui->setupUi(this);
+    setStyleSheet(glassFormStyleSheet());
+    ui->sure_btn->setAccent(QColor(0x0A, 0x84, 0xFF));
 
     connect(ui->user_edit,&QLineEdit::editingFinished,this,[this](){
         checkUserValid();

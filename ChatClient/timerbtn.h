@@ -1,10 +1,10 @@
 #ifndef TIMERBTN_H
 #define TIMERBTN_H
-#include<QPushButton>
+#include "liquidglass.h"
 #include<QTimer>
 
 
-class TimerBtn : public QPushButton
+class TimerBtn : public GlassButton
 {
 public:
     TimerBtn(QWidget* parent = nullptr);

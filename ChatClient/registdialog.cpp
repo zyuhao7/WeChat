@@ -5,6 +5,7 @@
 #include <QRegularExpressionValidator>
 #include <QRandomGenerator>
 #include "httpmgr.h"
+#include "liquidglass.h"
 
 
 RegistDialog::RegistDialog(QWidget *parent) :
@@ -13,6 +14,13 @@ RegistDialog::RegistDialog(QWidget *parent) :
     _countdown(5)
 {
     ui->setupUi(this);
+    setStyleSheet(glassFormStyleSheet() + QStringLiteral(R"(
+        QStackedWidget, QWidget#page, QWidget#page_2 { background: transparent; }
+        QLabel#done_title { color: #1C1C1E; font-size: 20px; font-weight: 600; }
+        QLabel#tip_lb, QLabel#tip2_lb { color: #3A3A3C; font-size: 13px; }
+    )"));
+    ui->confirm_btn->setAccent(QColor(0x0A, 0x84, 0xFF));
+    ui->return_btn->setAccent(QColor(0x0A, 0x84, 0xFF));
     ui->pass_edit->setEchoMode(QLineEdit::Password);
     ui->confirm_edit->setEchoMode(QLineEdit::Password);
     ui->err_tip->setProperty("state","normal");

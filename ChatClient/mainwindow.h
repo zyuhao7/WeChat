@@ -7,6 +7,7 @@
 #include "registdialog.h"
 #include "resetdialog.h"
 #include "chatdialog.h"
+#include "liquidglass.h"
 
 /******************************************************************************
  *
@@ -48,12 +49,15 @@ public slots:
     void SlotSwitchChat();
     void SlotOffline();
     void SlotExcepConOffline();
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 private:
     void offlineLogin();
     void setPage(QWidget* page);
     void applyLoginSize();   // fixed 300x500 content
     void applyChatSize();    // resizable 1050x900 content
 
+    GlassBackdrop* _backdrop;
     QWidget* _page_container;
     QVBoxLayout* _page_layout;
 
