@@ -25,7 +25,6 @@ protected:
 
 private slots:
     void on_send_btn_clicked();
-    void on_receive_btn_clicked();
 
 private:
     void clearItems();
