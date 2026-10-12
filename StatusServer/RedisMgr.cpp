@@ -2,8 +2,10 @@
 #include "const.h"
 #include "ConfigMgr.h"
 #include "DistLock.h"
+#include "ServerPicker.h"
+#include <climits>
 RedisMgr::~RedisMgr() {
-    //Close();
+    Close();
 }
 RedisMgr::RedisMgr() {
     auto& gCfgMgr = ConfigMgr::Inst();
@@ -11,7 +13,7 @@ RedisMgr::RedisMgr() {
     auto port = gCfgMgr["Redis"]["Port"];
     auto pwd = gCfgMgr["Redis"]["Passwd"];
 	// the distributed lock also uses connections; to avoid exhausting the pool, enlarge it to 10 up front
-    _con_pool.reset(new RedisConPool(10, host.c_str(), atoi(port.c_str()), pwd.c_str()));
+    _con_pool.reset(new RedisConPool(10, host, atoi(port.c_str()), pwd));
 }
 
 
@@ -75,6 +77,21 @@ bool RedisMgr::Set(const std::string& key, const std::string& value) {
 	return true;
 }
 
+bool RedisMgr::SetEx(const std::string& key, const std::string& value, int ttl_seconds) {
+	auto connect = _con_pool->getConnection();
+	if (connect == nullptr) {
+		return false;
+	}
+	auto reply = (redisReply*)redisCommand(connect, "SET %s %s EX %d", key.c_str(), value.c_str(), ttl_seconds);
+	bool ok = reply != nullptr && reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0;
+	if (reply != nullptr) {
+		freeReplyObject(reply);
+	}
+	_con_pool->returnConnection(connect);
+	std::cout << "Execut command [ SET " << key << " EX " << ttl_seconds << " ] " << (ok ? "success" : "failure") << " ! " << std::endl;
+	return ok;
+}
+
 bool RedisMgr::LPush(const std::string& key, const std::string& value)
 {
 	auto connect = _con_pool->getConnection();
@@ -115,7 +132,7 @@ bool RedisMgr::LPop(const std::string& key, std::string& value) {
 		return false;
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		std::cout << "Execut command [ LPOP " << key << " ] failure ! " << std::endl;
 		freeReplyObject(reply);
 		_con_pool->returnConnection(connect);
@@ -167,7 +184,7 @@ bool RedisMgr::RPop(const std::string& key, std::string& value) {
 		return false;
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		std::cout << "Execut command [ RPOP " << key << " ] failure ! " << std::endl;
 		freeReplyObject(reply);
 		_con_pool->returnConnection(connect);
@@ -263,7 +280,7 @@ std::string RedisMgr::HGet(const std::string& key, const std::string& hkey)
 		return "";
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		freeReplyObject(reply);
 		std::cout << "Execut command [ HGet " << key << " " << hkey << "  ] failure ! " << std::endl;
 		_con_pool->returnConnection(connect);
@@ -356,7 +373,6 @@ bool RedisMgr::ExistsKey(const std::string& key)
 void RedisMgr::Close()
 {
 	_con_pool->Close();
-	_con_pool->ClearConnections();
 }
 
 // acquire the distributed lock
@@ -398,12 +414,9 @@ void RedisMgr::IncreaseCount(std::string server_name)
 
 	// increase the login count
 	auto rd_res = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server_name);
-	int count = 0;
-	if (!rd_res.empty())
-	{
-		count = std::stoi(rd_res);
-	}
-	count++;
+	int count = ParseLoginCount(rd_res).value_or(0);
+	if (count < INT_MAX)
+		count++;
 	auto count_str = std::to_string(count);
 	RedisMgr::GetInstance()->HSet(LOGIN_COUNT, server_name, count_str);
 }
@@ -419,12 +432,8 @@ void RedisMgr::DecreaseCount(std::string server_name)
 
 	// decrease the login count
 	auto rd_res = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server_name);
-	int count = 0;
-	if (!rd_res.empty())
-	{
-		count = std::stoi(rd_res);
-	}
-	if (count > 0) 
+	int count = ParseLoginCount(rd_res).value_or(0);
+	if (count > 0)
 		count--;
 	auto count_str = std::to_string(count);
 	RedisMgr::GetInstance()->HSet(LOGIN_COUNT, server_name, count_str);

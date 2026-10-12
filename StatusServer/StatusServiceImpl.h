@@ -1,7 +1,8 @@
 #pragma once
 #include <grpcpp/grpcpp.h>
 #include "message.grpc.pb.h"
-#include <mutex>
+#include <string>
+#include <vector>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -42,10 +43,10 @@ public:
 	Status Login(ServerContext* context, const LoginReq* request,
 		LoginRsp* reply) override;
 private:
-	void insertToken(int uid, std::string token);
-	ChatServer getChatServer();
-	std::unordered_map<std::string, ChatServer> _servers;
-	std::mutex _server_mtx;
+	bool insertToken(int uid, const std::string& token);
+	bool getChatServer(ChatServer& picked);
+	// filled once in the constructor and read-only afterwards, so no lock is needed
+	std::vector<ChatServer> _servers;
 
 };
 

@@ -2,7 +2,12 @@
 #include "ConfigMgr.h"
 #include "const.h"
 #include "RedisMgr.h"
-#include <climits>
+#include "ServerPicker.h"
+#include <map>
+
+// The token is only checked when the client logs in to the chat server right after
+// GetChatServer, so it only needs to outlive that hand-off.
+constexpr int USER_TOKEN_TTL_SECONDS = 600;
 
 std::string generate_unique_string() {
 	// create the UUID object
@@ -16,31 +21,29 @@ std::string generate_unique_string() {
 
 Status StatusServiceImpl::GetChatServer(ServerContext* context, const GetChatServerReq* request, GetChatServerRsp* reply)
 {
-	std::string prefix("myh status server has received :  ");
-	const auto& server = getChatServer();
+	ChatServer server;
+	if (!getChatServer(server)) {
+		reply->set_error(ErrorCodes::RPCFailed);
+		return Status::OK;
+	}
+
+	auto token = generate_unique_string();
+	if (!insertToken(request->uid(), token)) {
+		reply->set_error(ErrorCodes::RPCFailed);
+		return Status::OK;
+	}
+
 	reply->set_host(server.host);
 	reply->set_port(server.port);
+	reply->set_token(token);
 	reply->set_error(ErrorCodes::Success);
-	reply->set_token(generate_unique_string());
-	insertToken(request->uid(), reply->token());
 	return Status::OK;
 }
 
 StatusServiceImpl::StatusServiceImpl()
 {
 	auto& cfg = ConfigMgr::Inst();
-	auto server_list = cfg["chatservers"]["Name"];
-
-	std::vector<std::string> words;
-
-	std::stringstream ss(server_list);
-	std::string word;
-
-	while (std::getline(ss, word, ',')) {
-		words.push_back(word);
-	}
-
-	for (auto& word : words) {
+	for (auto& word : ParseServerList(cfg["chatservers"]["Name"])) {
 		if (cfg[word]["Name"].empty()) {
 			continue;
 		}
@@ -49,43 +52,31 @@ StatusServiceImpl::StatusServiceImpl()
 		server.port = cfg[word]["Port"];
 		server.host = cfg[word]["Host"];
 		server.name = cfg[word]["Name"];
-		_servers[server.name] = server;
+		_servers.push_back(server);
 	}
-
 }
 
-ChatServer StatusServiceImpl::getChatServer() {
-	std::lock_guard<std::mutex> guard(_server_mtx);
-	auto minServer = _servers.begin()->second;
-	auto count_str = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, minServer.name);
-	if (count_str.empty()) {
-		//default to the maximum when absent
-		minServer.con_count = INT_MAX;
-	}
-	else {
-		minServer.con_count = std::stoi(count_str);
+bool StatusServiceImpl::getChatServer(ChatServer& picked) {
+	// a chat server publishes its count on startup and removes it on shutdown,
+	// so a missing count means the server is down
+	std::vector<std::string> names;
+	std::map<std::string, std::string> counts;
+	for (const auto& server : _servers) {
+		names.push_back(server.name);
+		counts[server.name] = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server.name);
 	}
 
-
-	// use a range-based for loop
-	for (auto& server : _servers) {
-
-		if (server.second.name == minServer.name) {
-			continue;
-		}
-		auto count_str = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server.second.name);
-		if (count_str.empty()) {
-			server.second.con_count = INT_MAX;
-		}
-		else {
-			server.second.con_count = std::stoi(count_str);
-		}
-
-		if (server.second.con_count < minServer.con_count) {
-			minServer = server.second;
+	auto name = PickServer(names, counts);
+	if (!name) {
+		return false;
+	}
+	for (const auto& server : _servers) {
+		if (server.name == *name) {
+			picked = server;
+			return true;
 		}
 	}
-	return minServer;
+	return false;
 }
 
 Status StatusServiceImpl::Login(ServerContext* context, const LoginReq* request, LoginRsp* reply)
@@ -112,10 +103,10 @@ Status StatusServiceImpl::Login(ServerContext* context, const LoginReq* request,
 	return Status::OK;
 }
 
-void StatusServiceImpl::insertToken(int uid, std::string token)
+bool StatusServiceImpl::insertToken(int uid, const std::string& token)
 {
 	std::string uid_str = std::to_string(uid);
 	std::string token_key = USERTOKENPREFIX + uid_str;
-	RedisMgr::GetInstance()->Set(token_key, token);
+	return RedisMgr::GetInstance()->SetEx(token_key, token, USER_TOKEN_TTL_SECONDS);
 }
 
