@@ -5,7 +5,8 @@
 
 #include "HttpParse.h"
 
-namespace {
+namespace
+{
 
 using Params = std::unordered_map<std::string, std::string>;
 
@@ -14,13 +15,14 @@ Params Parse(const std::string& target, std::string* path_out = nullptr)
     std::string path;
     Params params;
     ParseTarget(target, path, params);
-    if (path_out) {
+    if (path_out)
+    {
         *path_out = path;
     }
     return params;
 }
 
-}
+} // namespace
 
 TEST(ParseTarget, NoQueryKeepsWholePath)
 {
@@ -143,7 +145,8 @@ TEST(ParseTarget, HandlesA64KbQuery)
 TEST(ParseJsonObject, RejectsNonObjects)
 {
     Json::Value v;
-    for (const char* body : {"", "null", "[]", "\"str\"", "1", "true", "   ", "{", "{\"a\":1,}x"}) {
+    for (const char* body : {"", "null", "[]", "\"str\"", "1", "true", "   ", "{", "{\"a\":1,}x"})
+    {
         EXPECT_FALSE(ParseJsonObject(body, v)) << "body: " << body;
     }
 }
@@ -172,24 +175,27 @@ TEST(ParseJsonObject, FailureLeavesOutputUntouched)
     EXPECT_EQ(v["keep"].asInt(), 1);
 }
 
-namespace {
+namespace
+{
 
 bool Field(const std::string& body, std::string& out, std::size_t maxLen = kMaxEmailLength)
 {
     Json::Value root;
-    if (!ParseJsonObject(body, root)) {
+    if (!ParseJsonObject(body, root))
+    {
         return false;
     }
     return GetStringField(root, "email", out, maxLen);
 }
 
-}
+} // namespace
 
 TEST(GetStringField, RejectsWrongTypes)
 {
     std::string out;
     for (const char* body : {"{\"email\":{}}", "{\"email\":[]}", "{\"email\":1}", "{\"email\":true}",
-                             "{\"email\":null}", "{\"email\":[\"a@b.cn\"]}"}) {
+                             "{\"email\":null}", "{\"email\":[\"a@b.cn\"]}"})
+    {
         EXPECT_FALSE(Field(body, out)) << "body: " << body;
     }
 }

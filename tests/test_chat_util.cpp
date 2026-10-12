@@ -15,7 +15,9 @@ TEST(IsPureDigit, Boundaries)
     EXPECT_FALSE(IsPureDigit("-1"));
     EXPECT_FALSE(IsPureDigit("+1"));
     EXPECT_FALSE(IsPureDigit("\xe4\xb8\x80"));
-    EXPECT_FALSE(IsPureDigit(std::string("1\0" "2", 3)));
+    EXPECT_FALSE(IsPureDigit(std::string("1\0"
+                                         "2",
+                                         3)));
 }
 
 TEST(ParseNonNegativeInt, Range)

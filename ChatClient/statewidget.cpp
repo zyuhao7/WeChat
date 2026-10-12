@@ -6,9 +6,8 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-
-StateWidget::StateWidget(QWidget *parent)
-    :QWidget(parent),
+StateWidget::StateWidget(QWidget* parent)
+    : QWidget(parent),
       _curstate(ClickLbState::Normal),
       _has_icons(false)
 {
@@ -25,7 +24,7 @@ void StateWidget::SetIcons(ElaIconType::IconName normal,
                    minimumHeight() > 1 ? minimumHeight() : 24);
     int size = pixelSize > 0 ? pixelSize : qBound(16, box, 24);
 
-    _pix_normal   = ElaIcon::getInstance()->getElaIcon(normal, size).pixmap(size, size);
+    _pix_normal = ElaIcon::getInstance()->getElaIcon(normal, size).pixmap(size, size);
     _pix_selected = ElaIcon::getInstance()->getElaIcon(selected, size, QColor(0x0A, 0x84, 0xFF)).pixmap(size, size);
     _has_icons = true;
     update();
@@ -60,7 +59,7 @@ void StateWidget::ClearState()
 
 void StateWidget::SetSelected(bool bselected)
 {
-    if(bselected)
+    if (bselected)
     {
         _curstate = ClickLbState::Selected;
         setProperty("state", _selected);
@@ -85,7 +84,7 @@ void StateWidget::AddRedPoint()
     QVBoxLayout* layout2 = new QVBoxLayout;
     _red_point->setAlignment(Qt::AlignCenter);
     layout2->addWidget(_red_point);
-    layout2->setContentsMargins(0, 0 ,0 ,0);
+    layout2->setContentsMargins(0, 0, 0, 0);
     this->setLayout(layout2);
     _red_point->setVisible(false);
 }
@@ -96,14 +95,15 @@ void StateWidget::ShowRedPoint(bool show)
     _red_point->setVisible(true);
 }
 
-void StateWidget::paintEvent(QPaintEvent *event)
+void StateWidget::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
     QStyleOption opt;
     opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-    if(_has_icons){
+    if (_has_icons)
+    {
         const QPixmap& pm = (_curstate == ClickLbState::Selected) ? _pix_selected : _pix_normal;
         QRect target(QPoint((width() - pm.width()) / 2, (height() - pm.height()) / 2), pm.size());
         p.drawPixmap(target, pm);
@@ -111,91 +111,96 @@ void StateWidget::paintEvent(QPaintEvent *event)
     return;
 }
 
-void StateWidget::mousePressEvent(QMouseEvent *event)
+void StateWidget::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::LeftButton) {
-            if(_curstate == ClickLbState::Selected){
-                qDebug()<<"PressEvent , already to selected press: "<< _selected_press;
-                //emit clicked();
-                // call the base-class mousePressEvent for normal event handling
-                QWidget::mousePressEvent(event);
-                return;
-            }
-
-            if(_curstate == ClickLbState::Normal){
-                qDebug()<<"PressEvent , change to selected press: "<< _selected_press;
-                _curstate = ClickLbState::Selected;
-                setProperty("state",_selected_press);
-                repolish(this);
-                update();
-            }
-
-            return;
-    }
-       // call the base-class mousePressEvent for normal event handling
-       QWidget::mousePressEvent(event);
-}
-
-void StateWidget::mouseReleaseEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton) {
-            if(_curstate == ClickLbState::Normal){
-                //qDebug()<<"ReleaseEvent , change to normal hover: "<< _normal_hover;
-                setProperty("state",_normal_hover);
-                repolish(this);
-                update();
-
-            }else{
-                //qDebug()<<"ReleaseEvent , change to select hover: "<< _selected_hover;
-                setProperty("state",_selected_hover);
-                repolish(this);
-                update();
-            }
-            emit clicked();
+    if (event->button() == Qt::LeftButton)
+    {
+        if (_curstate == ClickLbState::Selected)
+        {
+            qDebug() << "PressEvent , already to selected press: " << _selected_press;
+            // emit clicked();
+            //  call the base-class mousePressEvent for normal event handling
+            QWidget::mousePressEvent(event);
             return;
         }
-        // call the base-class mousePressEvent for normal event handling
+
+        if (_curstate == ClickLbState::Normal)
+        {
+            qDebug() << "PressEvent , change to selected press: " << _selected_press;
+            _curstate = ClickLbState::Selected;
+            setProperty("state", _selected_press);
+            repolish(this);
+            update();
+        }
+
+        return;
+    }
+    // call the base-class mousePressEvent for normal event handling
     QWidget::mousePressEvent(event);
 }
 
-void StateWidget::enterEvent(QEnterEvent *event)
+void StateWidget::mouseReleaseEvent(QMouseEvent* event)
 {
-        // handle mouse hover-enter logic here
-       if(_curstate == ClickLbState::Normal)
-       {
-            //qDebug()<<"enter , change to normal hover: "<< _normal_hover;
-           setProperty("state",_normal_hover);
-           repolish(this);
-           update();
-
-       }
-       else
-       {
-            //qDebug()<<"enter , change to selected hover: "<< _selected_hover;
-           setProperty("state",_selected_hover);
-           repolish(this);
-           update();
-       }
-
-       QWidget::enterEvent(event);
+    if (event->button() == Qt::LeftButton)
+    {
+        if (_curstate == ClickLbState::Normal)
+        {
+            // qDebug()<<"ReleaseEvent , change to normal hover: "<< _normal_hover;
+            setProperty("state", _normal_hover);
+            repolish(this);
+            update();
+        }
+        else
+        {
+            // qDebug()<<"ReleaseEvent , change to select hover: "<< _selected_hover;
+            setProperty("state", _selected_hover);
+            repolish(this);
+            update();
+        }
+        emit clicked();
+        return;
+    }
+    // call the base-class mousePressEvent for normal event handling
+    QWidget::mousePressEvent(event);
 }
 
-void StateWidget::leaveEvent(QEvent *event)
+void StateWidget::enterEvent(QEnterEvent* event)
+{
+    // handle mouse hover-enter logic here
+    if (_curstate == ClickLbState::Normal)
+    {
+        // qDebug()<<"enter , change to normal hover: "<< _normal_hover;
+        setProperty("state", _normal_hover);
+        repolish(this);
+        update();
+    }
+    else
+    {
+        // qDebug()<<"enter , change to selected hover: "<< _selected_hover;
+        setProperty("state", _selected_hover);
+        repolish(this);
+        update();
+    }
+
+    QWidget::enterEvent(event);
+}
+
+void StateWidget::leaveEvent(QEvent* event)
 {
     // handle mouse hover-leave logic here
-       if(_curstate == ClickLbState::Normal){
-           // qDebug()<<"leave , change to normal : "<< _normal;
-           setProperty("state",_normal);
-           repolish(this);
-           update();
-
-       }else{
-           // qDebug()<<"leave , change to select normal : "<< _selected;
-           setProperty("state",_selected);
-           repolish(this);
-           update();
-       }
-       QWidget::leaveEvent(event);
+    if (_curstate == ClickLbState::Normal)
+    {
+        // qDebug()<<"leave , change to normal : "<< _normal;
+        setProperty("state", _normal);
+        repolish(this);
+        update();
+    }
+    else
+    {
+        // qDebug()<<"leave , change to select normal : "<< _selected;
+        setProperty("state", _selected);
+        repolish(this);
+        update();
+    }
+    QWidget::leaveEvent(event);
 }
-
-

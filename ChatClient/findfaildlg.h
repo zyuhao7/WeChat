@@ -3,7 +3,8 @@
 
 #include <QDialog>
 
-namespace Ui {
+namespace Ui
+{
 class FindFailDlg;
 }
 
@@ -12,12 +13,13 @@ class FindFailDlg : public QDialog
     Q_OBJECT
 
 public:
-    explicit FindFailDlg(QWidget *parent = nullptr);
+    explicit FindFailDlg(QWidget* parent = nullptr);
     ~FindFailDlg();
 private slots:
     void on_fail_sure_btn_clicked();
+
 private:
-    Ui::FindFailDlg *ui;
+    Ui::FindFailDlg* ui;
 };
 
 #endif // FINDFAILDLG_H

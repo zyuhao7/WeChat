@@ -2,16 +2,16 @@
 #include "ui_applyfrienditem.h"
 #include "liquidglass.h"
 
-ApplyFriendItem::ApplyFriendItem(QWidget *parent) :
-    ListItemBase(parent),
-    ui(new Ui::ApplyFriendItem),
-    _added(false)
+ApplyFriendItem::ApplyFriendItem(QWidget* parent)
+    : ListItemBase(parent),
+      ui(new Ui::ApplyFriendItem),
+      _added(false)
 {
     ui->setupUi(this);
     SetItemType(ListItemType::APPLY_FRIEND_ITEM);
     ui->addBtn->SetState("normal", "hover", "press");
     ui->addBtn->hide();
-    connect(ui->addBtn, &ClickedBtn::clicked, [this](){
+    connect(ui->addBtn, &ClickedBtn::clicked, [this]() {
         emit this->sig_auth_friend(_apply_info);
     });
 }
@@ -37,7 +37,7 @@ void ApplyFriendItem::SetInfo(std::shared_ptr<ApplyInfo> apply_info)
 
 void ApplyFriendItem::ShowAddBtn(bool bshow)
 {
-    if(bshow)
+    if (bshow)
     {
         ui->addBtn->show();
         ui->already_add_lb->hide();
@@ -55,4 +55,3 @@ int ApplyFriendItem::GetUid()
 {
     return _apply_info->_uid;
 }
-

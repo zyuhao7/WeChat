@@ -6,8 +6,8 @@
 #include "userdata.h"
 #include "friendlabel.h"
 
-
-namespace Ui {
+namespace Ui
+{
 class ApplyFriend;
 }
 
@@ -16,22 +16,23 @@ class ApplyFriend : public QDialog
     Q_OBJECT
 
 public:
-    explicit ApplyFriend(QWidget *parent = nullptr);
+    explicit ApplyFriend(QWidget* parent = nullptr);
     ~ApplyFriend();
     void InitTipLbs();
-    void AddTipLbs(ClickedLabel*, QPoint cur_point, QPoint &next_point, int text_width, int text_height);
-    bool eventFilter(QObject *obj, QEvent *event);
+    void AddTipLbs(ClickedLabel*, QPoint cur_point, QPoint& next_point, int text_width, int text_height);
+    bool eventFilter(QObject* obj, QEvent* event);
     void SetSearchInfo(std::shared_ptr<SearchInfo> si);
+
 private:
     void resetLabels();
-    Ui::ApplyFriend *ui;
+    Ui::ApplyFriend* ui;
 
-    //an already-created label
+    // an already-created label
     QMap<QString, ClickedLabel*> _add_labels;
     std::vector<QString> _add_label_keys;
     QPoint _label_point;
 
-    //used to show new-friend labels in the input box
+    // used to show new-friend labels in the input box
     QMap<QString, FriendLabel*> _friend_labels;
     std::vector<QString> _friend_label_keys;
     void addLabel(QString name);
@@ -40,16 +41,16 @@ private:
     std::shared_ptr<SearchInfo> _si;
 
 public slots:
-    //show more labels
+    // show more labels
     void ShowMoreLabel();
 
-    //on Enter, add the entered label to the display area
+    // on Enter, add the entered label to the display area
     void SlotLabelEnter();
 
-    //remove the friend label
+    // remove the friend label
     void SlotRemoveFriendLabel(QString);
 
-    //add or remove friend labels by clicking the tip box
+    // add or remove friend labels by clicking the tip box
     void SlotChangeFriendLabelByTip(QString, ClickLbState);
 
     // handle input-box text changes and update the tip box
@@ -58,13 +59,13 @@ public slots:
     // triggered after the input box finishes editing
     void SlotLabelEditFinished();
 
-   //on clicking the tip content, add a new friend label
+    // on clicking the tip content, add a new friend label
     void SlotAddFirendLabelByClickTip(QString text);
 
-//    // handle the confirm callback
+    //    // handle the confirm callback
     void SlotApplySure();
 
-//    // handle the cancel callback
+    //    // handle the cancel callback
     void SlotApplyCancel();
 };
 

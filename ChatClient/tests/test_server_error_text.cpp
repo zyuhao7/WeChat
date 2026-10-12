@@ -17,7 +17,8 @@ private slots:
     {
         QSet<QString> texts;
         const QList<int> codes{1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012};
-        for (int code : codes) {
+        for (int code : codes)
+        {
             texts.insert(serverErrorText(code));
         }
         QCOMPARE(texts.size(), codes.size());
@@ -25,13 +26,14 @@ private slots:
 
     void unknownCodesShowTheNumber()
     {
-        for (int code : {-1, 5, 999, 1013, 99999}) {
+        for (int code : {-1, 5, 999, 1013, 99999})
+        {
             QVERIFY2(serverErrorText(code).contains(QString::number(code)), qPrintable(QString::number(code)));
         }
     }
 };
 
-QObject *createServerErrorTextTest()
+QObject* createServerErrorTextTest()
 {
     return new ServerErrorTextTest;
 }

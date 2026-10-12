@@ -3,7 +3,8 @@
 
 #include <QFrame>
 #include <QString>
-namespace Ui {
+namespace Ui
+{
 class FriendLabel;
 }
 
@@ -12,14 +13,15 @@ class FriendLabel : public QFrame
     Q_OBJECT
 
 public:
-    explicit FriendLabel(QWidget *parent = nullptr);
+    explicit FriendLabel(QWidget* parent = nullptr);
     ~FriendLabel();
     void SetText(QString text);
     int Width();
     int Height();
     QString Text();
+
 private:
-    Ui::FriendLabel *ui;
+    Ui::FriendLabel* ui;
     QString _text;
     int _width;
     int _height;

@@ -5,7 +5,8 @@
 #include <memory>
 #include "userdata.h"
 
-namespace Ui {
+namespace Ui
+{
 class FindSuccessDlg;
 }
 
@@ -14,12 +15,12 @@ class FindSuccessDlg : public QDialog
     Q_OBJECT
 
 public:
-    explicit FindSuccessDlg(QWidget *parent = nullptr);
+    explicit FindSuccessDlg(QWidget* parent = nullptr);
     ~FindSuccessDlg();
     void SetSearchInfo(std::shared_ptr<SearchInfo> si);
 
 private:
-    Ui::FindSuccessDlg *ui;
+    Ui::FindSuccessDlg* ui;
     std::shared_ptr<SearchInfo> _si;
     QWidget* _parent;
 

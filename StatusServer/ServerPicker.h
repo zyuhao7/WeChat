@@ -13,4 +13,4 @@ std::optional<int> ParseLoginCount(const std::string& text);
 // Picks the server with the fewest logins. Servers whose count is missing or unparsable are
 // treated as unavailable; ties go to the earliest name in `names`.
 std::optional<std::string> PickServer(const std::vector<std::string>& names,
-	const std::map<std::string, std::string>& counts);
+                                      const std::map<std::string, std::string>& counts);

@@ -6,7 +6,8 @@
 #include "MsgHeader.h"
 #include "MsgNode.h"
 
-namespace {
+namespace
+{
 
 // The reader in CSession hands the two header fields to network_to_host_short, so that is
 // how the test reads back what SendNode wrote.
@@ -17,7 +18,7 @@ short PeekShort(const char* at)
     return boost::asio::detail::socket_ops::network_to_host_short(raw);
 }
 
-}  // namespace
+} // namespace
 
 // The header SendNode writes and the frame IsValidMsgHeader accepts are two halves of the
 // same contract, so they have to agree on order and width.

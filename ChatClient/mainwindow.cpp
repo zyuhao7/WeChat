@@ -11,15 +11,8 @@
 // Title-bar height; the page container lives in the central area below it.
 static const int kAppBarHeight = 48;
 
-MainWindow::MainWindow(QWidget *parent)
-    : ElaWindow(parent)
-    , _backdrop(nullptr)
-    , _page_container(nullptr)
-    , _page_layout(nullptr)
-    , _login_dlg(nullptr)
-    , _reg_dlg(nullptr)
-    , _reset_dlg(nullptr)
-    , _chat_dlg(nullptr)
+MainWindow::MainWindow(QWidget* parent)
+    : ElaWindow(parent), _backdrop(nullptr), _page_container(nullptr), _page_layout(nullptr), _login_dlg(nullptr), _reg_dlg(nullptr), _reset_dlg(nullptr), _chat_dlg(nullptr)
 {
     _ui_status = LOGIN_UI;
 
@@ -194,7 +187,7 @@ void MainWindow::SlotExcepConOffline()
 
 void MainWindow::offlineLogin()
 {
-    if(_ui_status == LOGIN_UI)
+    if (_ui_status == LOGIN_UI)
     {
         return; // if the UI has returned to the login screen, do nothing
     }

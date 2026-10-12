@@ -1,10 +1,10 @@
 #include "grouptipitem.h"
 #include "ui_grouptipitem.h"
 
-GroupTipItem::GroupTipItem(QWidget *parent) :
-    ListItemBase(parent),
-    _tip(""),
-    ui(new Ui::GroupTipItem)
+GroupTipItem::GroupTipItem(QWidget* parent)
+    : ListItemBase(parent),
+      _tip(""),
+      ui(new Ui::GroupTipItem)
 {
     ui->setupUi(this);
     SetItemType(ListItemType::GROUP_TIP_ITEM);
@@ -24,4 +24,3 @@ void GroupTipItem::SetGroupTip(QString str)
 {
     ui->label->setText(str);
 }
-

@@ -1,7 +1,7 @@
 #include "MysqlMgr.h"
 
-MysqlMgr::~MysqlMgr() {
-
+MysqlMgr::~MysqlMgr()
+{
 }
 
 int MysqlMgr::RegUser(const std::string& name, const std::string& email, const std::string& pwd, const std::string& icon)
@@ -9,18 +9,21 @@ int MysqlMgr::RegUser(const std::string& name, const std::string& email, const s
     return _dao.RegUserTransaction(name, email, pwd, icon);
 }
 
-
-MysqlMgr::MysqlMgr() {
+MysqlMgr::MysqlMgr()
+{
 }
 
-DbStatus MysqlMgr::CheckEmail(const std::string& name, const std::string& email) {
+DbStatus MysqlMgr::CheckEmail(const std::string& name, const std::string& email)
+{
     return _dao.CheckEmail(name, email);
 }
 
-DbStatus MysqlMgr::UpdatePwd(const std::string& name, const std::string& pwd) {
+DbStatus MysqlMgr::UpdatePwd(const std::string& name, const std::string& pwd)
+{
     return _dao.UpdatePwd(name, pwd);
 }
 
-DbStatus MysqlMgr::CheckPwd(const std::string& email, const std::string& pwd, UserInfo& userInfo) {
-	return _dao.CheckPwd(email, pwd, userInfo);
+DbStatus MysqlMgr::CheckPwd(const std::string& email, const std::string& pwd, UserInfo& userInfo)
+{
+    return _dao.CheckPwd(email, pwd, userInfo);
 }

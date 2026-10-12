@@ -12,11 +12,13 @@ GetChatServerRsp StatusGrpcClient::GetChatServer(int uid)
     Status status = stub->GetChatServer(&context, request, &reply);
     Defer defer([&stub, this]() {
         pool_->returnConnection(std::move(stub));
-        });
-    if (status.ok()) {
+    });
+    if (status.ok())
+    {
         return reply;
     }
-    else {
+    else
+    {
         reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }
@@ -34,11 +36,13 @@ LoginRsp StatusGrpcClient::Login(int uid, std::string token)
     Status status = stub->Login(&context, request, &reply);
     Defer defer([&stub, this]() {
         pool_->returnConnection(std::move(stub));
-        });
-    if (status.ok()) {
+    });
+    if (status.ok())
+    {
         return reply;
     }
-    else {
+    else
+    {
         reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }

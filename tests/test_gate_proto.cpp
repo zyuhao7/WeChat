@@ -36,7 +36,8 @@ TEST(ProtoRoundTrip, TextChatMsgKeepsEveryRepeatedEntry)
     message::TextChatMsgReq req;
     req.set_fromuid(11);
     req.set_touid(22);
-    for (const char* content : {"first", "second", "third"}) {
+    for (const char* content : {"first", "second", "third"})
+    {
         auto* data = req.add_textmsgs();
         data->set_msgid(std::string("id-") + content);
         data->set_msgcontent(content);

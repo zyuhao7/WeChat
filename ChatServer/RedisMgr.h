@@ -10,13 +10,17 @@
 #include "Singleton.h"
 #include <string>
 
-class RedisConPool {
+class RedisConPool
+{
 public:
     RedisConPool(size_t poolSize, const std::string& host, int port, const std::string& pwd)
-        : b_stop_(false), poolSize_(poolSize), host_(host), pwd_(pwd), port_(port), fail_count_(0), counter_(0) {
-        for (size_t i = 0; i < poolSize_; ++i) {
+        : b_stop_(false), poolSize_(poolSize), host_(host), pwd_(pwd), port_(port), fail_count_(0), counter_(0)
+    {
+        for (size_t i = 0; i < poolSize_; ++i)
+        {
             auto* context = connectAndAuth();
-            if (context == nullptr) {
+            if (context == nullptr)
+            {
                 // let the health check retry it instead of running permanently short
                 fail_count_++;
                 continue;
@@ -25,18 +29,21 @@ public:
         }
 
         check_thread_ = std::thread([this]() {
-            while (!b_stop_) {
+            while (!b_stop_)
+            {
                 counter_++;
-                if (counter_ >= 60) {
+                if (counter_ >= 60)
+                {
                     checkThreadPro();
                     counter_ = 0;
                 }
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
-            });
+        });
     }
 
-    ~RedisConPool() {
+    ~RedisConPool()
+    {
         Close();
         ClearConnections();
     }
@@ -52,17 +59,20 @@ public:
         }
     }
 
-    redisContext* getConnection() {
+    redisContext* getConnection()
+    {
         std::unique_lock<std::mutex> lock(mutex_);
         cond_.wait(lock, [this] {
-            if (b_stop_) {
+            if (b_stop_)
+            {
                 return true;
             }
             return !connections_.empty();
-            });
-        //if stopped, return a null pointer
-        if (b_stop_) {
-            return  nullptr;
+        });
+        // if stopped, return a null pointer
+        if (b_stop_)
+        {
+            return nullptr;
         }
         auto* context = connections_.front();
         connections_.pop();
@@ -73,7 +83,8 @@ public:
     redisContext* getConnNonBlock()
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (b_stop_ || connections_.empty()) return nullptr;
+        if (b_stop_ || connections_.empty())
+            return nullptr;
 
         auto* context = connections_.front();
         connections_.pop();
@@ -81,43 +92,51 @@ public:
     }
 
     // recycle the redisContext connection for reuse.
-    void returnConnection(redisContext* context) {
-        if (context == nullptr) {
+    void returnConnection(redisContext* context)
+    {
+        if (context == nullptr)
+        {
             return;
         }
         {
             std::lock_guard<std::mutex> lock(mutex_);
             // a context with err set is dead for good; hand its slot to the reconnect loop
-            if (!b_stop_ && context->err == 0) {
+            if (!b_stop_ && context->err == 0)
+            {
                 connections_.push(context);
                 cond_.notify_one();
                 return;
             }
         }
         redisFree(context);
-        if (!b_stop_) {
+        if (!b_stop_)
+        {
             fail_count_++;
         }
     }
 
-    void Close() {
+    void Close()
+    {
         {
             std::lock_guard<std::mutex> lock(mutex_);
             b_stop_ = true;
         }
         // wake the condition variable waiting for connections, signaling shutdown.
         cond_.notify_all();
-        if (check_thread_.joinable()) {
+        if (check_thread_.joinable())
+        {
             check_thread_.join();
         }
     }
 
-    size_t IdleCount() {
+    size_t IdleCount()
+    {
         std::lock_guard<std::mutex> lock(mutex_);
         return connections_.size();
     }
 
-    int FailCount() const {
+    int FailCount() const
+    {
         return fail_count_;
     }
 
@@ -125,21 +144,26 @@ private:
     redisContext* connectAndAuth()
     {
         auto* context = redisConnect(host_.c_str(), port_);
-        if (context == nullptr || context->err != 0) {
-            if (context != nullptr) {
+        if (context == nullptr || context->err != 0)
+        {
+            if (context != nullptr)
+            {
                 redisFree(context);
             }
             return nullptr;
         }
         // an empty password means the server has no requirepass; AUTH "" would just fail
-        if (pwd_.empty()) {
+        if (pwd_.empty())
+        {
             return context;
         }
 
         auto* reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_.c_str());
-        if (reply == nullptr || reply->type == REDIS_REPLY_ERROR) {
+        if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
+        {
             std::cout << "redis AUTH failed" << std::endl;
-            if (reply != nullptr) {
+            if (reply != nullptr)
+            {
                 freeReplyObject(reply);
             }
             redisFree(context);
@@ -152,11 +176,13 @@ private:
     bool reconnect()
     {
         auto* context = connectAndAuth();
-        if (context == nullptr) {
+        if (context == nullptr)
+        {
             return false;
         }
         std::lock_guard<std::mutex> lock(mutex_);
-        if (b_stop_) {
+        if (b_stop_)
+        {
             redisFree(context);
             return true;
         }
@@ -169,7 +195,8 @@ private:
     {
         size_t pool_size = IdleCount();
 
-        for (size_t i = 0; i < pool_size && !b_stop_; ++i) {
+        for (size_t i = 0; i < pool_size && !b_stop_; ++i)
+        {
             auto* context = getConnNonBlock();
             if (context == nullptr)
             {
@@ -178,10 +205,12 @@ private:
 
             auto* reply = (redisReply*)redisCommand(context, "PING");
             bool alive = reply != nullptr && context->err == 0 && reply->type != REDIS_REPLY_ERROR;
-            if (reply != nullptr) {
+            if (reply != nullptr)
+            {
                 freeReplyObject(reply);
             }
-            if (!alive) {
+            if (!alive)
+            {
                 std::cout << "redis ping failed, dropping connection" << std::endl;
                 redisFree(context);
                 fail_count_++;
@@ -214,6 +243,7 @@ private:
 class RedisMgr : public Singleton<RedisMgr>, public std::enable_shared_from_this<RedisMgr>
 {
     friend class Singleton<RedisMgr>;
+
 public:
     ~RedisMgr();
     bool Get(const std::string& key, std::string& value);
@@ -242,4 +272,3 @@ private:
     RedisMgr();
     std::unique_ptr<RedisConPool> _con_pool;
 };
-

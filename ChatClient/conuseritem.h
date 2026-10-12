@@ -5,7 +5,8 @@
 #include "listitembase.h"
 #include "userdata.h"
 
-namespace Ui {
+namespace Ui
+{
 class ConUserItem;
 }
 
@@ -14,7 +15,7 @@ class ConUserItem : public ListItemBase
     Q_OBJECT
 
 public:
-    explicit ConUserItem(QWidget *parent = nullptr);
+    explicit ConUserItem(QWidget* parent = nullptr);
     ~ConUserItem();
     QSize sizeHint() const override;
     void SetInfo(std::shared_ptr<AuthInfo> auto_info);
@@ -24,7 +25,7 @@ public:
     std::shared_ptr<UserInfo> GetInfo();
 
 private:
-    Ui::ConUserItem *ui;
+    Ui::ConUserItem* ui;
     std::shared_ptr<UserInfo> _info;
 };
 

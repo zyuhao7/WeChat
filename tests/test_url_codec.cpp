@@ -60,7 +60,8 @@ TEST(FromHex, RejectsNonHexDigits)
 
 TEST(UrlCodec, RoundTripsThroughEncodeThenDecode)
 {
-    for (const char* original : {"a b", "a+b", "100%", "\xe4\xb8\xad\xe6\x96\x87", "/path?x=1&y=2", "%"}) {
+    for (const char* original : {"a b", "a+b", "100%", "\xe4\xb8\xad\xe6\x96\x87", "/path?x=1&y=2", "%"})
+    {
         EXPECT_EQ(UrlDecode(UrlEncode(original)), original) << "original: " << original;
     }
 }
@@ -93,7 +94,8 @@ TEST(UrlEncode, EscapesControlAndHighBytes)
 TEST(UrlCodec, RoundTripsEveryByte)
 {
     std::string all;
-    for (int c = 0; c < 256; ++c) {
+    for (int c = 0; c < 256; ++c)
+    {
         all.push_back(static_cast<char>(c));
     }
     EXPECT_EQ(UrlDecode(UrlEncode(all)), all);
@@ -115,12 +117,14 @@ TEST(ToHex, CoversTheNibbleRange)
 
 TEST(FromHex, InvertsToHexAndRejectsNeighbours)
 {
-    for (unsigned char x = 0; x < 16; ++x) {
+    for (unsigned char x = 0; x < 16; ++x)
+    {
         EXPECT_EQ(FromHex(ToHex(x)), x);
     }
     EXPECT_EQ(FromHex('f'), 15);
     // the characters just outside each hex range
-    for (unsigned char c : {'/', ':', '@', 'G', '`', 'g', '\0', '\x7f', '\x80', '\xff'}) {
+    for (unsigned char c : {'/', ':', '@', 'G', '`', 'g', '\0', '\x7f', '\x80', '\xff'})
+    {
         EXPECT_EQ(FromHex(c), -1) << "char code " << static_cast<int>(c);
     }
 }

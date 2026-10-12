@@ -2,12 +2,12 @@
 #include "ui_loadingdlg.h"
 #include <QMovie>
 
-LoadingDlg::LoadingDlg(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::LoadingDlg)
+LoadingDlg::LoadingDlg(QWidget* parent)
+    : QDialog(parent),
+      ui(new Ui::LoadingDlg)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Dialog |Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground); // make the background transparent
 
     // get the screen size

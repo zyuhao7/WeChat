@@ -8,7 +8,8 @@
 #include <thread>
 #include <boost/asio.hpp>
 #include "StatusServiceImpl.h"
-void RunServer() {
+void RunServer()
+{
     auto& cfg = ConfigMgr::Inst();
 
     std::string server_address(cfg["StatusServer"]["Host"] + ":" + cfg["StatusServer"]["Port"]);
@@ -31,11 +32,12 @@ void RunServer() {
 
     // asynchronously wait for the SIGINT signal
     signals.async_wait([&server](const boost::system::error_code& error, int signal_number) {
-        if (!error) {
+        if (!error)
+        {
             std::cout << "Shutting down server..." << std::endl;
             server->Shutdown(); // gracefully shut down the server
         }
-        });
+    });
 
     // run the io_context on a separate thread
     std::thread([&io_context]() { io_context.run(); }).detach();
@@ -45,8 +47,9 @@ void RunServer() {
     io_context.stop(); // stop the io_context
 }
 
-int main(int argc, char** argv) {
-    try 
+int main(int argc, char** argv)
+{
+    try
     {
         RunServer();
     }

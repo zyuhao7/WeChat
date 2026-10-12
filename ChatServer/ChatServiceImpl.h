@@ -16,31 +16,29 @@ using message::AuthFriendReq;
 using message::AuthFriendRsp;
 
 using message::ChatService;
-using message::TextChatMsgReq;
-using message::TextChatMsgRsp;
-using message::TextChatData;
 using message::KickUserReq;
 using message::KickUserRsp;
+using message::TextChatData;
+using message::TextChatMsgReq;
+using message::TextChatMsgRsp;
 
 class ChatServiceImpl final : public ChatService::Service
 {
 public:
-	ChatServiceImpl();
-	Status NotifyAddFriend(ServerContext* context, const AddFriendReq* request,
-		AddFriendRsp* reply) override;
+    ChatServiceImpl();
+    Status NotifyAddFriend(ServerContext* context, const AddFriendReq* request,
+                           AddFriendRsp* reply) override;
 
-	Status NotifyAuthFriend(ServerContext* context,
-		const AuthFriendReq* request, AuthFriendRsp* response) override;
+    Status NotifyAuthFriend(ServerContext* context,
+                            const AuthFriendReq* request, AuthFriendRsp* response) override;
 
-	Status NotifyTextChatMsg(::grpc::ServerContext* context,
-		const TextChatMsgReq* request, TextChatMsgRsp* response) override;
+    Status NotifyTextChatMsg(::grpc::ServerContext* context,
+                             const TextChatMsgReq* request, TextChatMsgRsp* response) override;
 
-	
-	// accept the rpc kick request
-	Status NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* response) override;
-	void RegisterServer(std::shared_ptr<CServer> pServer);
+    // accept the rpc kick request
+    Status NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* response) override;
+    void RegisterServer(std::shared_ptr<CServer> pServer);
 
 private:
-	std::shared_ptr<CServer> _p_server;
+    std::shared_ptr<CServer> _p_server;
 };
-

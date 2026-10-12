@@ -10,23 +10,24 @@
 #include <QListWidgetItem>
 #include <memory>
 
-namespace Ui {
+namespace Ui
+{
 class ChatDialog;
 }
 
-class   ChatDialog : public QDialog
+class ChatDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ChatDialog(QWidget *parent = nullptr);
+    explicit ChatDialog(QWidget* parent = nullptr);
     ~ChatDialog();
 
 protected:
-    bool eventFilter(QObject * watch, QEvent * event) override;
+    bool eventFilter(QObject* watch, QEvent* event) override;
     void handleGlobalMousePress(QMouseEvent* event);
     void CloseFindDlg();
-     void UpdateChatMsg(std::vector<std::shared_ptr<TextChatData>> msgdata); // update the chat history
+    void UpdateChatMsg(std::vector<std::shared_ptr<TextChatData>> msgdata); // update the chat history
 
 private:
     void ShowSearch(bool bsearch = false);
@@ -34,11 +35,11 @@ private:
     void addChatUserList();
     void loadMoreChatUser();
     void loadMoreConUser();
-    void ClearLabelState(StateWidget *lb);
+    void ClearLabelState(StateWidget* lb);
     void SetSelectChatItem(int uid = 0);
     void SetSelectChatPage(int uid = 0);
 
-    Ui::ChatDialog *ui;
+    Ui::ChatDialog* ui;
     ChatUIMode _mode;  // control sidebar switching
     ChatUIMode _state; // the same mode can have different states
     bool _b_loading;
@@ -56,7 +57,7 @@ public slots:
 
     void slot_show_search(bool show);
     void slot_text_changed(const QString& str); // the search box content changed
-    void slot_focus_out(); // the search box lost focus
+    void slot_focus_out();                      // the search box lost focus
 
     void slot_switch_apply_friend_page();
     void slot_apply_friend(std::shared_ptr<AddFriendApply>);
@@ -67,8 +68,9 @@ public slots:
     void slot_jump_chat_item_from_infopage(std::shared_ptr<UserInfo> user_info);
     void slot_friend_info_page(std::shared_ptr<UserInfo> user_info);
 
-    void slot_item_clicked(QListWidgetItem* item);;
-    void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg); // handle the received chat message
+    void slot_item_clicked(QListWidgetItem* item);
+    ;
+    void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg);              // handle the received chat message
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data); // append the sent message
 };
 

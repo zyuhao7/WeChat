@@ -2,9 +2,9 @@
 #include "ui_findfaildlg.h"
 #include <QDebug>
 
-FindFailDlg::FindFailDlg(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::FindFailDlg)
+FindFailDlg::FindFailDlg(QWidget* parent)
+    : QDialog(parent),
+      ui(new Ui::FindFailDlg)
 {
     ui->setupUi(this);
     setWindowTitle("添加");
@@ -16,7 +16,7 @@ FindFailDlg::FindFailDlg(QWidget *parent) :
 
 FindFailDlg::~FindFailDlg()
 {
-    qDebug() <<"Find FailDlg destruct";
+    qDebug() << "Find FailDlg destruct";
     delete ui;
 }
 

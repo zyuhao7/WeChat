@@ -2,10 +2,8 @@
 #include "ui_conuseritem.h"
 #include "liquidglass.h"
 
-
-
-ConUserItem::ConUserItem(QWidget *parent)
-    :ListItemBase(parent),
+ConUserItem::ConUserItem(QWidget* parent)
+    : ListItemBase(parent),
       ui(new Ui::ConUserItem)
 {
     ui->setupUi(this);
@@ -23,7 +21,7 @@ ConUserItem::~ConUserItem()
 
 QSize ConUserItem::sizeHint() const
 {
-    return QSize(250,70);
+    return QSize(250, 70);
 }
 
 void ConUserItem::SetInfo(std::shared_ptr<AuthInfo> auto_info)
@@ -67,11 +65,12 @@ void ConUserItem::SetInfo(int uid, QString name, QString icon)
 
 void ConUserItem::ShowRedPoint(bool show)
 {
-    if(show)
+    if (show)
     {
         ui->red_point->show();
     }
-    else{
+    else
+    {
         ui->red_point->hide();
     }
 }
@@ -80,5 +79,3 @@ std::shared_ptr<UserInfo> ConUserItem::GetInfo()
 {
     return _info;
 }
-
-

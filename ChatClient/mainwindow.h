@@ -23,7 +23,8 @@ QT_BEGIN_NAMESPACE
 class QVBoxLayout;
 QT_END_NAMESPACE
 
-enum UIStatus{
+enum UIStatus
+{
     LOGIN_UI,
     REGISTER_UI,
     RESET_UI,
@@ -38,7 +39,7 @@ class MainWindow : public ElaWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 public slots:
@@ -49,13 +50,15 @@ public slots:
     void SlotSwitchChat();
     void SlotOffline();
     void SlotExcepConOffline();
+
 protected:
     void resizeEvent(QResizeEvent* event) override;
+
 private:
     void offlineLogin();
     void setPage(QWidget* page);
-    void applyLoginSize();   // fixed 300x500 content
-    void applyChatSize();    // resizable 1050x900 content
+    void applyLoginSize(); // fixed 300x500 content
+    void applyChatSize();  // resizable 1050x900 content
 
     GlassBackdrop* _backdrop;
     QWidget* _page_container;

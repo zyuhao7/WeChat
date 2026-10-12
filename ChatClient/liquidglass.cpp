@@ -7,7 +7,8 @@
 #include <QVariantAnimation>
 #include <cmath>
 
-namespace {
+namespace
+{
 
 // The backdrop is nothing but soft gradients, so rendering it at a fraction of the window
 // size and letting the upscale smooth it costs nothing visible.
@@ -20,8 +21,8 @@ constexpr qreal kTau = 6.283185307179586;
 struct Blob
 {
     QColor color;
-    qreal radius;     // fraction of the longer side
-    qreal ax, ay;     // drift amplitude, fraction of each side
+    qreal radius; // fraction of the longer side
+    qreal ax, ay; // drift amplitude, fraction of each side
     qreal periodX, periodY;
     qreal phase;
 };
@@ -262,8 +263,7 @@ void GlassPanel::paintEvent(QPaintEvent*)
 }
 
 GlassButton::GlassButton(QWidget* parent)
-    : QPushButton(parent)
-    , _scaleAnim(new QVariantAnimation(this))
+    : QPushButton(parent), _scaleAnim(new QVariantAnimation(this))
 {
     setCursor(Qt::PointingHandCursor);
     setMouseTracking(true);
@@ -317,7 +317,8 @@ void GlassButton::paintEvent(QPaintEvent*)
     p.setClipPath(shape);
     GlassBackdrop::paintFrosted(p, this, pill);
     QColor fill = _accent.isValid() ? _accent : QColor(255, 255, 255);
-    fill.setAlpha(!on ? 110 : _accent.isValid() ? (_hovered ? 240 : 215) : (_hovered ? 190 : 150));
+    fill.setAlpha(!on ? 110 : _accent.isValid() ? (_hovered ? 240 : 215)
+                                                : (_hovered ? 190 : 150));
     p.fillPath(shape, fill);
     paintSheen(p, shape, pill, _accent.isValid() ? 90 : 120);
     if (_hovered && on)

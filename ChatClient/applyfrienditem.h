@@ -6,7 +6,8 @@
 #include "userdata.h"
 #include <memory>
 
-namespace Ui {
+namespace Ui
+{
 class ApplyFriendItem;
 }
 
@@ -15,17 +16,18 @@ class ApplyFriendItem : public ListItemBase
     Q_OBJECT
 
 public:
-    explicit ApplyFriendItem(QWidget *parent = nullptr);
+    explicit ApplyFriendItem(QWidget* parent = nullptr);
     ~ApplyFriendItem();
     void SetInfo(std::shared_ptr<ApplyInfo> apply_info);
     void ShowAddBtn(bool bshow);
-    QSize sizeHint() const override{
+    QSize sizeHint() const override
+    {
         return QSize(250, 80);
     }
     int GetUid();
 
 private:
-    Ui::ApplyFriendItem *ui;
+    Ui::ApplyFriendItem* ui;
     std::shared_ptr<ApplyInfo> _apply_info;
     bool _added;
 signals:

@@ -32,7 +32,7 @@ private slots:
     }
 };
 
-QObject *createUserMgrTest()
+QObject* createUserMgrTest()
 {
     return new UserMgrAccessorsTest;
 }

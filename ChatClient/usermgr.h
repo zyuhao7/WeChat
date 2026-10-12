@@ -5,20 +5,19 @@
 #include <singleton.h>
 #include "userdata.h"
 #include <vector>
-class UserMgr:public QObject,public Singleton<UserMgr>,
-        public std::enable_shared_from_this<UserMgr>
+class UserMgr : public QObject, public Singleton<UserMgr>, public std::enable_shared_from_this<UserMgr>
 {
     Q_OBJECT
 public:
     friend class Singleton<UserMgr>;
-    ~ UserMgr();
+    ~UserMgr();
     void SetUserInfo(std::shared_ptr<UserInfo> user_info);
     void SetToken(QString token);
     int GetUid();
     QString GetName();
 
     QString GetIcon();
-     std::shared_ptr<UserInfo> GetUserInfo();
+    std::shared_ptr<UserInfo> GetUserInfo();
     void AppendApplyList(QJsonArray array);
     void AppendFriendList(QJsonArray array);
 
@@ -39,13 +38,14 @@ public:
     void AddFriend(std::shared_ptr<AuthInfo> auth_info);
 
     std::shared_ptr<FriendInfo> GetFriendById(int uid);
-    void AppendFriendChatMsg(int friend_id,std::vector<std::shared_ptr<TextChatData>>);
+    void AppendFriendChatMsg(int friend_id, std::vector<std::shared_ptr<TextChatData>>);
+
 private:
     UserMgr();
     std::shared_ptr<UserInfo> _user_info;
-    std::vector<std::shared_ptr<ApplyInfo>> _apply_list; // apply list
-    std::vector<std::shared_ptr<FriendInfo>> _friend_list; //friend list
-    QMap<int, std::shared_ptr<FriendInfo>> _friend_map;  // friend map -> uid : FriendInfo
+    std::vector<std::shared_ptr<ApplyInfo>> _apply_list;   // apply list
+    std::vector<std::shared_ptr<FriendInfo>> _friend_list; // friend list
+    QMap<int, std::shared_ptr<FriendInfo>> _friend_map;    // friend map -> uid : FriendInfo
     QString _token;
     int _chat_loaded;
     int _contact_loaded;
