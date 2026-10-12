@@ -31,10 +31,8 @@ private:
 	void AuthFriendApply(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
 	void DealChatTextMsg(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
 	void HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data);
-	bool isPureDigit(const std::string& str);
-	void GetUserByUid(std::string uid_str, Json::Value& rtvalue);
-	void GetUserByName(std::string name, Json::Value& rtvalue);
-	bool GetBaseInfo(std::string base_key, int uid, std::shared_ptr<UserInfo>& userinfo);
+	void Dispatch(const std::shared_ptr<LogicNode>& msg_node);
+	void KickPreviousLogin(int uid, const std::shared_ptr<CSession>& session);
 	bool GetFriendApplyInfo(int to_uid, std::vector<std::shared_ptr<ApplyInfo>>& list);
 	bool GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>& user_list);
 

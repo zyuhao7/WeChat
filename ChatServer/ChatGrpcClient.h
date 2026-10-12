@@ -53,8 +53,8 @@ public:
 
 	~ChatConPool()
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
 		Close();
+		std::lock_guard<std::mutex> lock(mutex_);
 		while (!connections_.empty())
 		{
 			connections_.pop();
@@ -85,7 +85,11 @@ public:
 
 	void Close()
 	{
-		b_stop_ = true;
+		{
+			// set under the lock so a waiter cannot miss the wakeup between its check and wait
+			std::lock_guard<std::mutex> lock(mutex_);
+			b_stop_ = true;
+		}
 		cond_.notify_all();
 	}
 
@@ -106,7 +110,6 @@ public:
 	~ChatGrpcClient(){}
 	AddFriendRsp NotifyAddFriend(std::string server_ip, const AddFriendReq& req);
 	AuthFriendRsp NotifyAuthFriend(std::string server_ip, const AuthFriendReq& req);
-	bool GetBaseInfo(std::string base_key, int uid, std::shared_ptr<UserInfo>& userinfo);
 	TextChatMsgRsp NotifyTextChatMsg(std::string server_ip, const TextChatMsgReq& req, const Json::Value& rtvalue);
 	KickUserRsp NotifyKickUser(std::string server_ip, const KickUserReq& req);
 private:

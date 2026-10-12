@@ -35,7 +35,6 @@ public:
 	Status NotifyTextChatMsg(::grpc::ServerContext* context,
 		const TextChatMsgReq* request, TextChatMsgRsp* response) override;
 
-	bool GetBaseInfo(std::string base_key, int uid, std::shared_ptr<UserInfo>& userinfo);
 	
 	// accept the rpc kick request
 	Status NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* response) override;

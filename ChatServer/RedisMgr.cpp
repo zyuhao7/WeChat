@@ -2,6 +2,7 @@
 #include "const.h"
 #include "ConfigMgr.h"
 #include "DistLock.h"
+#include "JsonUtil.h"
 RedisMgr::~RedisMgr() {
     //Close();
 }
@@ -11,7 +12,7 @@ RedisMgr::RedisMgr() {
     auto port = gCfgMgr["Redis"]["Port"];
     auto pwd = gCfgMgr["Redis"]["Passwd"];
 	// the distributed lock also uses connections; to avoid exhausting the pool, enlarge it to 10 up front
-    _con_pool.reset(new RedisConPool(10, host.c_str(), atoi(port.c_str()), pwd.c_str()));
+    _con_pool.reset(new RedisConPool(10, host, atoi(port.c_str()), pwd));
 }
 
 
@@ -35,7 +36,7 @@ bool RedisMgr::Get(const std::string& key, std::string& value)
 		return false;
 	}
 
-	value = reply->str;
+	value.assign(reply->str, reply->len);
 	freeReplyObject(reply);
 
 	std::cout << "Succeed to execute command [ GET " << key << "  ]" << std::endl;
@@ -115,14 +116,14 @@ bool RedisMgr::LPop(const std::string& key, std::string& value) {
 		return false;
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		std::cout << "Execut command [ LPOP " << key << " ] failure ! " << std::endl;
 		freeReplyObject(reply);
 		_con_pool->returnConnection(connect);
 		return false;
 	}
 
-	value = reply->str;
+	value.assign(reply->str, reply->len);
 	std::cout << "Execut command [ LPOP " << key << " ] success ! " << std::endl;
 	freeReplyObject(reply);
 	_con_pool->returnConnection(connect);
@@ -167,13 +168,13 @@ bool RedisMgr::RPop(const std::string& key, std::string& value) {
 		return false;
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		std::cout << "Execut command [ RPOP " << key << " ] failure ! " << std::endl;
 		freeReplyObject(reply);
 		_con_pool->returnConnection(connect);
 		return false;
 	}
-	value = reply->str;
+	value.assign(reply->str, reply->len);
 	std::cout << "Execut command [ RPOP " << key << " ] success ! " << std::endl;
 	freeReplyObject(reply);
 	_con_pool->returnConnection(connect);
@@ -263,14 +264,14 @@ std::string RedisMgr::HGet(const std::string& key, const std::string& hkey)
 		return "";
 	}
 
-	if (reply->type == REDIS_REPLY_NIL) {
+	if (reply->type != REDIS_REPLY_STRING) {
 		freeReplyObject(reply);
 		std::cout << "Execut command [ HGet " << key << " " << hkey << "  ] failure ! " << std::endl;
 		_con_pool->returnConnection(connect);
 		return "";
 	}
 
-	std::string value = reply->str;
+	std::string value(reply->str, reply->len);
 	freeReplyObject(reply);
 	_con_pool->returnConnection(connect);
 	std::cout << "Execut command [ HGet " << key << " " << hkey << " ] success ! " << std::endl;
@@ -399,9 +400,10 @@ void RedisMgr::IncreaseCount(std::string server_name)
 	// increase the login count
 	auto rd_res = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server_name);
 	int count = 0;
-	if (!rd_res.empty())
+	if (!rd_res.empty() && !ParseNonNegativeInt(rd_res, count))
 	{
-		count = std::stoi(rd_res);
+		std::cout << "login count for " << server_name << " is corrupt: " << rd_res << ", resetting" << std::endl;
+		count = 0;
 	}
 	count++;
 	auto count_str = std::to_string(count);
@@ -420,9 +422,10 @@ void RedisMgr::DecreaseCount(std::string server_name)
 	// decrease the login count
 	auto rd_res = RedisMgr::GetInstance()->HGet(LOGIN_COUNT, server_name);
 	int count = 0;
-	if (!rd_res.empty())
+	if (!rd_res.empty() && !ParseNonNegativeInt(rd_res, count))
 	{
-		count = std::stoi(rd_res);
+		std::cout << "login count for " << server_name << " is corrupt: " << rd_res << ", resetting" << std::endl;
+		count = 0;
 	}
 	if (count > 0) 
 		count--;

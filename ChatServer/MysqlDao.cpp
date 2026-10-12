@@ -150,11 +150,6 @@ bool MysqlDao::CheckPwd(const std::string& email, const std::string& pwd, UserIn
 		// iterate the result set
 		if (res->next()) {
 			origin_pwd = res->getString("pwd");
-			// output the queried password
-			std::cout << "======================" << std::endl;
-			std::cout << "Password: " << origin_pwd << std::endl;
-			std::cout << "======================" << std::endl;
-
 			if (pwd != origin_pwd) {
 				std::cerr << "Password does not match." << std::endl;
 				return false;
@@ -220,14 +215,22 @@ bool MysqlDao::AuthFriendApply(const int& from, const int& to)
 		});
 	try
 	{
+		// approving requires an apply from the other side; an already-approved one still
+		// counts, so a retry after a failed AddFriend can finish creating the friendship
+		std::unique_ptr<sql::PreparedStatement> query(con->_con->prepareStatement("SELECT 1 FROM friend_apply "
+			"WHERE from_uid = ? AND to_uid = ?"));
+		query->setInt(1, to);
+		query->setInt(2, from);
+		std::unique_ptr<sql::ResultSet> res(query->executeQuery());
+		if (!res->next()) {
+			return false;
+		}
+
 		std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("UPDATE friend_apply SET status = 1 "
 			"WHERE from_uid = ? AND to_uid = ?"));
-
 		pstmt->setInt(1, to);
 		pstmt->setInt(2, from);
-
-		int rowAffected = pstmt->executeUpdate();
-		if (rowAffected < 0) return false;
+		pstmt->executeUpdate();
 		return true;
 	}
 	catch (sql::SQLException& e) {

@@ -54,6 +54,11 @@ void CSession::Start()
 
 void CSession::Send(std::string msg, short msg_id)
 {
+	if (!IsSendableBodyLen(msg.length()))
+	{
+		std::cout << "session: " << _session_id << " drop oversize msg " << msg_id << ", len " << msg.length() << std::endl;
+		return;
+	}
 	std::lock_guard<std::mutex> lock(_send_lock);
 	int send_que_size = _send_que.size();
 	if (send_que_size > MAX_SENDQUE)
@@ -71,6 +76,11 @@ void CSession::Send(std::string msg, short msg_id)
 
 void CSession::Send(char* msg, short max_length, short msgid)
 {
+	if (max_length < 0 || !IsSendableBodyLen(static_cast<std::size_t>(max_length)))
+	{
+		std::cout << "session: " << _session_id << " drop invalid msg " << msgid << ", len " << max_length << std::endl;
+		return;
+	}
 	std::lock_guard<std::mutex> lock(_send_lock);
 	int send_que_size = _send_que.size();
 	if (send_que_size > MAX_SENDQUE)
@@ -89,7 +99,8 @@ void CSession::Send(char* msg, short max_length, short msgid)
 void CSession::Close()
 {
 	std::lock_guard<std::mutex> lock(_session_mtx);
-	_socket.close();
+	boost::system::error_code ec;
+	_socket.close(ec);
 	_b_close = true;
 }
 
@@ -115,7 +126,7 @@ void CSession::AsyncReadBody(int total_len)
 			{
 				std::cout << "read length not match, read [" << bytes_transfered << "], total [" << total_len << "]" << std::endl;
 				Close();
-				_server->ClearSession(_session_id);
+				DealExceptionSesseion();
 				return;
 			}
 
@@ -161,7 +172,7 @@ void CSession::AsyncReadHead(int total_len)
 				std::cout << "read length not match, read [" << bytes_transfered << "] , total ["
 					<< HEAD_TOTAL_LEN << "]" << endl;
 				Close();
-				_server->ClearSession(_session_id);
+				DealExceptionSesseion();
 				return;
 			}
 
@@ -191,7 +202,9 @@ void CSession::AsyncReadHead(int total_len)
 			//both fields index into buffers downstream, so reject a high-bit value as well
 			if (!IsValidMsgHeader(msg_id, msg_len)) {
 				std::cout << "invalid msg header, id [" << msg_id << "] len [" << msg_len << "]" << endl;
-				_server->ClearSession(_session_id);
+				// close the socket too, or the peer stays connected to a session nobody reads
+				Close();
+				DealExceptionSesseion();
 				return;
 			}
 
@@ -237,8 +250,14 @@ void CSession::UpdateHeartbeat()
 void CSession::DealExceptionSesseion()
 {
 	auto self = shared_from_this();
+	int uid = _user_uid;
+	// never logged in: no redis state to clean, and "lock_0" must not be contended by every anonymous drop
+	if (uid == 0) {
+		_server->ClearSession(_session_id);
+		return;
+	}
 	// lock and clear the session
-	auto uid_str = std::to_string(_user_uid);
+	auto uid_str = std::to_string(uid);
 	auto lock_key = LOCK_PREFIX + uid_str;
 	auto identifier = RedisMgr::GetInstance()->acquireLock(lock_key, LOCK_TIME_OUT, ACQUIRE_TIME_OUT);
 	Defer defer([identifier, lock_key, self, this]() {

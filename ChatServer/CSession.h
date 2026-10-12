@@ -62,7 +62,7 @@ private:
 	bool _b_head_parse;
 	//received header structure
 	std::shared_ptr<MsgNode> _recv_head_node;
-	int _user_uid;
+	std::atomic<int> _user_uid;
 	// time of the last received data
 	std::atomic<time_t> _last_heartbeat;
 	// session lock

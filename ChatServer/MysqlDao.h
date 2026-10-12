@@ -38,11 +38,10 @@ public:
 			_check_thread = std::thread([this]() {
 				while (!b_stop_) {
 					checkConnection();
-					std::this_thread::sleep_for(std::chrono::seconds(60));
+					std::unique_lock<std::mutex> lock(check_mutex_);
+					check_cond_.wait_for(lock, std::chrono::seconds(60), [this] { return b_stop_.load(); });
 				}
 				});
-
-			_check_thread.detach();
 		}
 		catch (sql::SQLException& e) {
 			// handle the exception
@@ -76,12 +75,17 @@ public:
 			}
 			catch (sql::SQLException& e) {
 				std::cout << "Error keeping connection alive: " << e.what() << std::endl;
-				// recreate the connection and replace the old one
-				sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-				auto* newcon = driver->connect(url_, user_, pass_);
-				newcon->setSchema(schema_);
-				con->_con.reset(newcon);
-				con->_last_oper_time = timestamp;
+				// recreate the connection and replace the old one; an escaping throw would kill the process
+				try {
+					sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+					std::unique_ptr<sql::Connection> newcon(driver->connect(url_, user_, pass_));
+					newcon->setSchema(schema_);
+					con->_con = std::move(newcon);
+					con->_last_oper_time = timestamp;
+				}
+				catch (sql::SQLException& e2) {
+					std::cout << "mysql reconnect failed, retry next round: " << e2.what() << std::endl;
+				}
 			}
 		}
 	}
@@ -111,11 +115,20 @@ public:
 	}
 
 	void Close() {
-		b_stop_ = true;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			std::lock_guard<std::mutex> check_lock(check_mutex_);
+			b_stop_ = true;
+		}
 		cond_.notify_all();
+		check_cond_.notify_all();
+		if (_check_thread.joinable() && _check_thread.get_id() != std::this_thread::get_id()) {
+			_check_thread.join();
+		}
 	}
 
 	~MySqlPool() {
+		Close();
 		std::unique_lock<std::mutex> lock(mutex_);
 		while (!pool_.empty()) {
 			pool_.pop();
@@ -133,6 +146,8 @@ private:
 	std::condition_variable cond_;
 	std::atomic<bool> b_stop_;
 	std::thread _check_thread;
+	std::mutex check_mutex_;
+	std::condition_variable check_cond_;
 };
 
 

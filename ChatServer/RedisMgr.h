@@ -8,31 +8,19 @@
 #include <thread>
 #include <chrono>
 #include "Singleton.h"
+#include <string>
 
 class RedisConPool {
 public:
-    RedisConPool(size_t poolSize, const char* host, int port, const char* pwd)
-        : poolSize_(poolSize), host_(host), pwd_(pwd), port_(port),b_stop_(false), counter_(0), fail_count_(0) {
+    RedisConPool(size_t poolSize, const std::string& host, int port, const std::string& pwd)
+        : b_stop_(false), poolSize_(poolSize), host_(host), pwd_(pwd), port_(port), fail_count_(0), counter_(0) {
         for (size_t i = 0; i < poolSize_; ++i) {
-            auto* context = redisConnect(host, port);
-            if (context == nullptr || context->err != 0) {
-                if (context != nullptr) {
-                    redisFree(context);
-                }
+            auto* context = connectAndAuth();
+            if (context == nullptr) {
+                // let the health check retry it instead of running permanently short
+                fail_count_++;
                 continue;
             }
-
-            auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd);
-            if (reply->type == REDIS_REPLY_ERROR) {
-                std::cout << "AUTH failed" << std::endl;
-                //on success, free the redisReply memory returned after redisCommand executes
-                freeReplyObject(reply);
-                continue;
-            }
-
-            //on success, free the redisReply memory returned after redisCommand executes
-            freeReplyObject(reply);
-            std::cout << "AUTH succeeded" << std::endl;
             connections_.push(context);
         }
 
@@ -40,17 +28,18 @@ public:
             while (!b_stop_) {
                 counter_++;
                 if (counter_ >= 60) {
-                    checkThreadPro(); 
+                    checkThreadPro();
                     counter_ = 0;
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(1)); // send a PING every 30 seconds
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             });
-
-
     }
 
-    ~RedisConPool() {}
+    ~RedisConPool() {
+        Close();
+        ClearConnections();
+    }
 
     void ClearConnections()
     {
@@ -80,14 +69,12 @@ public:
         return context;
     }
 
-    // non-blocking context acquisition
+    // non-blocking context acquisition: nullptr when stopping or nothing is idle
     redisContext* getConnNonBlock()
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        // if shutting down or no connection available, return nullptr without waiting
-        if (b_stop_ || !connections_.empty()) return nullptr;
+        if (b_stop_ || connections_.empty()) return nullptr;
 
-        // both auto and auto* work; pick your preference.
         auto* context = connections_.front();
         connections_.pop();
         return context;
@@ -95,171 +82,126 @@ public:
 
     // recycle the redisContext connection for reuse.
     void returnConnection(redisContext* context) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // if shutting down, do not recycle, just return.
-        if (b_stop_) {
+        if (context == nullptr) {
             return;
         }
-        connections_.push(context);
-        cond_.notify_one();
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            // a context with err set is dead for good; hand its slot to the reconnect loop
+            if (!b_stop_ && context->err == 0) {
+                connections_.push(context);
+                cond_.notify_one();
+                return;
+            }
+        }
+        redisFree(context);
+        if (!b_stop_) {
+            fail_count_++;
+        }
     }
 
     void Close() {
-        b_stop_ = true;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            b_stop_ = true;
+        }
         // wake the condition variable waiting for connections, signaling shutdown.
         cond_.notify_all();
-        check_thread_.join();
+        if (check_thread_.joinable()) {
+            check_thread_.join();
+        }
+    }
+
+    size_t IdleCount() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return connections_.size();
+    }
+
+    int FailCount() const {
+        return fail_count_;
     }
 
 private:
-    // retry the connection
-    bool reconnect()
+    redisContext* connectAndAuth()
     {
-        auto context = redisConnect(host_, port_);
-        if (context == nullptr || context->err != 0)
-        {
-            if (context != nullptr)
+        auto* context = redisConnect(host_.c_str(), port_);
+        if (context == nullptr || context->err != 0) {
+            if (context != nullptr) {
                 redisFree(context);
-            // reconnect failed
-            return false;
+            }
+            return nullptr;
+        }
+        // an empty password means the server has no requirepass; AUTH "" would just fail
+        if (pwd_.empty()) {
+            return context;
         }
 
-        auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
-        if (reply->type == REDIS_REPLY_ERROR)
-        {
-            std::cout << "connection AUTH failed!" << std::endl;
-            // on failure, free the redisReply memory returned after redisCommand executes
-            freeReplyObject(reply);
+        auto* reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_.c_str());
+        if (reply == nullptr || reply->type == REDIS_REPLY_ERROR) {
+            std::cout << "redis AUTH failed" << std::endl;
+            if (reply != nullptr) {
+                freeReplyObject(reply);
+            }
             redisFree(context);
+            return nullptr;
+        }
+        freeReplyObject(reply);
+        return context;
+    }
+
+    bool reconnect()
+    {
+        auto* context = connectAndAuth();
+        if (context == nullptr) {
             return false;
         }
-        // on success, free the redisReply memory returned after redisCommand executes
-        freeReplyObject(reply);
-        std::cout << "connection AUTH succeeded!" << std::endl;
-        // hand the context to the recycle function.
-        returnConnection(context);
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (b_stop_) {
+            redisFree(context);
+            return true;
+        }
+        connections_.push(context);
+        cond_.notify_one();
         return true;
     }
 
     void checkThreadPro()
     {
-        size_t pool_size;
-        {
-            // first get the current online count.
-            std::lock_guard<std::mutex> lock(mutex_);
-            pool_size = connections_.size();
-        }
+        size_t pool_size = IdleCount();
 
-        for (int i = 0; i < pool_size && !b_stop_; ++i) {
-            redisContext* ctx = nullptr;
-            // 1) take a connection (holding the lock)
-            bool bsuccess = false;
+        for (size_t i = 0; i < pool_size && !b_stop_; ++i) {
             auto* context = getConnNonBlock();
             if (context == nullptr)
             {
                 break;
             }
 
-            redisReply* reply = nullptr;
-            try
-            {
-                reply = (redisReply*)redisCommand(context, "PING"); // send a PING request.
-                // 2) first check for low-level I/O protocol errors
-                if (context->err)
-                {
-                    std::cout << "Coonnection error: " << context->err << std::endl;
-                    if (reply) 
-                        freeReplyObject(reply);
-
-                    redisFree(context);
-                    fail_count_++;
-                    continue;
-                }
-                // 3) then check whether the Reply itself is ERROR
-                if (!reply || reply->type == REDIS_REPLY_ERROR)
-                {
-                    std::cout << "reply is null, redis ping failed: " << std::endl;
-                    if (reply)
-                        freeReplyObject(reply);
-                    redisFree(context);
-                    fail_count_++;
-                    continue;
-                }
-                // 4) if all is fine, return it to the pool
-                std::cout << "connection alive... " << std::endl;
+            auto* reply = (redisReply*)redisCommand(context, "PING");
+            bool alive = reply != nullptr && context->err == 0 && reply->type != REDIS_REPLY_ERROR;
+            if (reply != nullptr) {
                 freeReplyObject(reply);
-                returnConnection(context);
             }
-            catch (const std::exception& e)
-            {
-                if (reply)
-                    freeReplyObject(reply);
+            if (!alive) {
+                std::cout << "redis ping failed, dropping connection" << std::endl;
                 redisFree(context);
                 fail_count_++;
-
+                continue;
             }
+            returnConnection(context);
         }
-        // perform the reconnect
-        while (fail_count_ > 0)
+
+        while (fail_count_ > 0 && !b_stop_)
         {
-            auto res = reconnect();
-            if (res) fail_count_--;
-            else
+            if (!reconnect())
                 break; // leave it for the next retry.
-        }
-    }
-
-    void checkThread()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (b_stop_) return;
-
-        auto pool_size = connections_.size();
-        for (int i = 0; i < pool_size && !b_stop_; ++i)
-        {
-            auto* context = connections_.front();
-            connections_.pop();
-            try
-            {
-                auto reply = (redisReply*)redisCommand(context, "PING");
-                if (!reply)
-                {
-                    std::cout << " reply is null, redis ping failed! " << std::endl;
-                    connections_.push(context);
-                    continue;
-                }
-                freeReplyObject(reply);
-                connections_.push(context);
-            }
-            catch (const std::exception& e)
-            {
-                std::cout << "Error keeping connection alive : " << e.what() << std::endl;
-                redisFree(context);
-                context = redisConnect(host_, port_);
-                if (context == nullptr || context->err != 0)
-                {
-                    if (context != nullptr)
-                        redisFree(context);
-                    continue;
-                }
-                auto reply = (redisReply*)redisCommand(context, "AUTH %s", pwd_);
-                if (reply->type == REDIS_REPLY_ERROR)
-                {
-                    std::cout << "AUTH failed! " << std::endl;
-                    freeReplyObject(reply);
-                    continue;
-                }
-                freeReplyObject(reply);
-                std::cout << "AUTH succeeded! " << std::endl;
-                connections_.push(context);
-            }
+            fail_count_--;
         }
     }
 
     std::atomic<bool> b_stop_;
     size_t poolSize_;
-    const char* host_;
-    const char* pwd_;
+    std::string host_;
+    std::string pwd_;
     int port_;
     std::queue<redisContext*> connections_;
     std::atomic<int> fail_count_;
