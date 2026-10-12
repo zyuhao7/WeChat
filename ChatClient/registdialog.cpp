@@ -288,7 +288,7 @@ void RegistDialog::initHttpHandlers()
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS)
         {
-            showTip(tr("参数错误"), false);
+            showTip(serverErrorText(error), false);
             return;
         }
         auto email = jsonObj["email"].toString();
@@ -300,7 +300,7 @@ void RegistDialog::initHttpHandlers()
     _handlers.insert(ReqId::ID_REG_USER, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
-            showTip(tr("参数错误"),false);
+            showTip(serverErrorText(error),false);
             return;
         }
         auto email = jsonObj["email"].toString();

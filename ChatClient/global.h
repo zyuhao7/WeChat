@@ -65,6 +65,9 @@ enum ErrorCodes{
     ERR_NETWORK = 2, // network error
 };
 
+// Message for a non-zero "error" in a GateServer reply (VerifyServer codes pass through it).
+QString serverErrorText(int error);
+
 enum ClickLbState{
     Normal = 0,
     Selected = 1

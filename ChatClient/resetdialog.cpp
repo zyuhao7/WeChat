@@ -186,7 +186,7 @@ void ResetDialog::initHandlers()
     _handlers.insert(ReqId::ID_GET_VERIFY_CODE, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
-            showTip(tr("参数错误"),false);
+            showTip(serverErrorText(error),false);
             return;
         }
         auto email = jsonObj["email"].toString();
@@ -198,7 +198,7 @@ void ResetDialog::initHandlers()
     _handlers.insert(ReqId::ID_RESET_PWD, [this](QJsonObject jsonObj){
         int error = jsonObj["error"].toInt();
         if(error != ErrorCodes::SUCCESS){
-            showTip(tr("参数错误"),false);
+            showTip(serverErrorText(error),false);
             return;
         }
         auto email = jsonObj["email"].toString();

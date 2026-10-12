@@ -9,7 +9,8 @@ int main(int argc, char *argv[])
 
     int status = 0;
     for (QObject *suite : {createUserMgrTest(), createUserListLoadingTest(),
-                           createChatDialogTest(), createChatDialogTextMsgTest()}) {
+                           createChatDialogTest(), createChatDialogTextMsgTest(),
+                           createServerErrorTextTest()}) {
         status |= QTest::qExec(suite, argc, argv);
         delete suite;
     }

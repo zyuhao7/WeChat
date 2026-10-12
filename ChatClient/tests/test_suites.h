@@ -8,3 +8,4 @@ QObject *createUserMgrTest();
 QObject *createUserListLoadingTest();
 QObject *createChatDialogTest();
 QObject *createChatDialogTextMsgTest();
+QObject *createServerErrorTextTest();
