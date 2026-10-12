@@ -12,33 +12,29 @@ const RedisCli = new Redis({
 });
 
 
-/**
- * listen for connection error messages
- */
+// ioredis reconnects on its own (retryStrategy); calling connect() here again would
+// reject with "already connecting" and crash the process as an unhandled rejection.
 RedisCli.on("error", function (err) {
   console.log("Redis connection error", err);
-  // try to reconnect
-  RedisCli.connect();
 });
 
-// listen for the disconnect event
 RedisCli.on("end", function () {
   console.log("Redis connection closed");
-  // try to reconnect
-  RedisCli.connect();
 });
-  
-// heartbeat mechanism: send heartbeat messages on a timer
+
+// heartbeat: keeps the connection warm; with the offline queue disabled it fails while
+// Redis is down, which is expected and must not crash the process
 setInterval(() => {
-  // send a heartbeat, e.g. write the current timestamp to a specific key
-  RedisCli.set("heartbeat", Date.now());
-}, 10000); // send a heartbeat every 10 seconds
+  RedisCli.set("heartbeat", Date.now()).catch((err) => {
+    console.log("Redis heartbeat failed", err.message);
+  });
+}, 10000);
 
 
 /**
  * get the value by key
- * @param {*} key 
- * @returns 
+ * @param {*} key
+ * @returns
  */
 async function GetRedis(key) {
     try{
@@ -51,14 +47,14 @@ async function GetRedis(key) {
         return result
     }catch(error){
         console.log('GetRedis error is', error);
-        return null 
+        return null
     }
   }
 
 /**
  * check whether the key exists in redis
- * @param {*} key 
- * @returns 
+ * @param {*} key
+ * @returns
  */
 async function QueryRedis(key){
     try{
@@ -79,17 +75,15 @@ async function QueryRedis(key){
 
 /**
  * set the key and value with an expiration time
- * @param {*} key 
- * @param {*} value 
- * @param {*} exptime 
- * @returns 
+ * @param {*} key
+ * @param {*} value
+ * @param {*} exptime
+ * @returns
  */
 async function SetRedisExpire(key,value, exptime){
     try{
-        // set the key and value
-        await RedisCli.set(key,value)
-        // set the expiration time (in seconds)
-        await RedisCli.expire(key, exptime);
+        // value and TTL in one command, so a failure can never leave a key without expiry
+        await RedisCli.set(key, value, 'EX', exptime)
         return true;
     }catch(error){
         console.log('SetRedisExpire error is', error);
@@ -97,4 +91,28 @@ async function SetRedisExpire(key,value, exptime){
     }
 }
 
-module.exports = {GetRedis, QueryRedis, SetRedisExpire,}
+/**
+ * set the key only if it does not exist yet, with an expiration time
+ * @returns true if set, false if the key already existed, null on error
+ */
+async function SetRedisNxExpire(key, value, exptime){
+    try{
+        const result = await RedisCli.set(key, value, 'EX', exptime, 'NX')
+        return result === 'OK';
+    }catch(error){
+        console.log('SetRedisNxExpire error is', error);
+        return null;
+    }
+}
+
+async function DelRedis(key){
+    try{
+        await RedisCli.del(key)
+        return true;
+    }catch(error){
+        console.log('DelRedis error is', error);
+        return false;
+    }
+}
+
+module.exports = {GetRedis, QueryRedis, SetRedisExpire, SetRedisNxExpire, DelRedis,}
