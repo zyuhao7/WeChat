@@ -10,11 +10,11 @@ CServer::CServer(boost::asio::io_context& ioc, unsigned short& port)
 {
 	// set SO_REUSEADDR before binding so a quick restart is not blocked by
 	// lingering connections from the previous instance
-	boost::system::error_code ec;
-	_acceptor.open(tcp::v4(), ec);
-	_acceptor.set_option(tcp::acceptor::reuse_address(true), ec);
-	_acceptor.bind(tcp::endpoint(tcp::v4(), port), ec);
-	_acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
+	// throwing overloads: a port already in use must stop startup, not leave a dead acceptor
+	_acceptor.open(tcp::v4());
+	_acceptor.set_option(tcp::acceptor::reuse_address(true));
+	_acceptor.bind(tcp::endpoint(tcp::v4(), port));
+	_acceptor.listen(boost::asio::socket_base::max_listen_connections);
 }
 
 void CServer::Start()
@@ -26,6 +26,10 @@ void CServer::Start()
 	_acceptor.async_accept(new_con->GetSocket(), [self, new_con](beast::error_code ec) {
 		try{
 			// on error drop the connection and keep accepting others
+			if (ec == boost::asio::error::operation_aborted)
+			{
+				return;
+			}
 			if (ec)
 			{
 				self->Start();

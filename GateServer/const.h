@@ -41,6 +41,7 @@ enum ErrorCodes
 	PasswdInvalid = 1009,   //password update failed
 	TokenInvalid = 1010,    //Token invalid
 	UidInvalid = 1011,		//invalid uid
+	DbErr = 1012,			//database unavailable or query failed
 };
 
 // Defer class

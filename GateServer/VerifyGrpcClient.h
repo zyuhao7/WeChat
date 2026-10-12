@@ -89,17 +89,20 @@ public:
 		GetVerifyReq request;
 		request.set_email(email);
 		auto stub = pool_->getConnection();
-		Status status = stub->GetVerifyCode(&context, request, &reply);
-
-		if (status.ok()) {
-			pool_->returnConnection(std::move(stub));
-			return reply;
-		}
-		else {
-			pool_->returnConnection(std::move(stub));
+		if (!stub) {
 			reply.set_error(ErrorCodes::RPCFailed);
 			return reply;
 		}
+		// without a deadline a hung VerifyServer would pin this IO thread forever
+		context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+		Status status = stub->GetVerifyCode(&context, request, &reply);
+		pool_->returnConnection(std::move(stub));
+
+		if (!status.ok()) {
+			std::cout << "GetVerifyCode rpc failed: " << status.error_message() << std::endl;
+			reply.set_error(ErrorCodes::RPCFailed);
+		}
+		return reply;
 	}
 
 private:

@@ -34,7 +34,7 @@ ConfigMgr::ConfigMgr()
 		SectionInfo section_config = section_entry.second;
 		std::cout << "[" << section_name << "]" << std::endl;
 		for (const auto& key_value_pair : section_config._section_datas) {
-			std::cout << key_value_pair.first << "=" << key_value_pair.second << std::endl;
+			std::cout << key_value_pair.first << "=" << (key_value_pair.first == "Passwd" ? "******" : key_value_pair.second) << std::endl;
 		}
 	}
 }
