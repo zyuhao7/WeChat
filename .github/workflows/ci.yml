@@ -13,6 +13,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format:
+    name: Format (clang-format / prettier)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format-18
+
+      - name: Check C++ formatting
+        run: CLANG_FORMAT=clang-format-18 scripts/format.sh --check
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check JavaScript formatting
+        run: npx --yes prettier@3.3.3 --check "VerifyServer/**/*.js" "!VerifyServer/node_modules/**"
+
+  verify-server:
+    name: VerifyServer (Node)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: VerifyServer/package-lock.json
+
+      - name: Install dependencies
+        working-directory: VerifyServer
+        run: npm ci
+
+      - name: Syntax check
+        working-directory: VerifyServer
+        run: for f in *.js; do node --check "$f"; done
+
+      - name: Test
+        working-directory: VerifyServer
+        run: npm test
+
   backend:
     name: Backend (C++ / CMake)
     runs-on: ubuntu-24.04
