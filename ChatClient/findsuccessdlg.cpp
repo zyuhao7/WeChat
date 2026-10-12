@@ -4,10 +4,10 @@
 #include <QDebug>
 #include "applyfriend.h"
 #include <memory>
-FindSuccessDlg::FindSuccessDlg(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::FindSuccessDlg),
-    _parent(parent)
+FindSuccessDlg::FindSuccessDlg(QWidget* parent)
+    : QDialog(parent),
+      ui(new Ui::FindSuccessDlg),
+      _parent(parent)
 {
     ui->setupUi(this);
     // set the dialog title
@@ -26,12 +26,11 @@ FindSuccessDlg::FindSuccessDlg(QWidget *parent) :
     ui->head_lb->setPixmap(head_pix);
     ui->add_friend_btn->SetState("normal", "hover", "press");
     this->setModal(true);
-
 }
 
 FindSuccessDlg::~FindSuccessDlg()
 {
-    qDebug() <<"FindSuccessDlg success";
+    qDebug() << "FindSuccessDlg success";
     delete ui;
 }
 

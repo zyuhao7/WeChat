@@ -1,0 +1,20 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+Standard: c++17
+IndentWidth: 4
+UseTab: Never
+# Keep the author's line breaks; only fix indentation, braces and spacing.
+ColumnLimit: 0
+PointerAlignment: Left
+DerivePointerAlignment: false
+AccessModifierOffset: -4
+NamespaceIndentation: None
+# Qt and the backends depend on include order in a few places.
+SortIncludes: Never
+# The tree mixes CRLF and LF files; keep each file's own line endings.
+LineEnding: DeriveLF
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+...

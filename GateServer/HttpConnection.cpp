@@ -1,127 +1,96 @@
 #include "HttpConnection.h"
 #include "LogicSystem.h"
-#include "UrlCodec.h"
+#include "HttpParse.h"
 
 HttpConnection::HttpConnection(boost::asio::io_context& ioc)
-	:_socket(ioc)
+    : _socket(ioc)
 {
-
 }
 void HttpConnection::Start()
 {
-	auto self = shared_from_this(); // ensure the lifetime
-	http::async_read(_socket, _buffer, _request, [self](beast::error_code ec, std::size_t bytes_transferred) {
-		try {
-			if (ec)
-			{
-				std::cout << " http read  err is " << ec.message() << std::endl;
-				return;
-			}
-			boost::ignore_unused(bytes_transferred);
-			self->HandleReq();
-			self->CheckDeadLine();
-		}
-		catch (std::exception& ep) {
-			std::cout << "exception is " << ep.what() << std::endl;
-		}
-		});
+    auto self = shared_from_this(); // ensure the lifetime
+    // armed before the read so a client that never finishes its request is dropped
+    CheckDeadLine();
+    http::async_read(_socket, _buffer, _request, [self](beast::error_code ec, std::size_t bytes_transferred) {
+        boost::ignore_unused(bytes_transferred);
+        if (ec)
+        {
+            std::cout << " http read  err is " << ec.message() << std::endl;
+            self->deadline_.cancel();
+            return;
+        }
+        self->HandleReq();
+    });
 }
-
-void HttpConnection::PreParseGetParam() {
-	// extract the URI, e.g. get_test?name=123&age=456
-	auto uri = _request.target();
-	// find the start of the query string (the '?' position)  
-	auto query_pos = uri.find('?');
-	if (query_pos == std::string::npos) {
-		_get_url = uri;
-		return;
-	}
-
-	_get_url = uri.substr(0, query_pos);
-	std::string query_string = uri.substr(query_pos + 1);
-	std::string key;
-	std::string value;
-	size_t pos = 0;
-	while ((pos = query_string.find('&')) != std::string::npos) {
-		auto pair = query_string.substr(0, pos);
-		size_t eq_pos = pair.find('=');
-		if (eq_pos != std::string::npos) {
-			key = UrlDecode(pair.substr(0, eq_pos)); 
-			value = UrlDecode(pair.substr(eq_pos + 1));
-			_get_params[key] = value;
-		}
-		query_string.erase(0, pos + 1);
-	}
-	// handle the last parameter pair (when there is no & separator)  
-	if (!query_string.empty()) {
-		size_t eq_pos = query_string.find('=');
-		if (eq_pos != std::string::npos) {
-			key = UrlDecode(query_string.substr(0, eq_pos));
-			value = UrlDecode(query_string.substr(eq_pos + 1));
-			_get_params[key] = value;
-		}
-	}
-}
-
 
 void HttpConnection::HandleReq()
 {
-	// set the version
-	_response.version(_request.version());
-	_response.keep_alive(false);
-	if (_request.method() == http::verb::get)
-	{
-		PreParseGetParam();
-		bool success = LogicSystem::GetInstance()->HandleGet(_get_url, shared_from_this());
-		if (!success)
-		{
-			_response.result((http::status::not_found));
-			_response.set(http::field::content_type, "text/plain");
-			beast::ostream(_response.body()) << "url not found\r\n";
-			WriteResponse();
-			return;
-		}
-		_response.result((http::status::ok));
-		_response.set(http::field::server, "GateServer");
-		WriteResponse();
-		return;
-	}
+    // set the version
+    _response.version(_request.version());
+    _response.keep_alive(false);
+    _response.set(http::field::server, "GateServer");
+    try
+    {
+        Dispatch();
+    }
+    catch (std::exception& ep)
+    {
+        std::cout << "handle request exception is " << ep.what() << std::endl;
+        _response.body().consume(_response.body().size());
+        _response.set(http::field::content_type, "text/json");
+        _response.result(http::status::internal_server_error);
+        Json::Value root;
+        root["error"] = ErrorCodes::Error_Json;
+        beast::ostream(_response.body()) << root.toStyledString();
+    }
+    WriteResponse();
+}
 
+void HttpConnection::Dispatch()
+{
+    auto method = _request.method();
+    if (method != http::verb::get && method != http::verb::post)
+    {
+        _response.set(http::field::allow, "GET, POST");
+        WriteStatus(http::status::method_not_allowed, "method not allowed\r\n");
+        return;
+    }
 
-	if (_request.method() == http::verb::post)
-	{
-		bool success = LogicSystem::GetInstance()->HandlePost(_request.target(), shared_from_this());
-		if (!success)
-		{
-			_response.result((http::status::not_found));
-			_response.set(http::field::content_type, "text/plain");
-			beast::ostream(_response.body()) << "url not found\r\n";
-			WriteResponse();
-			return;
-		}
-		_response.result((http::status::ok));
-		_response.set(http::field::server, "GateServer");
-		WriteResponse();
-		return;
-	}
+    ParseTarget(std::string(_request.target()), _get_url, _get_params);
+    bool success = method == http::verb::get
+                       ? LogicSystem::GetInstance()->HandleGet(_get_url, shared_from_this())
+                       : LogicSystem::GetInstance()->HandlePost(_get_url, shared_from_this());
+    if (!success)
+    {
+        WriteStatus(http::status::not_found, "url not found\r\n");
+        return;
+    }
+    _response.result(http::status::ok);
+}
+
+void HttpConnection::WriteStatus(http::status status, const std::string& text)
+{
+    _response.result(status);
+    _response.set(http::field::content_type, "text/plain");
+    beast::ostream(_response.body()) << text;
 }
 
 void HttpConnection::CheckDeadLine()
 {
-	auto self = shared_from_this();
-	deadline_.async_wait([self](beast::error_code ec) {
-		if (!ec)
-		{
-			self->_socket.close(ec);
-		}
-	});
+    auto self = shared_from_this();
+    deadline_.async_wait([self](beast::error_code ec) {
+        if (!ec)
+        {
+            self->_socket.close(ec);
+        }
+    });
 }
 void HttpConnection::WriteResponse()
 {
-	auto self = shared_from_this();
-	_response.content_length(_response.body().size());
-	http::async_write(_socket, _response, [self](beast::error_code ec, std::size_t  bytes_transferred) {
-		self->_socket.shutdown(tcp::socket::shutdown_send, ec);
-		self->deadline_.cancel();
-		});
+    auto self = shared_from_this();
+    _response.content_length(_response.body().size());
+    http::async_write(_socket, _response, [self](beast::error_code ec, std::size_t bytes_transferred) {
+        self->_socket.shutdown(tcp::socket::shutdown_send, ec);
+        self->deadline_.cancel();
+    });
 }

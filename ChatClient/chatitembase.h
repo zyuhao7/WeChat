@@ -12,7 +12,7 @@ class ChatItemBase : public QWidget
 public:
     explicit ChatItemBase(ChatRole role, QWidget* parent = nullptr);
     void setUserName(const QString& name);
-    void setUserIcon(const QPixmap &icon);
+    void setUserIcon(const QPixmap& icon);
     void setWidget(QWidget* w);
 
 private:

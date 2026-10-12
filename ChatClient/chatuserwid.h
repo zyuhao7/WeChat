@@ -5,7 +5,8 @@
 #include "listitembase.h"
 #include "userdata.h"
 
-namespace Ui {
+namespace Ui
+{
 class ChatUserWid;
 }
 
@@ -15,7 +16,7 @@ class ChatUserWid : public ListItemBase
     Q_OBJECT
 
 public:
-    explicit ChatUserWid(QWidget *parent = nullptr);
+    explicit ChatUserWid(QWidget* parent = nullptr);
     ~ChatUserWid();
 
     QSize sizeHint() const override;
@@ -27,8 +28,9 @@ public:
     std::shared_ptr<UserInfo> GetUserInfo();
     // update the last message
     void UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs);
+
 private:
-    Ui::ChatUserWid *ui;
+    Ui::ChatUserWid* ui;
     std::shared_ptr<UserInfo> _user_info;
 };
 

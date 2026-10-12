@@ -2,14 +2,14 @@
 #include <QDebug>
 #include <QMouseEvent>
 
-TimerBtn::TimerBtn(QWidget *parent)
-    :GlassButton(parent),
+TimerBtn::TimerBtn(QWidget* parent)
+    : GlassButton(parent),
       _counter(10)
 {
     _timer = new QTimer(this);
-    connect(_timer, &QTimer::timeout,[this](){
+    connect(_timer, &QTimer::timeout, [this]() {
         _counter--;
-        if(_counter <= 0)
+        if (_counter <= 0)
         {
             _timer->stop();
             _counter = 10;
@@ -26,15 +26,15 @@ TimerBtn::~TimerBtn()
     _timer->stop();
 }
 
-void TimerBtn::mouseReleaseEvent(QMouseEvent *e)
+void TimerBtn::mouseReleaseEvent(QMouseEvent* e)
 {
-     if(e->button() == Qt::LeftButton)
-     {
-         qDebug()<<"MyButton was released!";
-         this->setEnabled(false);
-         this->setText(QString::number(_counter));
-         _timer->start(1000);
-         emit clicked();
-     }
-     GlassButton::mouseReleaseEvent(e);
+    if (e->button() == Qt::LeftButton)
+    {
+        qDebug() << "MyButton was released!";
+        this->setEnabled(false);
+        this->setText(QString::number(_counter));
+        _timer->start(1000);
+        emit clicked();
+    }
+    GlassButton::mouseReleaseEvent(e);
 }

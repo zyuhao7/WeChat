@@ -19,17 +19,18 @@ public:
                   ElaIconType::IconName hover,
                   ElaIconType::IconName press,
                   int pixelSize = 0);
+
 protected:
-    virtual void enterEvent(QEnterEvent* event) override ; // mouse enter
-    virtual void leaveEvent(QEvent* event) override;  //mouse leave
-    virtual void mousePressEvent(QMouseEvent* event) override; // mouse press
-    virtual void mouseReleaseEvent(QMouseEvent* event) override; //mouse release
+    virtual void enterEvent(QEnterEvent* event) override;        // mouse enter
+    virtual void leaveEvent(QEvent* event) override;             // mouse leave
+    virtual void mousePressEvent(QMouseEvent* event) override;   // mouse press
+    virtual void mouseReleaseEvent(QMouseEvent* event) override; // mouse release
 private:
     QString _normal;
     QString _hover;
     QString _press;
 
-    bool  _has_icon;
+    bool _has_icon;
     QIcon _icon_normal;
     QIcon _icon_hover;
     QIcon _icon_press;

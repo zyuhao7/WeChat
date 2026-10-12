@@ -8,17 +8,23 @@ GetChatServerRsp StatusGrpcClient::GetChatServer(int uid)
     GetChatServerReq request;
     request.set_uid(uid);
     auto stub = pool_->getConnection();
-
-    Status status = stub->GetChatServer(&context, request, &reply);
-    std::cout << "Status status = stub->GetChatServer(&context, request, &reply);" << std::endl;
-    Defer defer([&stub, this]() {
-        pool_->returnConnection(std::move(stub));
-        });
-
-    if (status.ok()) {
+    if (!stub)
+    {
+        reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }
-    else {
+    Defer defer([&stub, this]() {
+        pool_->returnConnection(std::move(stub));
+    });
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    Status status = stub->GetChatServer(&context, request, &reply);
+
+    if (status.ok())
+    {
+        return reply;
+    }
+    else
+    {
         reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }
@@ -33,14 +39,22 @@ LoginRsp StatusGrpcClient::Login(int uid, std::string token)
     request.set_token(token);
 
     auto stub = pool_->getConnection();
-    Status status = stub->Login(&context, request, &reply);
-    Defer defer([&stub, this]() {
-        pool_->returnConnection(std::move(stub));
-        });
-    if (status.ok()) {
+    if (!stub)
+    {
+        reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }
-    else {
+    Defer defer([&stub, this]() {
+        pool_->returnConnection(std::move(stub));
+    });
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    Status status = stub->Login(&context, request, &reply);
+    if (status.ok())
+    {
+        return reply;
+    }
+    else
+    {
         reply.set_error(ErrorCodes::RPCFailed);
         return reply;
     }

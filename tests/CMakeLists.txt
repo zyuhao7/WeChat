@@ -136,3 +136,8 @@ add_test(NAME msg_node COMMAND test_msg_node)
 
 
 
+
+# Per-service suites live in their own files so they can evolve independently.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/gate.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/chat.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/status.cmake)

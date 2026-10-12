@@ -3,17 +3,15 @@
 #include "ElaIcon.h"
 #include <QVariant>
 
-
-
-ClickedBtn::ClickedBtn(QWidget *parent)
+ClickedBtn::ClickedBtn(QWidget* parent)
     : QPushButton(parent),
       _has_icon(false)
 {
-    setCursor(Qt::PointingHandCursor); //set the cursor to a pointing hand
+    setCursor(Qt::PointingHandCursor); // set the cursor to a pointing hand
     setFocusPolicy(Qt::NoFocus);
 }
 
-ClickedBtn::~ClickedBtn(){}
+ClickedBtn::~ClickedBtn() {}
 
 void ClickedBtn::SetState(QString normal, QString hover, QString press)
 {
@@ -36,8 +34,8 @@ void ClickedBtn::SetIcons(ElaIconType::IconName normal,
     int size = pixelSize > 0 ? pixelSize : qBound(16, qRound(box * 0.7), 24);
 
     _icon_normal = ElaIcon::getInstance()->getElaIcon(normal, size);
-    _icon_hover  = ElaIcon::getInstance()->getElaIcon(hover, size);
-    _icon_press  = ElaIcon::getInstance()->getElaIcon(press, size);
+    _icon_hover = ElaIcon::getInstance()->getElaIcon(hover, size);
+    _icon_press = ElaIcon::getInstance()->getElaIcon(press, size);
     _has_icon = true;
 
     setText(QString());
@@ -46,39 +44,42 @@ void ClickedBtn::SetIcons(ElaIconType::IconName normal,
     setIcon(_icon_normal);
 }
 
-
-void ClickedBtn::enterEvent(QEnterEvent *event)
+void ClickedBtn::enterEvent(QEnterEvent* event)
 {
     setProperty("state", _hover);
     repolish(this);
     update();
-    if(_has_icon) setIcon(_icon_hover);
+    if (_has_icon)
+        setIcon(_icon_hover);
     QPushButton::enterEvent(event);
 }
 
-void ClickedBtn::leaveEvent(QEvent *event)
+void ClickedBtn::leaveEvent(QEvent* event)
 {
-    setProperty("state",_normal);
+    setProperty("state", _normal);
     repolish(this);
     update();
-    if(_has_icon) setIcon(_icon_normal);
+    if (_has_icon)
+        setIcon(_icon_normal);
     QPushButton::leaveEvent(event);
 }
 
-void ClickedBtn::mousePressEvent(QMouseEvent *event)
+void ClickedBtn::mousePressEvent(QMouseEvent* event)
 {
-    setProperty("state",_press);
+    setProperty("state", _press);
     repolish(this);
     update();
-    if(_has_icon) setIcon(_icon_press);
+    if (_has_icon)
+        setIcon(_icon_press);
     QPushButton::mousePressEvent(event);
 }
 
-void ClickedBtn::mouseReleaseEvent(QMouseEvent *event)
+void ClickedBtn::mouseReleaseEvent(QMouseEvent* event)
 {
-    setProperty("state",_hover);
+    setProperty("state", _hover);
     repolish(this);
     update();
-    if(_has_icon) setIcon(_icon_hover);
+    if (_has_icon)
+        setIcon(_icon_hover);
     QPushButton::mouseReleaseEvent(event);
 }

@@ -2,7 +2,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-BubbleFrame::BubbleFrame(ChatRole role, QWidget *parent)
+BubbleFrame::BubbleFrame(ChatRole role, QWidget* parent)
     : QFrame(parent),
       m_role(role),
       m_margin(4)
@@ -17,10 +17,10 @@ void BubbleFrame::setMargin(int margin)
     Q_UNUSED(margin);
 }
 
-void BubbleFrame::setWidget(QWidget *w)
+void BubbleFrame::setWidget(QWidget* w)
 {
     // check whether the layout already has child widgets
-    if(m_pHLayout->count() > 0)
+    if (m_pHLayout->count() > 0)
         return;
     else
         m_pHLayout->addWidget(w);
@@ -31,7 +31,7 @@ ChatRole BubbleFrame::role() const
     return m_role;
 }
 
-void BubbleFrame::paintEvent(QPaintEvent *e)
+void BubbleFrame::paintEvent(QPaintEvent* e)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -41,7 +41,7 @@ void BubbleFrame::paintEvent(QPaintEvent *e)
     QPainterPath shape;
     shape.addRoundedRect(body, radius, radius);
 
-    if(m_role == ChatRole::Self)
+    if (m_role == ChatRole::Self)
     {
         QLinearGradient fill(body.topLeft(), body.bottomLeft());
         fill.setColorAt(0.0, QColor(0x3D, 0x9C, 0xFF));

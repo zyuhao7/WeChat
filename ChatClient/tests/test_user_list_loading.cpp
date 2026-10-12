@@ -12,12 +12,14 @@
 #include "global.h"
 #include "usermgr.h"
 
-namespace {
+namespace
+{
 
 void seedFriends(int count)
 {
     QJsonArray friends;
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i)
+    {
         QJsonObject friend_obj;
         friend_obj["uid"] = 1000 + i;
         friend_obj["name"] = QString("friend %1").arg(i);
@@ -31,7 +33,7 @@ void seedFriends(int count)
     UserMgr::GetInstance()->AppendFriendList(friends);
 }
 
-void wheelAtTheBottomEdge(QWidget *viewport)
+void wheelAtTheBottomEdge(QWidget* viewport)
 {
     const QPointF pos(10, 10);
     QWheelEvent wheel(pos, viewport->mapToGlobal(pos.toPoint()), QPoint(0, 0), QPoint(0, -120),
@@ -89,7 +91,7 @@ private slots:
     }
 };
 
-QObject *createUserListLoadingTest()
+QObject* createUserListLoadingTest()
 {
     return new UserListLoadingTest;
 }

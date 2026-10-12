@@ -14,7 +14,7 @@ public:
     ChatRole role() const;
 
 protected:
-    void paintEvent(QPaintEvent *e);
+    void paintEvent(QPaintEvent* e);
 
 private:
     QHBoxLayout* m_pHLayout;

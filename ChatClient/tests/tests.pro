@@ -24,6 +24,7 @@ SOURCES += test_usermgr.cpp \
            test_user_list_loading.cpp \
            test_chat_dialog.cpp \
            test_chat_text_msg.cpp \
+           test_server_error_text.cpp \
            tests_main.cpp \
            $$CLIENT_SOURCES
 

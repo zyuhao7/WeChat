@@ -9,7 +9,8 @@
 #include "tcpmgr.h"
 #include "usermgr.h"
 
-namespace {
+namespace
+{
 
 // ChatDialog reads the signed-in user straight out of UserMgr while building its UI.
 void signInTestUser()
@@ -40,7 +41,7 @@ private slots:
     {
         signInTestUser();
         ChatDialog dialog;
-        auto *chat_list = dialog.findChild<QListWidget *>("chat_user_list");
+        auto* chat_list = dialog.findChild<QListWidget*>("chat_user_list");
         QVERIFY(chat_list);
         const int items_before = chat_list->count();
 
@@ -53,7 +54,7 @@ private slots:
     {
         signInTestUser();
         ChatDialog dialog;
-        auto *chat_list = dialog.findChild<QListWidget *>("chat_user_list");
+        auto* chat_list = dialog.findChild<QListWidget*>("chat_user_list");
         QVERIFY(chat_list);
         const int items_before = chat_list->count();
 
@@ -64,7 +65,7 @@ private slots:
     }
 };
 
-QObject *createChatDialogTextMsgTest()
+QObject* createChatDialogTextMsgTest()
 {
     return new ChatDialogTextMsgTest;
 }

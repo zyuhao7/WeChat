@@ -2,10 +2,9 @@
 #include <QStyleOption>
 #include <QPainter>
 
-ListItemBase::ListItemBase(QWidget *parent)
-    :QWidget(parent)
+ListItemBase::ListItemBase(QWidget* parent)
+    : QWidget(parent)
 {
-
 }
 
 void ListItemBase::SetItemType(ListItemType itemType)
@@ -18,7 +17,7 @@ ListItemType ListItemBase::GetItemType()
     return _itemType;
 }
 
-void ListItemBase::paintEvent(QPaintEvent *event)
+void ListItemBase::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
     QStyleOption opt;

@@ -1,288 +1,293 @@
 #include "LogicSystem.h"
 #include "HttpConnection.h"
+#include "HttpParse.h"
 #include "VerifyGrpcClient.h"
 #include "RedisMgr.h"
 #include "MysqlMgr.h"
 #include "StatusGrpcClient.h"
 
+namespace
+{
+
+void ReplyJson(const std::shared_ptr<HttpConnection>& connection, const Json::Value& root)
+{
+    connection->AppendBody(root.toStyledString());
+}
+
+void ReplyError(const std::shared_ptr<HttpConnection>& connection, int error)
+{
+    Json::Value root;
+    root["error"] = error;
+    ReplyJson(connection, root);
+}
+
+// Parses the body as a JSON object; replies Error_Json and returns false otherwise.
+bool ReadJsonBody(const std::shared_ptr<HttpConnection>& connection, Json::Value& src_root)
+{
+    connection->SetContentType("text/json");
+    auto body_str = connection->RequestBody();
+    if (!ParseJsonObject(body_str, src_root))
+    {
+        std::cout << "Failed to parse JSON data!" << std::endl;
+        ReplyError(connection, ErrorCodes::Error_Json);
+        return false;
+    }
+    return true;
+}
+
+// Checks the emailed code; replies VerifyExpired / VerifyCodeErr and returns false on mismatch.
+bool CheckVerifyCode(const std::shared_ptr<HttpConnection>& connection, const std::string& email,
+                     const std::string& code)
+{
+    std::string verify_code;
+    if (!RedisMgr::GetInstance()->Get(CODEPREFIX + email, verify_code))
+    {
+        std::cout << " get verify code expired" << std::endl;
+        ReplyError(connection, ErrorCodes::VerifyExpired);
+        return false;
+    }
+    if (verify_code != code)
+    {
+        std::cout << " verify code error" << std::endl;
+        ReplyError(connection, ErrorCodes::VerifyCodeErr);
+        return false;
+    }
+    return true;
+}
+
+// Codes are single-use: once consumed they must not authorize a second register/reset.
+void ConsumeVerifyCode(const std::string& email)
+{
+    if (!RedisMgr::GetInstance()->Del(CODEPREFIX + email))
+    {
+        std::cout << " failed to delete verify code of " << email << std::endl;
+    }
+}
+
+} // namespace
+
 void LogicSystem::RegGet(std::string url, HttpHandler handler)
 {
-	_get_handlers.insert(make_pair(url, handler));
+    _get_handlers.insert(make_pair(url, handler));
 }
 
 void LogicSystem::RegPost(std::string url, HttpHandler handler)
 {
-	_post_handlers.insert(make_pair(url, handler));
+    _post_handlers.insert(make_pair(url, handler));
 }
 
 LogicSystem::LogicSystem()
 {
-	RegGet("/get_test", [](std::shared_ptr<HttpConnection> connection) {
-		beast::ostream(connection->_response.body()) << "receive get_test req";
-		int i = 0;
-		for (auto& elem : connection->_get_params)
-		{
-			i++;
-			beast::ostream(connection->_response.body()) <<" param " << i << "key is" << elem.first;
-			beast::ostream(connection->_response.body()) << " param " << i << "val is" << elem.second << std::endl;
-		}
-	});
+    RegGet("/get_test", [](std::shared_ptr<HttpConnection> connection) {
+        beast::ostream(connection->_response.body()) << "receive get_test req";
+        int i = 0;
+        for (auto& elem : connection->_get_params)
+        {
+            i++;
+            beast::ostream(connection->_response.body()) << " param " << i << "key is" << elem.first;
+            beast::ostream(connection->_response.body()) << " param " << i << "val is" << elem.second << std::endl;
+        }
+    });
 
     RegPost("/get_verify_code", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "get_verify_code" << std::endl;
-        auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
-
-        std::cout << "receive body is " << body_str << std::endl;
-        connection->_response.set(http::field::content_type, "text/json");
-
-		//parse the JSON data
-        Json::Value root;
-        Json::Reader reader;
         Json::Value src_root;
-        bool parse_success = reader.parse(body_str, src_root);
-        if (!parse_success) {
-            std::cout << "Failed to parse JSON data!" << std::endl;
-            root["error"] = ErrorCodes::Error_Json;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!ReadJsonBody(connection, src_root))
+        {
+            return;
         }
 
-        if (!src_root.isMember("email")) {
-            std::cout << "Failed to parse JSON data!" << std::endl;
-            root["error"] = ErrorCodes::Error_Json;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        std::string email;
+        if (!GetStringField(src_root, "email", email, kMaxEmailLength))
+        {
+            ReplyError(connection, ErrorCodes::Error_Json);
+            return;
         }
-
-        auto email = src_root["email"].asString();
-        GetVerifyRsp rsp = VerifyGrpcClient::GetInstance()->GetVerifyCode(email); 
 
         std::cout << "email is " << email << std::endl;
+        GetVerifyRsp rsp = VerifyGrpcClient::GetInstance()->GetVerifyCode(email);
+        Json::Value root;
         root["error"] = rsp.error();
-        root["email"] = src_root["email"];
-        std::string jsonstr = root.toStyledString();
-        beast::ostream(connection->_response.body()) << jsonstr;
-        return true;
-        });
+        root["email"] = email;
+        ReplyJson(connection, root);
+    });
 
     RegPost("/user_register", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "user_register" << std::endl;
-        auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
-        std::cout << "receive body is " << body_str << std::endl;
-        connection->_response.set(http::field::content_type, "text/json");
-        Json::Value root;
-        Json::Reader reader;
         Json::Value src_root;
-        bool parse_success = reader.parse(body_str, src_root);
-        if (!parse_success) {
-            std::cout << "Failed to parse JSON data!" << std::endl;
-            root["error"] = ErrorCodes::Error_Json;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!ReadJsonBody(connection, src_root))
+        {
+            return;
         }
 
-        auto email = src_root["email"].asString();
-        auto name = src_root["user"].asString();
-        auto pwd = src_root["passwd"].asString();
-        auto confirm = src_root["confirm"].asString();
-        auto icon = src_root["icon"].asString();
+        std::string email, name, pwd, confirm, icon, code;
+        if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "user", name, kMaxFieldLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength) || !GetStringField(src_root, "confirm", confirm, kMaxFieldLength) || !GetStringField(src_root, "icon", icon, kMaxFieldLength) || !GetStringField(src_root, "verifycode", code, kMaxFieldLength))
+        {
+            ReplyError(connection, ErrorCodes::Error_Json);
+            return;
+        }
 
-        if (pwd != confirm) {
+        if (pwd != confirm)
+        {
             std::cout << "password err " << std::endl;
-            root["error"] = ErrorCodes::PasswdErr;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+            ReplyError(connection, ErrorCodes::PasswdErr);
+            return;
         }
 
-        //first check the verify code for the email in redis
-        std::string  verify_code;
-        bool b_get_verify = RedisMgr::GetInstance()->Get(CODEPREFIX + src_root["email"].asString(), verify_code);
-        if (!b_get_verify) {
-            std::cout << " get verify code expired" << std::endl;
-            root["error"] = ErrorCodes::VerifyExpired;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!CheckVerifyCode(connection, email, code))
+        {
+            return;
         }
 
-        if (verify_code != src_root["verifycode"].asString()) {
-            std::cout << " verify code error" << std::endl;
-            root["error"] = ErrorCodes::VerifyCodeErr;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
-        }
-
-        //query the DB to check whether the user exists
         int uid = MysqlMgr::GetInstance()->RegUser(name, email, pwd, icon);
-        if (uid == 0 || uid == -1) {
+        if (uid == 0)
+        {
             std::cout << " user or email exist" << std::endl;
-            root["error"] = ErrorCodes::UserExist;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+            ReplyError(connection, ErrorCodes::UserExist);
+            return;
         }
+        if (uid < 0)
+        {
+            std::cout << " register user db error" << std::endl;
+            ReplyError(connection, ErrorCodes::DbErr);
+            return;
+        }
+        ConsumeVerifyCode(email);
+
+        Json::Value root;
         root["error"] = 0;
         root["uid"] = uid;
         root["email"] = email;
         root["user"] = name;
-        root["passwd"] = pwd;
-        root["confirm"] = confirm;
-        root["verifycode"] = src_root["verifycode"].asString();
         root["icon"] = icon;
-        std::string jsonstr = root.toStyledString();
-        beast::ostream(connection->_response.body()) << jsonstr;
-        return true;
-        });
+        ReplyJson(connection, root);
+    });
 
-    //reset the callback logic
     RegPost("/reset_pwd", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "reset_pwd" << std::endl;
-        auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
-        std::cout << "receive body is " << body_str << std::endl;
-        connection->_response.set(http::field::content_type, "text/json");
-        Json::Value root;
-        Json::Reader reader;
         Json::Value src_root;
-        bool parse_success = reader.parse(body_str, src_root);
-        if (!parse_success) {
-            std::cout << "Failed to parse JSON data!" << std::endl;
-            root["error"] = ErrorCodes::Error_Json;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!ReadJsonBody(connection, src_root))
+        {
+            return;
         }
 
-        auto email = src_root["email"].asString();
-        auto name = src_root["user"].asString();
-        auto pwd = src_root["passwd"].asString();
-
-        //first check the verify code for the email in redis
-        std::string  verify_code;
-        bool b_get_verify = RedisMgr::GetInstance()->Get(CODEPREFIX + src_root["email"].asString(), verify_code);
-        if (!b_get_verify) {
-            std::cout << " get verify code expired" << std::endl;
-            root["error"] = ErrorCodes::VerifyExpired;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        std::string email, name, pwd, code;
+        if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "user", name, kMaxFieldLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength) || !GetStringField(src_root, "verifycode", code, kMaxFieldLength))
+        {
+            ReplyError(connection, ErrorCodes::Error_Json);
+            return;
         }
 
-        if (verify_code != src_root["verifycode"].asString()) {
-            std::cout << " verify code error" << std::endl;
-            root["error"] = ErrorCodes::VerifyCodeErr;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!CheckVerifyCode(connection, email, code))
+        {
+            return;
         }
-        //query the DB to check whether the name and email match
-        bool email_valid = MysqlMgr::GetInstance()->CheckEmail(name, email);
-        if (!email_valid) {
+
+        DbStatus email_status = MysqlMgr::GetInstance()->CheckEmail(name, email);
+        if (email_status == DbStatus::Error)
+        {
+            ReplyError(connection, ErrorCodes::DbErr);
+            return;
+        }
+        if (email_status == DbStatus::Mismatch)
+        {
             std::cout << " user email not match" << std::endl;
-            root["error"] = ErrorCodes::EmailNotMatch;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+            ReplyError(connection, ErrorCodes::EmailNotMatch);
+            return;
         }
 
-        //update the password to the latest
-        bool b_up = MysqlMgr::GetInstance()->UpdatePwd(name, pwd);
-        if (!b_up) {
+        DbStatus up_status = MysqlMgr::GetInstance()->UpdatePwd(name, pwd);
+        if (up_status == DbStatus::Error)
+        {
+            ReplyError(connection, ErrorCodes::DbErr);
+            return;
+        }
+        if (up_status == DbStatus::Mismatch)
+        {
             std::cout << " update pwd failed" << std::endl;
-            root["error"] = ErrorCodes::PasswdUpFailed;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+            ReplyError(connection, ErrorCodes::PasswdUpFailed);
+            return;
         }
+        ConsumeVerifyCode(email);
 
-        std::cout << "succeed to update password : " << pwd << std::endl;
+        std::cout << "succeed to update password of " << name << std::endl;
+        Json::Value root;
         root["error"] = 0;
         root["email"] = email;
         root["user"] = name;
-        root["passwd"] = pwd;
-        root["verifycode"] = src_root["verifycode"].asString();
-        std::string jsonstr = root.toStyledString();
-        beast::ostream(connection->_response.body()) << jsonstr;
-        return true;
-        });
+        ReplyJson(connection, root);
+    });
 
-    //user login logic
     RegPost("/user_login", [](std::shared_ptr<HttpConnection> connection) {
         std::cout << "receive user login message" << std::endl;
-        auto body_str = boost::beast::buffers_to_string(connection->_request.body().data());
-        std::cout << "receive body is " << body_str << std::endl;
-        connection->_response.set(http::field::content_type, "text/json");
-        Json::Value root;
-        Json::Reader reader;
         Json::Value src_root;
-        bool parse_success = reader.parse(body_str, src_root);
-        if (!parse_success) {
-            std::cout << "Failed to parse JSON data!" << std::endl;
-            root["error"] = ErrorCodes::Error_Json;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        if (!ReadJsonBody(connection, src_root))
+        {
+            return;
         }
 
-        auto email = src_root["email"].asString();
-        auto pwd = src_root["passwd"].asString();
-		std::cout << "eamil is " << email << " pwd is " << pwd << std::endl;
+        std::string email, pwd;
+        if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength))
+        {
+            ReplyError(connection, ErrorCodes::Error_Json);
+            return;
+        }
+        std::cout << "login email is " << email << std::endl;
+
         UserInfo userInfo;
-        //query the DB to check whether the name and password match
-        bool pwd_valid = MysqlMgr::GetInstance()->CheckPwd(email, pwd, userInfo);
-        if (!pwd_valid) {
-            std::cout << " user pwd not match" << std::endl;
-            root["error"] = ErrorCodes::PasswdInvalid;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+        DbStatus pwd_status = MysqlMgr::GetInstance()->CheckPwd(email, pwd, userInfo);
+        if (pwd_status == DbStatus::Error)
+        {
+            ReplyError(connection, ErrorCodes::DbErr);
+            return;
         }
-        std::cout << "查询数据库成功" << std::endl;
+        if (pwd_status == DbStatus::Mismatch)
+        {
+            std::cout << " user pwd not match" << std::endl;
+            ReplyError(connection, ErrorCodes::PasswdInvalid);
+            return;
+        }
 
-        //query StatusServer to find a suitable connection
+        // query StatusServer to find a suitable connection
         auto reply = StatusGrpcClient::GetInstance()->GetChatServer(userInfo.uid);
-        if (reply.error()) {
+        if (reply.error())
+        {
             std::cout << " grpc get chat server failed, error is " << reply.error() << std::endl;
-            root["error"] = ErrorCodes::RPCFailed;
-            std::string jsonstr = root.toStyledString();
-            beast::ostream(connection->_response.body()) << jsonstr;
-            return true;
+            ReplyError(connection, ErrorCodes::RPCFailed);
+            return;
         }
 
         std::cout << "succeed to load userinfo uid is " << userInfo.uid << std::endl;
+        Json::Value root;
         root["error"] = 0;
         root["email"] = email;
         root["uid"] = userInfo.uid;
         root["token"] = reply.token();
         root["host"] = reply.host();
         root["port"] = reply.port();
-        std::string jsonstr = root.toStyledString();
-        beast::ostream(connection->_response.body()) << jsonstr;
-        return true;
-        });
+        ReplyJson(connection, root);
+    });
 }
 
 bool LogicSystem::HandleGet(std::string path, std::shared_ptr<HttpConnection> con)
 {
-	if (_get_handlers.find(path) == _get_handlers.end())
-	{
-		return false;
-	}
-	_get_handlers[path](con);
-	return true;
+    auto it = _get_handlers.find(path);
+    if (it == _get_handlers.end())
+    {
+        return false;
+    }
+    it->second(con);
+    return true;
 }
 
 bool LogicSystem::HandlePost(std::string path, std::shared_ptr<HttpConnection> con)
 {
-	if (_post_handlers.find(path) == _post_handlers.end())
-	{
+    auto it = _post_handlers.find(path);
+    if (it == _post_handlers.end())
+    {
         std::cout << "handle Post failed" << std::endl;
-		return false;
-	}
-	_post_handlers[path](con);
-	return true;
+        return false;
+    }
+    it->second(con);
+    return true;
 }

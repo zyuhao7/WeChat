@@ -3,15 +3,15 @@
 #include "liquidglass.h"
 #include <QDebug>
 
-FriendInfoPage::FriendInfoPage(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::FriendInfoPage),
-    _user_info(nullptr)
+FriendInfoPage::FriendInfoPage(QWidget* parent)
+    : QWidget(parent),
+      ui(new Ui::FriendInfoPage),
+      _user_info(nullptr)
 {
     ui->setupUi(this);
-    ui->msg_chat->SetState("normal","hover","press");
-    ui->video_chat->SetState("normal","hover","press");
-    ui->voice_chat->SetState("normal","hover","press");
+    ui->msg_chat->SetState("normal", "hover", "press");
+    ui->video_chat->SetState("normal", "hover", "press");
+    ui->voice_chat->SetState("normal", "hover", "press");
     ui->msg_chat->SetIcons(ElaIconType::Message, ElaIconType::Message, ElaIconType::Message, 26);
     ui->voice_chat->SetIcons(ElaIconType::Phone, ElaIconType::Phone, ElaIconType::Phone, 26);
     ui->video_chat->SetIcons(ElaIconType::Video, ElaIconType::Video, ElaIconType::Video, 26);

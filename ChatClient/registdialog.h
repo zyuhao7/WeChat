@@ -10,9 +10,8 @@
 #include <QString>
 #include <QTimer>
 
-
-
-namespace Ui {
+namespace Ui
+{
 class RegistDialog;
 }
 
@@ -21,7 +20,7 @@ class RegistDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit RegistDialog(QWidget *parent = nullptr);
+    explicit RegistDialog(QWidget* parent = nullptr);
     ~RegistDialog();
 
 private slots:
@@ -31,7 +30,7 @@ private slots:
     void on_cancel_btn_clicked();
 
 public slots:
-    void slot_reg_mod_finish(ReqId id,QString res, ErrorCodes err);
+    void slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err);
 
 private:
     void AddTipErr(TipErr te, QString tips);
@@ -44,17 +43,15 @@ private:
     bool checkConfirmValid();
 
     void initHttpHandlers();
-    Ui::RegistDialog *ui;
+    Ui::RegistDialog* ui;
     void showTip(QString str, bool b_ok);
     QMap<ReqId, std::function<void(const QJsonObject&)>> _handlers;
     QMap<TipErr, QString> _tip_errs;
-    QTimer *_countdown_timer;
+    QTimer* _countdown_timer;
     int _countdown;
 
 signals:
     void sigSwitchLogin();
 };
-
-
 
 #endif // REGISTDIALOG_H

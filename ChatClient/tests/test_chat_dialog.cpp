@@ -6,7 +6,8 @@
 #include "tcpmgr.h"
 #include "usermgr.h"
 
-namespace {
+namespace
+{
 
 // ChatDialog reads the signed-in user straight out of UserMgr while building its UI.
 void signInTestUser()
@@ -48,7 +49,7 @@ private slots:
     }
 };
 
-QObject *createChatDialogTest()
+QObject* createChatDialogTest()
 {
     return new ChatDialogApplyFriendTest;
 }

@@ -10,64 +10,65 @@
 
 DistLock& DistLock::Inst()
 {
-	static DistLock lock;
-	return lock;
+    static DistLock lock;
+    return lock;
 }
 
 // generate a globally unique identifier (UUID) with Boost UUID
 static std::string generateUUID()
 {
-	boost::uuids::uuid uuid = boost::uuids::random_generator()();
-	return to_string(uuid);
+    boost::uuids::uuid uuid = boost::uuids::random_generator()();
+    return to_string(uuid);
 }
-
 
 // // try to acquire the lock, returning its unique id (UUID), or an empty string on failure
 std::string DistLock::acquireLock(redisContext* context, const std::string& lockName, int lockTimeout, int acquireTimeout)
 {
-	std::string identifier = generateUUID();
-	std::string lockKey = "lock:" + lockName; // lock:lockcount
-	auto endTime = std::chrono::steady_clock::now() + std::chrono::seconds(acquireTimeout);
+    std::string identifier = generateUUID();
+    std::string lockKey = "lock:" + lockName; // lock:lockcount
+    auto endTime = std::chrono::steady_clock::now() + std::chrono::seconds(acquireTimeout);
 
-	while (std::chrono::steady_clock::now() < endTime)
-	{
-		redisReply* reply = (redisReply*)redisCommand(context, "SET %s %s NX EX %d",
-			lockKey.c_str(), identifier.c_str(), lockTimeout);
-		if (reply != nullptr)
-		{
-			// check whether the reply is OK
-			if (reply->type == REDIS_REPLY_STATUS && std::string(reply->str) == "OK")
-			{
-				freeReplyObject(reply);
-				return identifier;
-			}
-			freeReplyObject(reply);
-		}
-		// sleep 1ms and retry to avoid busy-waiting.
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-	return "";
+    while (std::chrono::steady_clock::now() < endTime)
+    {
+        redisReply* reply = (redisReply*)redisCommand(context, "SET %s %s NX EX %d",
+                                                      lockKey.c_str(), identifier.c_str(), lockTimeout);
+        if (reply != nullptr)
+        {
+            // check whether the reply is OK
+            if (reply->type == REDIS_REPLY_STATUS && std::string(reply->str) == "OK")
+            {
+                freeReplyObject(reply);
+                return identifier;
+            }
+            freeReplyObject(reply);
+        }
+        // sleep 1ms and retry to avoid busy-waiting.
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return "";
 }
 
 // release the lock; only the holder can release it, returns success
 bool DistLock::releaseLock(redisContext* context, const std::string& lockName, const std::string& identifier)
 {
-	std::string lockKey = "lock:" + lockName;
-	// Lua script: check whether the lock id matches, and delete the lock if it does.
-	const char* luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then  \
+    std::string lockKey = "lock:" + lockName;
+    // Lua script: check whether the lock id matches, and delete the lock if it does.
+    const char* luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then  \
                                 return redis.call('del', KEYS[1]) \
                              else \
                                 return 0 \
                              end";
-	// run the Lua script with EVAL: first the script, then the key count, the keys, and the args
-	redisReply* reply = (redisReply*)redisCommand(context, "EVAL %s 1 %s %s", luaScript, lockKey.c_str(), identifier.c_str());
-	bool success = false;
-	if (reply != nullptr) {
-		// a return value of 1 means the lock was deleted successfully
-		if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1) {
-			success = true;
-		}
-		freeReplyObject(reply);
-	}
-	return success;
+    // run the Lua script with EVAL: first the script, then the key count, the keys, and the args
+    redisReply* reply = (redisReply*)redisCommand(context, "EVAL %s 1 %s %s", luaScript, lockKey.c_str(), identifier.c_str());
+    bool success = false;
+    if (reply != nullptr)
+    {
+        // a return value of 1 means the lock was deleted successfully
+        if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1)
+        {
+            success = true;
+        }
+        freeReplyObject(reply);
+    }
+    return success;
 }

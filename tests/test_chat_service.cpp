@@ -27,7 +27,8 @@ TEST(ChatServiceKickUser, UnwiredServiceReportsErrorInsteadOfDereferencingNull)
     EXPECT_EQ(rsp.error(), ErrorCodes::RPCFailed);
 }
 
-namespace {
+namespace
+{
 
 // A session with no server behind it is enough for the registry: none of the paths below
 // dereference the CServer. They also all return before RedisMgr::Del, so the suite stays
@@ -38,7 +39,7 @@ std::shared_ptr<CSession> MakeSession(boost::asio::io_context& ioc)
     return std::make_shared<CSession>(ioc, nullptr);
 }
 
-}  // namespace
+} // namespace
 
 TEST(ChatUserMgr, LookupAnswersNullForAnUnknownUid)
 {

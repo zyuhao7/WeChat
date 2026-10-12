@@ -12,6 +12,7 @@ class CustomizeEdit : public ElaLineEdit
 public:
     CustomizeEdit(QWidget* parent = nullptr);
     void SetMaxLength(int maxLen);
+
 protected:
     void focusOutEvent(QFocusEvent* event) override
     {
@@ -20,13 +21,15 @@ protected:
         // emit the focus-out signal
         emit sig_focus_out();
     }
+
 private:
     void limitTextLength(QString text)
     {
-        if(_max_len <= 0) return;
+        if (_max_len <= 0)
+            return;
         QByteArray byteArray = text.toUtf8();
 
-        if(byteArray.size() > _max_len)
+        if (byteArray.size() > _max_len)
         {
             byteArray = byteArray.left(_max_len);
             this->setText(QString::fromUtf8(byteArray));

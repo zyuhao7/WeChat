@@ -3,16 +3,16 @@
 
 #include <QDebug>
 
-FriendLabel::FriendLabel(QWidget *parent) :
-    QFrame(parent),
-    ui(new Ui::FriendLabel)
+FriendLabel::FriendLabel(QWidget* parent)
+    : QFrame(parent),
+      ui(new Ui::FriendLabel)
 {
     ui->setupUi(this);
-    ui->close_lb->SetState("normal","hover","pressed",
-                             "selected_normal","selected_hover","selected_pressed");
+    ui->close_lb->SetState("normal", "hover", "pressed",
+                           "selected_normal", "selected_hover", "selected_pressed");
     ui->close_lb->SetIcons(ElaIconType::Xmark, ElaIconType::Xmark);
 
-      connect(ui->close_lb, &ClickedLabel::clicked, this, &FriendLabel::slot_close);
+    connect(ui->close_lb, &ClickedLabel::clicked, this, &FriendLabel::slot_close);
 }
 
 FriendLabel::~FriendLabel()
@@ -30,13 +30,13 @@ void FriendLabel::SetText(QString text)
     auto textWidth = fontMetrics.horizontalAdvance(ui->tip_lb->text()); // get the text width
     auto textHeight = fontMetrics.height();                             // get the text height
 
-    qDebug()<< " ui->tip_lb.width() is " << ui->tip_lb->width();
-    qDebug()<< " ui->close_lb->width() is " << ui->close_lb->width();
-    qDebug()<< " textWidth is " << textWidth;
+    qDebug() << " ui->tip_lb.width() is " << ui->tip_lb->width();
+    qDebug() << " ui->close_lb->width() is " << ui->close_lb->width();
+    qDebug() << " textWidth is " << textWidth;
 
     this->setFixedWidth(ui->tip_lb->width() + ui->close_lb->width() + 5);
     this->setFixedHeight(textHeight + 2);
-     qDebug()<< "  this->setFixedHeight " << this->height();
+    qDebug() << "  this->setFixedHeight " << this->height();
     _width = this->width();
     _height = this->height();
 }

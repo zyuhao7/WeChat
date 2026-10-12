@@ -2,16 +2,16 @@
 #include "liquidglass.h"
 #include "ui_chatuserwid.h"
 
-ChatUserWid::ChatUserWid(QWidget *parent) :
-    ListItemBase(parent),
-    ui(new Ui::ChatUserWid)
+ChatUserWid::ChatUserWid(QWidget* parent)
+    : ListItemBase(parent),
+      ui(new Ui::ChatUserWid)
 {
     ui->setupUi(this);
     SetItemType(ListItemType::CHAT_USER_ITEM);
-   ui->red_point->raise();
-   ui->red_point->setPixmap(QPixmap(":/res/red_point.png"));
-   ui->red_point->setScaledContents(true);
-   ShowRedPoint(false);
+    ui->red_point->raise();
+    ui->red_point->setPixmap(QPixmap(":/res/red_point.png"));
+    ui->red_point->setScaledContents(true);
+    ShowRedPoint(false);
 }
 
 ChatUserWid::~ChatUserWid()
@@ -55,11 +55,10 @@ void ChatUserWid::SetInfo(std::shared_ptr<FriendInfo> friend_info)
 void ChatUserWid::ShowRedPoint(bool bshow)
 {
 
-   if(bshow)
-       ui->red_point->show();
-   else
-       ui->red_point->show();
-
+    if (bshow)
+        ui->red_point->show();
+    else
+        ui->red_point->show();
 }
 
 std::shared_ptr<UserInfo> ChatUserWid::GetUserInfo()
@@ -70,7 +69,7 @@ std::shared_ptr<UserInfo> ChatUserWid::GetUserInfo()
 void ChatUserWid::UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs)
 {
     QString last_msg = "";
-    for(auto& msg : msgs)
+    for (auto& msg : msgs)
     {
         last_msg = msg->_msg_content;
         _user_info->_chat_msgs.push_back(msg);
@@ -79,6 +78,3 @@ void ChatUserWid::UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs)
     _user_info->_last_msg = last_msg;
     ui->user_chat_lb->setText(_user_info->_last_msg);
 }
-
-
-
