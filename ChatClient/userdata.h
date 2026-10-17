@@ -166,14 +166,17 @@ struct UserInfo
 
 struct TextChatData
 {
-    TextChatData(QString msg_id, QString msg_content, int fromuid, int touid)
-        : _msg_id(msg_id), _msg_content(msg_content), _from_uid(fromuid), _to_uid(touid)
+    TextChatData(QString msg_id, QString msg_content, int fromuid, int touid, QString msg_type = "text")
+        : _msg_id(msg_id), _msg_content(msg_content), _from_uid(fromuid), _to_uid(touid), _msg_type(msg_type)
     {
     }
     QString _msg_id;
     QString _msg_content;
     int _from_uid;
     int _to_uid;
+    QString _msg_type; // "text" or "file"; a file message carries its name in _msg_content
+    qint64 _file_size = 0;
+    QString _local_path; // where the file landed, empty until a transfer finishes
 };
 
 struct TextChatMsg

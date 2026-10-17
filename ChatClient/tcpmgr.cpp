@@ -26,9 +26,6 @@ TcpMgr::TcpMgr()
         // read all data and append it to the buffer
         _buffer.append(_socket.readAll());
 
-        QDataStream stream(&_buffer, QIODevice::ReadOnly);
-        stream.setVersion(QDataStream::Qt_5_0);
-
         forever
         {
             // parse the header first
@@ -40,8 +37,12 @@ TcpMgr::TcpMgr()
                     return; // not enough data; wait for more
                 }
 
-                // peek the message id and length without removing them from the buffer
-                stream >> _message_id >> _message_len;
+                // a stream reused across iterations keeps its read position after the buffer is
+                // re-sliced, so each header is decoded from its own copy of the first four bytes
+                QDataStream header(_buffer.left(sizeof(quint16) * 2));
+                header.setVersion(QDataStream::Qt_5_0);
+                header.setByteOrder(QDataStream::BigEndian);
+                header >> _message_id >> _message_len;
 
                 // remove the first four bytes from the buffer
                 _buffer = _buffer.mid(sizeof(quint16) * 2);
@@ -493,6 +494,43 @@ void TcpMgr::initHandlers()
         }
 
         qDebug() << " Receive Heart Beat Msg Success";
+    });
+
+    // the server replies to every file chunk, successful or not, so each reply retires exactly
+    // one index from the sender's window
+    _handlers.insert(ID_FILE_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
+        if (jsonDoc.isNull() || !jsonDoc.isObject())
+        {
+            qDebug() << "File Msg Rsp Failed, err is Json Parse Err";
+            return;
+        }
+
+        QJsonObject jsonObj = jsonDoc.object();
+        int err = jsonObj.contains("error") ? jsonObj["error"].toInt() : ErrorCodes::ERR_JSON;
+        emit sig_file_rsp(err, jsonObj["fileid"].toString(), jsonObj["index"].toInt(-1));
+    });
+
+    _handlers.insert(ID_NOTIFY_FILE_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
+        if (jsonDoc.isNull() || !jsonDoc.isObject())
+        {
+            qDebug() << "Notify File Msg Failed, err is Json Parse Err";
+            return;
+        }
+
+        QJsonObject jsonObj = jsonDoc.object();
+        int err = jsonObj.contains("error") ? jsonObj["error"].toInt() : ErrorCodes::ERR_JSON;
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "Notify File Msg Failed, err is " << err;
+            return;
+        }
+        emit sig_file_msg(jsonObj);
     });
 }
 

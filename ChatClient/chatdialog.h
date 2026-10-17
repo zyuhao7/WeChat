@@ -38,6 +38,7 @@ private:
     void ClearLabelState(StateWidget* lb);
     void SetSelectChatItem(int uid = 0);
     void SetSelectChatPage(int uid = 0);
+    void AppendIncomingMsgs(int from_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
 
     Ui::ChatDialog* ui;
     ChatUIMode _mode;  // control sidebar switching
@@ -72,6 +73,11 @@ public slots:
     ;
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg);              // handle the received chat message
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data); // append the sent message
+
+    // a file never arrives as a message: the transfer manager reports the chunk stream and
+    // the dialog turns its first and last events into a chat-list entry
+    void slot_file_recv_started(QString file_id, int from_uid, QString name, qint64 size);
+    void slot_file_recv_finished(QString file_id, int from_uid, QString name, QString path);
 };
 
 #endif // CHATDIALOG_H

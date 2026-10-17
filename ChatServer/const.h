@@ -34,6 +34,7 @@ enum ErrorCodes
     PasswdInvalid = 1009,  // password update failed
     TokenInvalid = 1010,   // Token invalid
     UidInvalid = 1011,     // invalid uid
+    FileInvalid = 1013,    // file transfer frame failed validation
 };
 
 // Defer class
@@ -78,6 +79,9 @@ enum MSG_IDS
     ID_TEXT_CHAT_MSG_REQ = 1017,        // text chat message request
     ID_TEXT_CHAT_MSG_RSP = 1018,        // text chat message reply
     ID_NOTIFY_TEXT_CHAT_MSG_REQ = 1019, // notify the user of the text chat message
+    ID_FILE_MSG_REQ = 1025,             // file chunk request
+    ID_FILE_MSG_RSP = 1026,             // file chunk reply
+    ID_NOTIFY_FILE_MSG_REQ = 1027,      // notify the user of a file chunk
     ID_NOTIFY_OFF_LINE_REQ = 1021,      // notify the user of going offline
     ID_HEART_BEAT_REQ = 1023,           // heartbeat request
     ID_HEARTBEAT_RSP = 1024,            // heartbeat reply

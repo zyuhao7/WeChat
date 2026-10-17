@@ -36,6 +36,8 @@ QString serverErrorText(int error)
         return QStringLiteral("用户不存在或无效");
     case 1012:
         return QStringLiteral("数据库异常，请稍后重试");
+    case 1013:
+        return QStringLiteral("文件数据无效，传输失败");
     default:
         return QStringLiteral("请求失败 (错误码 %1)").arg(error);
     }

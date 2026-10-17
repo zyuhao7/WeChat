@@ -41,8 +41,18 @@ enum ReqId
     ID_NOTIFY_TEXT_CHAT_MSG_REQ = 1019, // notify the user of the text chat message
     ID_NOTIFY_OFF_LINE_REQ = 1021,      // notify the user of going offline
     ID_HEART_BEAT_REQ = 1023,           // heartbeat request
-    ID_HEART_BEAT_RSP = 1024            // heartbeat reply
+    ID_HEART_BEAT_RSP = 1024,           // heartbeat reply
+    ID_FILE_MSG_REQ = 1025,             // file chunk request
+    ID_FILE_MSG_RSP = 1026,             // file chunk reply
+    ID_NOTIFY_FILE_MSG_REQ = 1027       // notify the user of a file chunk
 };
+
+// A file travels as a run of chunk frames; the server relays each one and stores nothing.
+// Raw bytes are base64'd, so 4/3 of a chunk plus the JSON envelope has to stay under the
+// 2048-byte frame the server accepts.
+const int FILE_CHUNK_BYTES = 1024;
+const qint64 MAX_FILE_BYTES = 100LL * 1024 * 1024;
+const int MAX_FILE_NAME_BYTES = 128;
 
 enum Modules
 {

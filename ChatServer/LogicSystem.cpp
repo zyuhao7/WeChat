@@ -100,6 +100,8 @@ void LogicSystem::RegisterCallBacks()
                                                    placeholders::_1, placeholders::_2, placeholders::_3);
     _fun_callbacks[ID_TEXT_CHAT_MSG_REQ] = std::bind(&LogicSystem::DealChatTextMsg, this,
                                                      placeholders::_1, placeholders::_2, placeholders::_3);
+    _fun_callbacks[ID_FILE_MSG_REQ] = std::bind(&LogicSystem::DealFileMsg, this,
+                                                placeholders::_1, placeholders::_2, placeholders::_3);
     _fun_callbacks[ID_HEART_BEAT_REQ] = std::bind(&LogicSystem::HeartBeatHandler, this,
                                                   placeholders::_1, placeholders::_2, placeholders::_3);
 }
@@ -615,6 +617,101 @@ void LogicSystem::DealChatTextMsg(std::shared_ptr<CSession> session, const short
 
     // send the notification
     ChatGrpcClient::GetInstance()->NotifyTextChatMsg(to_ip_value, text_msg_req, rtvalue);
+}
+
+// One chunk per frame: the sender spaces them out, so a whole file never sits in the logic
+// thread's queue. The relay is stateless — a chunk the peer misses is a failed transfer on
+// the sender, whose per-index reply is what reports it.
+void LogicSystem::DealFileMsg(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data)
+{
+    Json::Value rtvalue;
+    rtvalue["error"] = ErrorCodes::Success;
+
+    int index = -1;
+    // echo the chunk identity back even on a rejected frame, so the sender can retire it
+    Json::Value root;
+    if (ParseJsonObject(msg_data, root))
+    {
+        GetIntField(root, "index", index);
+        std::string fileid;
+        GetStringField(root, "fileid", fileid);
+        rtvalue["fileid"] = fileid;
+    }
+
+    Defer defer([this, &rtvalue, &index, session]() {
+        rtvalue["index"] = index;
+        session->Send(rtvalue.toStyledString(), ID_FILE_MSG_RSP);
+    });
+
+    if (root.isNull())
+    {
+        rtvalue["error"] = ErrorCodes::Error_Json;
+        return;
+    }
+
+    // the sender is whoever owns this connection, never a uid taken from the request
+    int uid = session->GetUserId();
+    int touid = 0;
+    if (!IsValidUid(uid) || !GetIntField(root, "touid", touid) || !IsValidUid(touid) || touid == uid)
+    {
+        rtvalue["error"] = ErrorCodes::UidInvalid;
+        return;
+    }
+
+    FileChunk chunk;
+    if (!ParseFileChunk(root, chunk))
+    {
+        rtvalue["error"] = ErrorCodes::FileInvalid;
+        return;
+    }
+
+    auto to_str = std::to_string(touid);
+    auto to_ip_key = USERIPPREFIX + to_str;
+    std::string to_ip_value = "";
+    if (!RedisMgr::GetInstance()->Get(to_ip_key, to_ip_value))
+    {
+        rtvalue["error"] = ErrorCodes::UidInvalid;
+        return;
+    }
+
+    Json::Value notify;
+    notify["error"] = ErrorCodes::Success;
+    notify["fromuid"] = uid;
+    notify["touid"] = touid;
+    notify["fileid"] = chunk.file_id;
+    notify["filename"] = chunk.file_name;
+    notify["filesize"] = chunk.file_size;
+    notify["index"] = chunk.index;
+    notify["total"] = chunk.total;
+    notify["data"] = chunk.data;
+
+    auto& cfg = ConfigMgr::Inst();
+    auto self_name = cfg["SelfServer"]["Name"];
+    if (to_ip_value == self_name)
+    {
+        auto to_session = UserMgr::GetInstance()->GetSession(touid);
+        if (!to_session)
+        {
+            // offline mid-transfer: say so now instead of after the whole file is streamed
+            rtvalue["error"] = ErrorCodes::UidInvalid;
+            return;
+        }
+        to_session->Send(notify.toStyledString(), ID_NOTIFY_FILE_MSG_REQ);
+        return;
+    }
+
+    FileMsgReq file_req;
+    file_req.set_fromuid(uid);
+    file_req.set_touid(touid);
+    file_req.set_fileid(chunk.file_id);
+    file_req.set_filename(chunk.file_name);
+    file_req.set_filesize(chunk.file_size);
+    file_req.set_index(chunk.index);
+    file_req.set_total(chunk.total);
+    file_req.set_data(chunk.data);
+
+    FileMsgRsp rsp = ChatGrpcClient::GetInstance()->NotifyFileMsg(to_ip_value, file_req);
+    rtvalue["error"] = rsp.error();
 }
 
 void LogicSystem::HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data)

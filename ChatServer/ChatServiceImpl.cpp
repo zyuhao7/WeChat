@@ -129,6 +129,42 @@ Status ChatServiceImpl::NotifyTextChatMsg(::grpc::ServerContext* context,
     return Status::OK;
 }
 
+Status ChatServiceImpl::NotifyFileMsg(::grpc::ServerContext* context,
+                                      const FileMsgReq* request, FileMsgRsp* reply)
+{
+    // destructured here the same way the client frame is, so both paths build one wire shape
+    auto touid = request->touid();
+    auto session = UserMgr::GetInstance()->GetSession(touid);
+
+    reply->set_error(ErrorCodes::Success);
+    reply->set_fromuid(request->fromuid());
+    reply->set_touid(touid);
+    reply->set_fileid(request->fileid());
+    reply->set_index(request->index());
+
+    if (session == nullptr)
+    {
+        // the peer went offline between the sender's chunk and this relay; report it so the
+        // sender can stop instead of streaming the rest of the file into the void
+        reply->set_error(ErrorCodes::UidInvalid);
+        return Status::OK;
+    }
+
+    Json::Value rtvalue;
+    rtvalue["error"] = ErrorCodes::Success;
+    rtvalue["fromuid"] = request->fromuid();
+    rtvalue["touid"] = touid;
+    rtvalue["fileid"] = request->fileid();
+    rtvalue["filename"] = request->filename();
+    rtvalue["filesize"] = request->filesize();
+    rtvalue["index"] = request->index();
+    rtvalue["total"] = request->total();
+    rtvalue["data"] = request->data();
+
+    session->Send(rtvalue.toStyledString(), ID_NOTIFY_FILE_MSG_REQ);
+    return Status::OK;
+}
+
 Status ChatServiceImpl::NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* reply)
 {
     // check whether the user is on this server

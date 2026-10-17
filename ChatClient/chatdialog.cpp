@@ -12,11 +12,13 @@
 #include "chatuserlist.h"
 #include "grouptipitem.h"
 #include "conuseritem.h"
+#include "filetransfermgr.h"
 
 #include "liquidglass.h"
 #include "ElaWidgetToolsDef.h"
 
 #include <QAction>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QRandomGenerator>
 #include <QJsonDocument>
@@ -202,6 +204,23 @@ ChatDialog::ChatDialog(QWidget* parent)
             this, &ChatDialog::slot_text_chat_msg);
 
     connect(ui->chat_page, &ChatPage::sig_append_send_chat_msg, this, &ChatDialog::slot_append_send_chat_msg);
+
+    // file transfers report through the manager, not through the chat message path; only
+    // the events that need a chat-list entry or a dialog land here
+    auto file_mgr = FileTransferMgr::GetInstance();
+    connect(file_mgr.get(), &FileTransferMgr::sig_recv_started, this, &ChatDialog::slot_file_recv_started);
+    connect(file_mgr.get(), &FileTransferMgr::sig_recv_progress, ui->chat_page,
+            &ChatPage::UpdateFileProgress);
+    connect(file_mgr.get(), &FileTransferMgr::sig_recv_finished, this, &ChatDialog::slot_file_recv_finished);
+    connect(file_mgr.get(), &FileTransferMgr::sig_recv_failed, ui->chat_page,
+            &ChatPage::UpdateFileFailed);
+    connect(file_mgr.get(), &FileTransferMgr::sig_send_progress, ui->chat_page,
+            &ChatPage::UpdateFileProgress);
+    connect(file_mgr.get(), &FileTransferMgr::sig_send_finished, this, [this](QString file_id) {
+        ui->chat_page->UpdateFileFinished(file_id, QString());
+    });
+    connect(file_mgr.get(), &FileTransferMgr::sig_send_failed, this,
+            [this](QString file_id, QString reason) { ui->chat_page->UpdateFileFailed(file_id, reason); });
 
     _timer = new QTimer(this);
     connect(_timer, &QTimer::timeout, this, []() {
@@ -471,7 +490,7 @@ void ChatDialog::UpdateChatMsg(std::vector<std::shared_ptr<TextChatData>> msgdat
     for (auto& msg : msgdata)
     {
         if (msg->_from_uid != _cur_chat_uid)
-            break;
+            continue;
         ui->chat_page->AppendChatMsg(msg);
     }
 }
@@ -801,28 +820,33 @@ void ChatDialog::slot_item_clicked(QListWidgetItem* item)
 
 void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg)
 {
-    auto it = _chat_items_added.find(msg->_from_uid);
+    AppendIncomingMsgs(msg->_from_uid, msg->_chat_msgs);
+}
+
+void ChatDialog::AppendIncomingMsgs(int from_uid, std::vector<std::shared_ptr<TextChatData>> msgs)
+{
+    auto it = _chat_items_added.find(from_uid);
     if (it != _chat_items_added.end())
     {
-        qDebug() << "set chat item msg, uid is " << msg->_from_uid;
+        qDebug() << "set chat item msg, uid is " << from_uid;
         QWidget* widget = ui->chat_user_list->itemWidget(it.value());
         auto chat_wid = qobject_cast<ChatUserWid*>(widget);
         if (!chat_wid)
             return;
-        chat_wid->UpdateLastMsg(msg->_chat_msgs);
+        chat_wid->UpdateLastMsg(msgs);
         // update the current chat page record
-        UpdateChatMsg(msg->_chat_msgs);
-        UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
+        UpdateChatMsg(msgs);
+        UserMgr::GetInstance()->AppendFriendChatMsg(from_uid, msgs);
         // + a return, either omit else or write else.
     }
     else
     {
         // the peer need not be in the friend map yet, e.g. a message that arrives
         // before the friend list is loaded; there is no name or icon to show then
-        auto fri_ptr = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
+        auto fri_ptr = UserMgr::GetInstance()->GetFriendById(from_uid);
         if (!fri_ptr)
         {
-            qDebug() << "text chat msg from an unknown friend, dropped:" << msg->_from_uid;
+            qDebug() << "text chat msg from an unknown friend, dropped:" << from_uid;
             return;
         }
 
@@ -832,12 +856,42 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg)
 
         QListWidgetItem* item = new QListWidgetItem;
         item->setSizeHint(chat_user_wid->sizeHint());
-        chat_user_wid->UpdateLastMsg(msg->_chat_msgs);
-        UserMgr::GetInstance()->AppendFriendChatMsg(msg->_from_uid, msg->_chat_msgs);
+        chat_user_wid->UpdateLastMsg(msgs);
+        UserMgr::GetInstance()->AppendFriendChatMsg(from_uid, msgs);
         ui->chat_user_list->insertItem(0, item);
         ui->chat_user_list->setItemWidget(item, chat_user_wid);
-        _chat_items_added.insert(msg->_from_uid, item);
+        _chat_items_added.insert(from_uid, item);
     }
+}
+
+void ChatDialog::slot_file_recv_started(QString file_id, int from_uid, QString name, qint64 size)
+{
+    auto file_msg = std::make_shared<TextChatData>(file_id, name, from_uid,
+                                                   UserMgr::GetInstance()->GetUserInfo()->_uid, "file");
+    file_msg->_file_size = size;
+    AppendIncomingMsgs(from_uid, {file_msg});
+    // the chat may not be open yet, in which case the bubble is built from history later
+    ui->chat_page->UpdateFileProgress(file_id, 0);
+}
+
+void ChatDialog::slot_file_recv_finished(QString file_id, int from_uid, QString name, QString path)
+{
+    // the bubble on the open page and the history entry are separate TextChatData objects, so
+    // both need the path; a reopened chat rebuilds its bubble straight from the history
+    auto friend_info = UserMgr::GetInstance()->GetFriendById(from_uid);
+    if (friend_info != nullptr)
+    {
+        for (const auto& msg : friend_info->_chat_msgs)
+        {
+            if (msg != nullptr && msg->_msg_id == file_id && msg->_msg_type == "file")
+            {
+                msg->_local_path = path;
+                break;
+            }
+        }
+    }
+    ui->chat_page->UpdateFileFinished(file_id, path);
+    qDebug() << "file" << name << "received into" << path;
 }
 
 void ChatDialog::slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data)

@@ -71,7 +71,8 @@ void ChatUserWid::UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs)
     QString last_msg = "";
     for (auto& msg : msgs)
     {
-        last_msg = msg->_msg_content;
+        // the preview names the file instead of showing its opaque internal id
+        last_msg = msg->_msg_type == "file" ? QStringLiteral("[文件] ") + msg->_msg_content : msg->_msg_content;
         _user_info->_chat_msgs.push_back(msg);
     }
 
