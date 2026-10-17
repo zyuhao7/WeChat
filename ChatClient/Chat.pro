@@ -43,6 +43,8 @@ SOURCES += \
     customizeedit.cpp \
     findfaildlg.cpp \
     findsuccessdlg.cpp \
+    filebubble.cpp \
+    filetransfermgr.cpp \
     friendinfopage.cpp \
     friendlabel.cpp \
     global.cpp \
@@ -88,6 +90,8 @@ HEADERS += \
     customizeedit.h \
     findfaildlg.h \
     findsuccessdlg.h \
+    filebubble.h \
+    filetransfermgr.h \
     friendinfopage.h \
     friendlabel.h \
     global.h \

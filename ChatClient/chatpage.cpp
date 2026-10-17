@@ -12,6 +12,10 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include "tcpmgr.h"
+#include "filebubble.h"
+#include "filetransfermgr.h"
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QUuid>
 
 ChatPage::ChatPage(QWidget* parent)
@@ -29,6 +33,7 @@ ChatPage::ChatPage(QWidget* parent)
 
     // add the Enter-to-send-message signal
     connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);
+    connect(ui->file_lb, &ClickedLabel::clicked, this, &ChatPage::on_file_lb_clicked);
 }
 
 ChatPage::~ChatPage()
@@ -42,6 +47,8 @@ void ChatPage::SetUserInfo(std::shared_ptr<UserInfo> user_info)
     // set the UI display
     ui->title_lb->setText(_user_info->_name);
     ui->chat_data_list->removeAllItem();
+    _file_bubbles.clear();
+    _file_msgs.clear();
     for (auto& msg : user_info->_chat_msgs)
     {
         AppendChatMsg(msg);
@@ -60,8 +67,7 @@ void ChatPage::AppendChatMsg(std::shared_ptr<TextChatData> msg)
         pChatItem->setUserName(self_info->_name);
         pChatItem->setUserIcon(QPixmap(self_info->_icon));
 
-        QWidget* pBubble = nullptr;
-        pBubble = new TextBubble(role, msg->_msg_content);
+        QWidget* pBubble = MakeBubble(role, msg);
         pChatItem->setWidget(pBubble);
         ui->chat_data_list->appendChatItem(pChatItem);
     }
@@ -79,11 +85,75 @@ void ChatPage::AppendChatMsg(std::shared_ptr<TextChatData> msg)
         pChatItem->setUserName(friend_info->_name);
         pChatItem->setUserIcon(QPixmap(friend_info->_icon));
 
-        QWidget* pBubble = nullptr;
-        pBubble = new TextBubble(role, msg->_msg_content);
+        QWidget* pBubble = MakeBubble(role, msg);
         pChatItem->setWidget(pBubble);
         ui->chat_data_list->appendChatItem(pChatItem);
     }
+}
+
+QWidget* ChatPage::MakeBubble(ChatRole role, std::shared_ptr<TextChatData> msg)
+{
+    if (msg->_msg_type != "file")
+        return new TextBubble(role, msg->_msg_content);
+
+    return AddFileBubble(role, msg);
+}
+
+FileBubble* ChatPage::AddFileBubble(ChatRole role, std::shared_ptr<TextChatData> msg)
+{
+    auto* bubble = new FileBubble(role, msg->_msg_content, msg->_file_size);
+    if (!msg->_local_path.isEmpty())
+    {
+        bubble->setPath(msg->_local_path);
+        bubble->setStatus(role == ChatRole::Self ? QStringLiteral("已发送 · 点击打开")
+                                                 : QStringLiteral("已保存 · 点击打开"));
+    }
+    else if (role == ChatRole::Self)
+        bubble->setStatus(QStringLiteral("已发送"));
+    else
+        bubble->setStatus(QStringLiteral("未接收"));
+
+    _file_bubbles.insert(msg->_msg_id, bubble);
+    _file_msgs.insert(msg->_msg_id, msg);
+    return bubble;
+}
+
+void ChatPage::UpdateFileProgress(const QString& file_id, int percent)
+{
+    auto it = _file_bubbles.find(file_id);
+    if (it != _file_bubbles.end())
+        it.value()->setStatus(QStringLiteral("传输中 %1%").arg(percent));
+}
+
+void ChatPage::UpdateFileFinished(const QString& file_id, const QString& path)
+{
+    auto bubble = _file_bubbles.find(file_id);
+    if (bubble == _file_bubbles.end())
+        return;
+    auto msg = _file_msgs.value(file_id);
+    const bool is_self = msg != nullptr && msg->_from_uid == UserMgr::GetInstance()->GetUserInfo()->_uid;
+    bubble.value()->setPath(path);
+    bubble.value()->setStatus(is_self ? QStringLiteral("已发送 · 点击打开")
+                                      : QStringLiteral("已保存 · 点击打开"));
+    // the history entry is shared, so the path survives a reopen of the chat
+    if (msg != nullptr)
+        msg->_local_path = path;
+}
+
+void ChatPage::UpdateFileFailed(const QString& file_id, const QString& reason)
+{
+    auto it = _file_bubbles.find(file_id);
+    if (it != _file_bubbles.end())
+        it.value()->setFailed(reason);
+}
+
+void ChatPage::on_file_lb_clicked()
+{
+    if (_user_info == nullptr)
+        return;
+    const QStringList files = QFileDialog::getOpenFileNames(this, QStringLiteral("选择要发送的文件"));
+    if (!files.isEmpty())
+        ui->chatEdit->insertFileFromUrl(files);
 }
 
 void ChatPage::paintEvent(QPaintEvent* event)
@@ -169,6 +239,32 @@ void ChatPage::on_send_btn_clicked()
         }
         else if (type == "file")
         {
+            const QString path = msgList[i].content;
+            const QFileInfo info(path);
+            const QString file_id = FileTransferMgr::GetInstance()->SendFile(_user_info->_uid, path);
+
+            auto file_msg = std::make_shared<TextChatData>(file_id, info.fileName(), user_info->_uid,
+                                                           _user_info->_uid, "file");
+            file_msg->_local_path = path;
+            file_msg->_file_size = info.size();
+
+            if (file_id.isEmpty())
+            {
+                // rejected before a byte went out; the manager already emitted the reason
+                auto* bubble = new FileBubble(role, info.fileName(), info.size());
+                bubble->setFailed(QStringLiteral("发送失败"));
+                pChatItem->setWidget(bubble);
+                ui->chat_data_list->appendChatItem(pChatItem);
+                continue;
+            }
+
+            auto* bubble = AddFileBubble(role, file_msg);
+            bubble->setPath(path);
+            bubble->setStatus(QStringLiteral("传输中 0%"));
+            pChatItem->setWidget(bubble);
+            ui->chat_data_list->appendChatItem(pChatItem);
+            emit sig_append_send_chat_msg(file_msg);
+            continue;
         }
         // :) add the bubble to the chat page
         if (pBubble != nullptr)
@@ -177,6 +273,9 @@ void ChatPage::on_send_btn_clicked()
             ui->chat_data_list->appendChatItem(pChatItem);
         }
     }
+
+    if (textArray.isEmpty())
+        return;
 
     qDebug() << "textArray is " << textArray;
     // send to the server

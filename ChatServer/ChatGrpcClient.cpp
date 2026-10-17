@@ -119,6 +119,21 @@ TextChatMsgRsp ChatGrpcClient::NotifyTextChatMsg(std::string server_ip,
     return rsp;
 }
 
+FileMsgRsp ChatGrpcClient::NotifyFileMsg(std::string server_ip, const FileMsgReq& req)
+{
+    FileMsgRsp rsp;
+    bool ok = CallPeer(_pools, server_ip, req, rsp,
+                       [](ChatService::Stub& stub, ClientContext* ctx, const FileMsgReq& r, FileMsgRsp* out) {
+                           return stub.NotifyFileMsg(ctx, r, out);
+                       });
+    rsp.set_error(ok ? rsp.error() : static_cast<int>(ErrorCodes::RPCFailed));
+    rsp.set_fromuid(req.fromuid());
+    rsp.set_touid(req.touid());
+    rsp.set_fileid(req.fileid());
+    rsp.set_index(req.index());
+    return rsp;
+}
+
 KickUserRsp ChatGrpcClient::NotifyKickUser(std::string server_ip, const KickUserReq& req)
 {
     KickUserRsp rsp;

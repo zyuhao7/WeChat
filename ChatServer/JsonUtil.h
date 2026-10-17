@@ -77,6 +77,87 @@ inline bool GetStringField(const Json::Value& root, const char* key, std::string
     return true;
 }
 
+// A file travels as a sequence of chunk frames. The sender base64s the raw bytes, so a chunk
+// costs 4/3 of its size on the wire; these limits keep one frame inside MAX_LENGTH.
+constexpr int FILE_CHUNK_BYTES = 1024;
+constexpr int FILE_MAX_BYTES = 100 * 1024 * 1024;
+constexpr int FILE_MAX_NAME_BYTES = 128;
+constexpr int FILE_CHUNK_BASE64_LEN = ((FILE_CHUNK_BYTES + 2) / 3) * 4;
+
+struct FileChunk
+{
+    std::string file_id;
+    std::string file_name;
+    int file_size = 0;
+    int index = 0;
+    int total = 0;
+    std::string data;
+};
+
+inline bool IsValidBase64(const std::string& str)
+{
+    for (unsigned char c : str)
+    {
+        const bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+                        c == '+' || c == '/' || c == '=';
+        if (!ok)
+            return false;
+    }
+    return true;
+}
+
+// A name that arrives here is only ever relayed, never opened as a path, but a name with a
+// separator is still a bug or an attack on the receiver, so it is rejected.
+inline bool IsValidFileName(const std::string& name)
+{
+    if (name.empty() || name.size() > FILE_MAX_NAME_BYTES)
+        return false;
+    if (name == "." || name == "..")
+        return false;
+    for (unsigned char c : name)
+    {
+        if (c < 0x20 || c == 0x7f || c == '/' || c == '\\' || c == ':')
+            return false;
+    }
+    return true;
+}
+
+inline int FileChunkTotal(int file_size)
+{
+    if (file_size <= 0)
+        return 0;
+    return (file_size + FILE_CHUNK_BYTES - 1) / FILE_CHUNK_BYTES;
+}
+
+// Validates one chunk frame. `data` is length-checked but never decoded: the server has no
+// use for the bytes and a bad chunk then only fails at the receiver, which is where the
+// checksum-free design already puts the risk.
+inline bool ParseFileChunk(const Json::Value& root, FileChunk& out)
+{
+    if (!GetStringField(root, "fileid", out.file_id) || !GetStringField(root, "filename", out.file_name))
+        return false;
+    if (!GetIntField(root, "filesize", out.file_size) || !GetIntField(root, "index", out.index) ||
+        !GetIntField(root, "total", out.total))
+        return false;
+    if (!GetStringField(root, "data", out.data))
+        return false;
+
+    if (out.file_id.empty() || out.file_id.size() > 64 || !IsValidFileName(out.file_name))
+        return false;
+    if (out.file_size <= 0 || out.file_size > FILE_MAX_BYTES)
+        return false;
+    if (out.total != FileChunkTotal(out.file_size) || out.total <= 0)
+        return false;
+    if (out.index < 0 || out.index >= out.total)
+        return false;
+    // every chunk but the last is exactly full, so its encoded length is fixed
+    if (out.index + 1 < out.total && out.data.size() != FILE_CHUNK_BASE64_LEN)
+        return false;
+    if (out.data.empty() || out.data.size() > FILE_CHUNK_BASE64_LEN || out.data.size() % 4 != 0)
+        return false;
+    return IsValidBase64(out.data);
+}
+
 // A text message batch must be a non-empty array of {content: string, msgid: string}.
 inline bool IsValidTextArray(const Json::Value& arr)
 {

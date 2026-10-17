@@ -16,7 +16,8 @@ private slots:
     void gateServerCodesAreDistinct()
     {
         QSet<QString> texts;
-        const QList<int> codes{1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012};
+        const QList<int> codes{1001, 1002, 1003, 1004, 1005, 1006,
+                               1007, 1008, 1009, 1010, 1011, 1012, 1013};
         for (int code : codes)
         {
             texts.insert(serverErrorText(code));
@@ -26,7 +27,7 @@ private slots:
 
     void unknownCodesShowTheNumber()
     {
-        for (int code : {-1, 5, 999, 1013, 99999})
+        for (int code : {-1, 5, 999, 1014, 99999})
         {
             QVERIFY2(serverErrorText(code).contains(QString::number(code)), qPrintable(QString::number(code)));
         }

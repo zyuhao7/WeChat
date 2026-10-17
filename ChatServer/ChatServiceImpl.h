@@ -16,6 +16,8 @@ using message::AuthFriendReq;
 using message::AuthFriendRsp;
 
 using message::ChatService;
+using message::FileMsgReq;
+using message::FileMsgRsp;
 using message::KickUserReq;
 using message::KickUserRsp;
 using message::TextChatData;
@@ -34,6 +36,9 @@ public:
 
     Status NotifyTextChatMsg(::grpc::ServerContext* context,
                              const TextChatMsgReq* request, TextChatMsgRsp* response) override;
+
+    Status NotifyFileMsg(::grpc::ServerContext* context, const FileMsgReq* request,
+                         FileMsgRsp* response) override;
 
     // accept the rpc kick request
     Status NotifyKickUser(::grpc::ServerContext* context, const KickUserReq* req, KickUserRsp* response) override;
