@@ -94,6 +94,19 @@ private slots:
         QCOMPARE(no_ext, QString(MAX_FILE_NAME_BYTES, QChar('y')));
     }
 
+    void sendFileReportsWhyItRejected()
+    {
+        QString error = QStringLiteral("unchanged");
+        QVERIFY(FileTransferMgr::GetInstance()
+                    ->SendFile(5, "/nonexistent/definitely/missing.bin", &error)
+                    .isEmpty());
+        QCOMPARE(error, QStringLiteral("文件不存在"));
+
+        error.clear();
+        QVERIFY(FileTransferMgr::GetInstance()->SendFile(0, "/tmp/x", &error).isEmpty());
+        QCOMPARE(error, QStringLiteral("对方不在线"));
+    }
+
     void formatSizePicksAReadableUnit()
     {
         QCOMPARE(FileBubble::FormatSize(0), QString("0 B"));
