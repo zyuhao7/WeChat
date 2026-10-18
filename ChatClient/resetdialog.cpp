@@ -5,6 +5,7 @@
 #include "global.h"
 #include "httpmgr.h"
 #include "liquidglass.h"
+#include <QKeyEvent>
 
 ResetDialog::ResetDialog(QWidget* parent)
     : QDialog(parent),
@@ -34,6 +35,17 @@ ResetDialog::ResetDialog(QWidget* parent)
     initHandlers();
     connect(Httpmgr::GetInstance().get(), &Httpmgr::sig_reset_mod_finish, this,
             &ResetDialog::slot_reset_mod_finish);
+}
+
+void ResetDialog::keyPressEvent(QKeyEvent* event)
+{
+    // the dialog is embedded as a page, so ESC must not reject (hide) it
+    if (event->key() == Qt::Key_Escape)
+    {
+        event->accept();
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 ResetDialog::~ResetDialog()

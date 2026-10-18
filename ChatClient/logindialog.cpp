@@ -6,6 +6,7 @@
 #include "liquidglass.h"
 #include <QDebug>
 #include <QPainter>
+#include <QKeyEvent>
 #include <QPainterPath>
 #include <QRegularExpression>
 
@@ -35,6 +36,17 @@ LoginDialog::LoginDialog(QWidget* parent)
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_login_failed, this, &LoginDialog::slot_login_failed);
     initStyle();
     initHead();
+}
+
+void LoginDialog::keyPressEvent(QKeyEvent* event)
+{
+    // the dialog is embedded as a page, so ESC must not reject (hide) it
+    if (event->key() == Qt::Key_Escape)
+    {
+        event->accept();
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 LoginDialog::~LoginDialog()
