@@ -40,6 +40,7 @@ private:
     void SetSelectChatItem(int uid = 0);
     void SetSelectChatPage(int uid = 0);
     void AppendIncomingMsgs(int from_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
+    void ChooseAvatar();
 
     Ui::ChatDialog* ui;
     ChatUIMode _mode;  // control sidebar switching

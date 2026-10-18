@@ -14,6 +14,7 @@
 #include "grouptipitem.h"
 #include "conuseritem.h"
 #include "filetransfermgr.h"
+#include "cropdialog.h"
 
 #include "liquidglass.h"
 #include "ElaWidgetToolsDef.h"
@@ -27,6 +28,8 @@
 #include <QMovie>
 #include <QTimer>
 #include <QDebug>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <vector>
 
 ChatDialog::ChatDialog(QWidget* parent)
@@ -132,6 +135,9 @@ ChatDialog::ChatDialog(QWidget* parent)
     // simulate loading the own avatar
     ui->side_head_lb->setPixmap(roundedPixmap(QPixmap(UserMgr::GetInstance()->GetIcon()),
                                               ui->side_head_lb->size(), 12));
+    ui->side_head_lb->setToolTip(QStringLiteral("点击更换头像"));
+    ui->side_head_lb->setCursor(Qt::PointingHandCursor);
+    ui->side_head_lb->installEventFilter(this);
 
     ui->side_chat_lb->setProperty("state", "normal");
     ui->side_chat_lb->SetState("normal", "hover", "pressed", "selected_normal", "selected_hover", "selected_pressed");
@@ -462,8 +468,44 @@ void ChatDialog::SetSelectChatPage(int uid)
     }
 }
 
+void ChatDialog::ChooseAvatar()
+{
+    const QString path = QFileDialog::getOpenFileName(
+        this, QStringLiteral("选择头像"),
+        QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+        QStringLiteral("图片 (*.png *.jpg *.jpeg *.bmp *.webp)"));
+    if (path.isEmpty())
+        return;
+
+    const QPixmap source(path);
+    if (source.isNull())
+    {
+        QMessageBox::warning(this, QStringLiteral("头像"), QStringLiteral("无法读取该图片"));
+        return;
+    }
+
+    CropDialog dialog(source, this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    const QPixmap cropped = dialog.CroppedPixmap();
+    if (cropped.isNull())
+        return;
+    ui->side_head_lb->setPixmap(roundedPixmap(cropped, ui->side_head_lb->size(), 12));
+}
+
 bool ChatDialog::eventFilter(QObject* watched, QEvent* event)
 {
+    if (watched == ui->side_head_lb && event->type() == QEvent::MouseButtonRelease)
+    {
+        auto* mouse_event = static_cast<QMouseEvent*>(event);
+        if (mouse_event->button() == Qt::LeftButton)
+        {
+            ChooseAvatar();
+            return true;
+        }
+    }
+
     if (event->type() == QEvent::MouseButtonPress)
     {
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);

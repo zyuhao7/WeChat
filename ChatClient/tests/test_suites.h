@@ -10,3 +10,4 @@ QObject* createChatDialogTest();
 QObject* createChatDialogTextMsgTest();
 QObject* createServerErrorTextTest();
 QObject* createFileTransferHelpersTest();
+QObject* createCropDialogHelpersTest();

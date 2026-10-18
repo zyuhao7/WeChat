@@ -119,15 +119,21 @@ and verify-code requests.
 
 ### 3.3 VerifyServer — email verify-code service (Node.js)
 
-**Role**: generate a code → store in Redis (600s TTL) → send via 163 SMTP.
+**Role**: generate a code → store in Redis (600s TTL) → send via SMTP.
 
 - **Entry**: `VerifyServer/server.js`, gRPC listening on `0.0.0.0:50052` (matches config.ini and the
   C++ side).
-- **Logic**: if Redis already has `code_<email>`, reuse it; otherwise take 4 chars of a uuidv4,
-  `SetRedisExpire(key, code, 600)`, then call `email.js` (nodemailer, `smtp.163.com:465`, TLS).
-- **`redis.js`**: ioredis-based with a 10s keepalive, exposing `GetRedis / QueryRedis / SetRedisExpire`.
-- **Config** `VerifyServer/config.json`: `email.user/pass`, `redis.host/port/passwd` (a `mysql`
-  section exists but is unused by the current code).
+- **Logic**: validate the address (`verify.js`), claim a per-email 60s resend slot with `SET NX EX`,
+  reuse `code_<email>` if it is still live (a resent mail repeats the same code), otherwise draw a
+  6-digit zero-padded code and store it with a 600s TTL, then call `email.js` (nodemailer,
+  `smtp.yeah.net:465`, TLS). A failed send or a lost Redis write releases the slot. GateServer treats
+  the code as single-use and deletes it after a successful register/reset.
+- **Error codes**: `InvalidEmail = 3` / `TooFrequent = 4` are passed straight through GateServer, so
+  the client sees them as `error` values.
+- **`redis.js`**: ioredis-based with a 10s heartbeat and its own reconnect, exposing
+  `GetRedis / QueryRedis / SetRedisExpire / SetRedisNxExpire / DelRedis`.
+- **Config** `VerifyServer/config.json`: `email.host/user/pass`, `redis.host/port/passwd`. The file is
+  untracked and gitignored; copy `config.example.json` and fill it in.
 
 ### 3.4 ChatServer — long connections & messaging (C++, core)
 
@@ -223,6 +229,8 @@ plain data structs: `SearchInfo`, `AddFriendApply`, `ApplyInfo`, `AuthInfo`, `Fr
 | `ResetDialog` | password reset via code |
 | `ChatDialog` | IM shell hosting chat/contacts/search/heartbeat |
 | `ChatPage` | one friend's chat page (history + input) |
+| `FileTransferMgr` / `FileBubble` | chunked file send/receive (16-chunk send window, 30s watchdog) and transfer bubbles |
+| `CropDialog` | square crop dialog after picking an avatar from the sidebar (local display only, not uploaded) |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | chat session list and scroll view |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | send request / handle request / request list |
 | `FriendInfoPage` / `ContactUserList` / `ConUserItem` | friend detail, contact list |
@@ -298,7 +306,8 @@ services:
 | `ubaseinfo_<uid>` | user base-info cache |
 | `nameinfo_<name>` | name→info cache (search by name) |
 | `logincount` (Hash) | online count per ChatServer (load balancing) |
-| `code_<email>` | email verify code, TTL 600s |
+| `code_<email>` | email verify code, TTL 600s, deleted once used |
+| `verify_cooldown_<email>` | resend throttle, TTL 60s |
 | `lock_<uid>` / `lockcount` | distributed lock and counter |
 | `ipcount_` | defined but currently unused |
 
@@ -309,7 +318,7 @@ services:
 ### 6.1 Registration
 
 ```
-Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► 163 SMTP send
+Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► SMTP send
                                         └─► Redis code_<email> (TTL 600)
 Client ──POST /user_register──► Gate ─► check code_<email> ─► MysqlMgr::RegUser ─► create account
 ```
@@ -513,9 +522,10 @@ proving the GateServer → MySQL → StatusServer(gRPC) → Redis chain works.
 
 ### 10.2 Remaining notes
 
-- **Hard-coded secrets**: `VerifyServer/config.json` contains a real mailbox account/app password and
-  remote MySQL/Redis addresses; `ChatServer/config.ini` etc. contain plaintext Redis passwords.
-  Move to environment variables or placeholders before committing/deploying.
+- **Hard-coded secrets**: `VerifyServer/config.json` is now untracked and gitignored, with
+  `config.example.json` as the template — but its old values are still recoverable from git history
+  and the leaked credentials still need rotating. `ChatServer/config.ini` etc. contain plaintext
+  local-dev Redis passwords. Move to environment variables or placeholders before committing/deploying.
 - **No client auto-reconnect**: on disconnect it returns straight to login; no exponential backoff.
 - **`ipcount_`** is defined in `const.h` but never used — likely legacy.
 - **Console output encoding**: GBK-commented sources print garbled Chinese in a UTF-8 terminal.
@@ -544,8 +554,9 @@ Each service directory also holds `.drawio` architecture/sequence diagrams, open
 
 ## 12. Tutorial Progress (gitbookcpp.llfc.club day01–day45)
 
-The project is implemented lesson by lesson. Current progress reaches **day35**, with day32
-(distributed lock) and day41 (Qt packet reassembly) also done early. day30 is interview-only, no code.
+The project is implemented lesson by lesson. Current progress reaches **day36**, with day31
+(file transfer), day32 (distributed lock) and day41 (Qt packet reassembly) also done early. day30
+is interview-only, no code.
 
 `[x]` done / `[ ]` not done:
 
@@ -560,8 +571,8 @@ The project is implemented lesson by lesson. Current progress reaches **day35**,
 [x] day27-29  distributed chat service / friend query·apply·auth·chat   → ChatGrpcClient cross-node
 [x] day32     distributed lock                                         → DistLock
 [x] day33-35  single-node kick / cross-node kick / heartbeat            → NotifyKickUser + HeartBeat
-[ ] day31     file transfer                                             → no transfer protocol
-[ ] day36     Qt avatar cropping                                        → no crop dialog
+[x] day31     file transfer                                             → FileTransferMgr + ID_FILE_MSG_REQ/RSP
+[x] day36     Qt avatar cropping                                        → CropDialog (local display only)
 [ ] day37     chat message persistence                                  → MySQL stores only friend relations
 [ ] day38     resumable transfer
 [ ] day39     multimedia messages (voice/video)
@@ -573,9 +584,9 @@ The project is implemented lesson by lesson. Current progress reaches **day35**,
 [ ] day45     WebRTC signaling server for video calls
 ```
 
-**Suggested next order**: `day31 file transfer` → `day36 avatar cropping` → `day37 chat history
-persistence` → `day38 resumable transfer` → `day39 multimedia` → `day40 distributed transactions`
-→ `day42-43 image async download / chat resources` → `day44-45 WebRTC audio/video`.
+**Suggested next order**: `day37 chat history persistence` → `day38 resumable transfer` → `day39
+multimedia` → `day40 distributed transactions` → `day42-43 image async download / chat resources`
+→ `day44-45 WebRTC audio/video`.
 
 > Note: day37 is the watershed. Messages are currently not persisted — purely online forwarding.
 > Chat-history storage must be added before multimedia and video work.
