@@ -40,6 +40,7 @@ SOURCES += \
     clickedoncelabel.cpp \
     contactuserlist.cpp \
     conuseritem.cpp \
+    cropdialog.cpp \
     customizeedit.cpp \
     findfaildlg.cpp \
     findsuccessdlg.cpp \
@@ -87,6 +88,7 @@ HEADERS += \
     clickedoncelabel.h \
     contactuserlist.h \
     conuseritem.h \
+    cropdialog.h \
     customizeedit.h \
     findfaildlg.h \
     findsuccessdlg.h \

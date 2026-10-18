@@ -101,12 +101,13 @@
 
 ### 3.3 VerifyServer — 邮件验证码服务（Node.js）
 
-**职责**：生成验证码 → 存 Redis（600 秒过期）→ 通过 163 邮箱 SMTP 发送。
+**职责**：生成验证码 → 存 Redis（600 秒过期）→ 通过邮箱 SMTP 发送。
 
 - **入口**：`VerifyServer/server.js`，gRPC 监听 `0.0.0.0:50052`（与 config.ini 及 C++ 侧一致）。
-- **逻辑**：若 Redis 已有 `code_<email>` 则复用，否则用 uuidv4 截取 4 位，`SetRedisExpire(key, code, 600)`，再调用 `email.js`（nodemailer，`smtp.163.com:465` 加密发送）。
-- **`redis.js`**：基于 ioredis，带 10 秒心跳保活，封装 `GetRedis / QueryRedis / SetRedisExpire`。
-- **配置** `VerifyServer/config.json`：`email.user/pass`、`redis.host/port/passwd`（含 `mysql` 段但当前代码未使用）。
+- **逻辑**：先用 `verify.js` 校验邮箱格式，再用 `SET NX EX` 抢占每邮箱 60 秒的重发名额；若 `code_<email>` 仍在有效期内则复用（重发得到同一个验证码），否则生成 6 位补零随机码并以 600 秒 TTL 写入，随后调用 `email.js`（nodemailer，`smtp.yeah.net:465` 加密发送）。发送失败或写入 Redis 失败会释放名额。GateServer 侧验证码为一次性，注册/重置成功即删除。
+- **错误码**：`InvalidEmail = 3` / `TooFrequent = 4` 由 GateServer 原样透传，客户端在 `error` 字段中可见。
+- **`redis.js`**：基于 ioredis，带 10 秒心跳与自动重连，封装 `GetRedis / QueryRedis / SetRedisExpire / SetRedisNxExpire / DelRedis`。
+- **配置** `VerifyServer/config.json`：`email.host/user/pass`、`redis.host/port/passwd`。该文件未被 git 跟踪（已 gitignore），复制 `config.example.json` 填写即可。
 
 ### 3.4 ChatServer — 长连接与消息服务（C++，核心）
 
@@ -187,6 +188,8 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 | `ResetDialog` | 验证码重置密码 |
 | `ChatDialog` | IM 主界面外壳，承载聊天/联系人/搜索/心跳 |
 | `ChatPage` | 单个好友的聊天页（历史 + 输入区） |
+| `FileTransferMgr` / `FileBubble` | 分块文件收发（16 块发送窗口、30s 超时看门狗）与传输气泡 |
+| `CropDialog` | 点击侧边栏头像后选择图片并方形框选裁剪（仅本地显示，未上传服务器） |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | 聊天会话列表与滚动视图 |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | 发起加好友 / 处理好友申请 / 申请列表 |
 | `FriendInfoPage` / `ContactUserList` / `ConUserItem` | 好友详情、联系人列表 |
@@ -257,7 +260,8 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 | `ubaseinfo_<uid>` | 用户基础信息缓存 |
 | `nameinfo_<name>` | 用户名→信息缓存（按名搜索） |
 | `logincount`（Hash） | 各 ChatServer 在线数（负载均衡） |
-| `code_<email>` | 邮箱验证码，TTL 600 秒 |
+| `code_<email>` | 邮箱验证码，TTL 600 秒，用后即删 |
+| `verify_cooldown_<email>` | 重发限流，TTL 60 秒 |
 | `lock_<uid>` / `lockcount` | 分布式锁与计数 |
 | `ipcount_` | 已定义但当前未使用 |
 
@@ -268,7 +272,7 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 ### 6.1 注册
 
 ```
-Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► 163 SMTP 发信
+Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► SMTP 发信
                                         └─► Redis code_<email> (TTL 600)
 Client ──POST /user_register──► Gate ─► 校验 code_<email> ─► MysqlMgr::RegUser ─► 建号
 ```
@@ -462,7 +466,7 @@ curl -X POST http://127.0.0.1:8080/user_login -H 'Content-Type: application/json
 
 ### 10.2 遗留注意
 
-- **硬编码的敏感信息**：`VerifyServer/config.json` 含真实邮箱账号/授权码及远程 MySQL/Redis 地址；`ChatServer/config.ini` 等含明文 Redis 密码。提交或部署前应改用环境变量或占位符。
+- **硬编码的敏感信息**：`VerifyServer/config.json` 现已不被 git 跟踪（已 gitignore），模板为 `config.example.json`；但旧值仍可从 git 历史中找回，泄露的凭据仍需轮换。`ChatServer/config.ini` 等含明文 Redis 密码（本地开发用）。提交或部署前应改用环境变量或占位符。
 - **客户端无自动重连**：断线后直接回登录页，未实现指数退避重连。
 - **`ipcount_` 键**在 `const.h` 中定义但无任何使用，疑为历史遗留。
 - **proto 生成代码版本**：各服务的 `message.pb.cc/.h` 为预生成产物，若本机 protoc 版本差异较大，建议用 `protoc` + `grpc_cpp_plugin` 重新生成。
@@ -490,7 +494,7 @@ WeChat/
 
 ## 12. 教程进度对照（gitbookcpp.llfc.club day01–day45）
 
-本项目按教程逐日实现，当前进度跟进到 **day35**，另已提前完成 day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
+本项目按教程逐日实现，当前进度跟进到 **day36**，另已提前完成 day31（文件传输）、day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
 
 `[x]` 已实现 / `[ ]` 未实现：
 
@@ -505,8 +509,8 @@ WeChat/
 [x] day27-29  分布式聊天服务/好友查询·申请·认证·通信                   → ChatGrpcClient 跨服
 [x] day32     分布式锁                                                 → DistLock
 [x] day33-35  单服踢人/跨服踢人/心跳检测                               → NotifyKickUser + HeartBeat
-[ ] day31     文件传输                                                 → 缺文件传输协议
-[ ] day36     Qt头像裁剪                                               → 缺裁剪对话框
+[x] day31     文件传输                                                 → FileTransferMgr + ID_FILE_MSG_REQ/RSP
+[x] day36     Qt头像裁剪                                               → CropDialog（仅本地显示）
 [ ] day37     聊天信息存储方案                                         → MySQL 仅存好友关系，无聊天记录表
 [ ] day38     断点续传
 [ ] day39     多媒体信息传输（语音/视频消息）
@@ -518,7 +522,7 @@ WeChat/
 [ ] day45     webrtc 信令服务器实现视频通信
 ```
 
-**后续待办顺序**：`day31 文件传输` → `day36 头像裁剪` → `day37 聊天记录持久化` → `day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
+**后续待办顺序**：`day37 聊天记录持久化` → `day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
 > 注意：day37 是分水岭。当前消息不落库、纯在线转发；做多媒体与视频前需先补齐聊天记录存储。
 
