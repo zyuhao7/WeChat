@@ -6,6 +6,7 @@
 #include <QRandomGenerator>
 #include "httpmgr.h"
 #include "liquidglass.h"
+#include <QKeyEvent>
 
 RegistDialog::RegistDialog(QWidget* parent)
     : QDialog(parent),
@@ -105,6 +106,17 @@ RegistDialog::RegistDialog(QWidget* parent)
         auto str = QString("注册成功，%1 s后返回登录").arg(_countdown);
         ui->tip_lb->setText(str);
     });
+}
+
+void RegistDialog::keyPressEvent(QKeyEvent* event)
+{
+    // the dialog is embedded as a page, so ESC must not reject (hide) it
+    if (event->key() == Qt::Key_Escape)
+    {
+        event->accept();
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 RegistDialog::~RegistDialog()

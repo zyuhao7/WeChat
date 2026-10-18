@@ -16,6 +16,9 @@ public:
     explicit LoginDialog(QWidget* parent = nullptr);
     ~LoginDialog();
 
+protected:
+    void keyPressEvent(QKeyEvent* event) override;
+
 private:
     void initHttpHandlers();
     void initStyle();

@@ -25,6 +25,7 @@ public:
 
 protected:
     bool eventFilter(QObject* watch, QEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void handleGlobalMousePress(QMouseEvent* event);
     void CloseFindDlg();
     void UpdateChatMsg(std::vector<std::shared_ptr<TextChatData>> msgdata); // update the chat history

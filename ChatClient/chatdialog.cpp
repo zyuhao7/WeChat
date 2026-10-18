@@ -6,6 +6,7 @@
 #include "chatitembase.h"
 #include "tcpmgr.h"
 #include "usermgr.h"
+#include <QKeyEvent>
 #include "textbubble.h"
 #include "picturebubble.h"
 #include "messagetextedit.h"
@@ -234,6 +235,17 @@ ChatDialog::ChatDialog(QWidget* parent)
     });
 
     _timer->start(5000);
+}
+
+void ChatDialog::keyPressEvent(QKeyEvent* event)
+{
+    // the dialog is embedded as a page, so ESC must not reject (hide) it
+    if (event->key() == Qt::Key_Escape)
+    {
+        event->accept();
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 ChatDialog::~ChatDialog()

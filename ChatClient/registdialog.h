@@ -23,6 +23,9 @@ public:
     explicit RegistDialog(QWidget* parent = nullptr);
     ~RegistDialog();
 
+protected:
+    void keyPressEvent(QKeyEvent* event) override;
+
 private slots:
     void on_get_code_clicked();
     void on_confirm_btn_clicked();

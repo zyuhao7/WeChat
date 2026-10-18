@@ -17,6 +17,9 @@ public:
     explicit ResetDialog(QWidget* parent = nullptr);
     ~ResetDialog();
 
+protected:
+    void keyPressEvent(QKeyEvent* event) override;
+
 private slots:
     void on_return_btn_clicked();
 
