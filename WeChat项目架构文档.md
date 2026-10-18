@@ -189,7 +189,7 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 | `ChatDialog` | IM 主界面外壳，承载聊天/联系人/搜索/心跳 |
 | `ChatPage` | 单个好友的聊天页（历史 + 输入区） |
 | `FileTransferMgr` / `FileBubble` | 分块文件收发（16 块发送窗口、30s 超时看门狗）与传输气泡 |
-| `CropDialog` | 点击侧边栏头像后选择图片并方形框选裁剪（仅本地显示，未上传服务器） |
+| `CropDialog` | 点击侧边栏头像后选择图片并方形框选裁剪（按 uid 存本地，未上传服务器） |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | 聊天会话列表与滚动视图 |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | 发起加好友 / 处理好友申请 / 申请列表 |
 | `FriendInfoPage` / `ContactUserList` / `ConUserItem` | 好友详情、联系人列表 |
@@ -510,7 +510,7 @@ WeChat/
 [x] day32     分布式锁                                                 → DistLock
 [x] day33-35  单服踢人/跨服踢人/心跳检测                               → NotifyKickUser + HeartBeat
 [x] day31     文件传输                                                 → FileTransferMgr + ID_FILE_MSG_REQ/RSP
-[x] day36     Qt头像裁剪                                               → CropDialog（仅本地显示）
+[x] day36     Qt头像裁剪                                               → CropDialog（按 uid 存本地）
 [ ] day37     聊天信息存储方案                                         → MySQL 仅存好友关系，无聊天记录表
 [ ] day38     断点续传
 [ ] day39     多媒体信息传输（语音/视频消息）

@@ -1,6 +1,21 @@
 #include "usermgr.h"
+#include <QDir>
+#include <QFileInfo>
 #include <QJsonArray>
+#include <QPixmap>
+#include <QStandardPaths>
 #include "tcpmgr.h"
+
+namespace
+{
+QString AvatarPath(int uid)
+{
+    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (base.isEmpty())
+        base = QDir::homePath() + "/.wechat";
+    return base + "/avatars/" + QString::number(uid) + ".png";
+}
+} // namespace
 
 UserMgr::~UserMgr()
 {
@@ -40,6 +55,33 @@ QString UserMgr::GetIcon()
         return QString();
 
     return _user_info->_icon;
+}
+
+QPixmap UserMgr::LoadAvatar()
+{
+    if (!_user_info)
+        return QPixmap();
+
+    const QPixmap saved(AvatarPath(_user_info->_uid));
+    if (!saved.isNull())
+        return saved;
+    return QPixmap(_user_info->_icon);
+}
+
+bool UserMgr::SaveAvatar(const QPixmap& pixmap)
+{
+    if (!_user_info || pixmap.isNull())
+        return false;
+
+    const QString path = AvatarPath(_user_info->_uid);
+    if (!QDir().mkpath(QFileInfo(path).absolutePath()))
+        return false;
+    if (!pixmap.save(path, "PNG"))
+        return false;
+
+    // in-memory identity now points at the saved file, not at the server's head path
+    _user_info->SetIcon(path);
+    return true;
 }
 
 std::shared_ptr<UserInfo> UserMgr::GetUserInfo()

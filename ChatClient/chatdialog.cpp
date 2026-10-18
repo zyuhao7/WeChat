@@ -132,8 +132,8 @@ ChatDialog::ChatDialog(QWidget* parent)
     connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this, &ChatDialog::slot_loading_chat_user);
     addChatUserList();
 
-    // simulate loading the own avatar
-    ui->side_head_lb->setPixmap(roundedPixmap(QPixmap(UserMgr::GetInstance()->GetIcon()),
+    // a locally saved crop wins over the head path the server returned at login
+    ui->side_head_lb->setPixmap(roundedPixmap(UserMgr::GetInstance()->LoadAvatar(),
                                               ui->side_head_lb->size(), 12));
     ui->side_head_lb->setToolTip(QStringLiteral("点击更换头像"));
     ui->side_head_lb->setCursor(Qt::PointingHandCursor);
@@ -491,7 +491,12 @@ void ChatDialog::ChooseAvatar()
     const QPixmap cropped = dialog.CroppedPixmap();
     if (cropped.isNull())
         return;
-    ui->side_head_lb->setPixmap(roundedPixmap(cropped, ui->side_head_lb->size(), 12));
+
+    const QPixmap avatar =
+        cropped.scaled(256, 256, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    if (!UserMgr::GetInstance()->SaveAvatar(avatar))
+        QMessageBox::warning(this, QStringLiteral("头像"), QStringLiteral("无法保存头像"));
+    ui->side_head_lb->setPixmap(roundedPixmap(avatar, ui->side_head_lb->size(), 12));
 }
 
 bool ChatDialog::eventFilter(QObject* watched, QEvent* event)

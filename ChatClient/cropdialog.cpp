@@ -136,7 +136,7 @@ private:
             // anchor is the press point, for a resize it is the current top-left corner
             const QPoint anchor = _drag == Drag::New ? _press : _selection.topLeft();
             const int side = qMax(MIN_SELECTION, qMax(qAbs(pos.x() - anchor.x()),
-                                                     qAbs(pos.y() - anchor.y())));
+                                                      qAbs(pos.y() - anchor.y())));
             const int x = pos.x() >= anchor.x() ? anchor.x() : anchor.x() - side;
             const int y = pos.y() >= anchor.y() ? anchor.y() : anchor.y() - side;
             _selection = CropDialog::ClampSelection(QRect(x, y, side, side), _image_rect,

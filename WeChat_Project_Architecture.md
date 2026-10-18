@@ -230,7 +230,7 @@ plain data structs: `SearchInfo`, `AddFriendApply`, `ApplyInfo`, `AuthInfo`, `Fr
 | `ChatDialog` | IM shell hosting chat/contacts/search/heartbeat |
 | `ChatPage` | one friend's chat page (history + input) |
 | `FileTransferMgr` / `FileBubble` | chunked file send/receive (16-chunk send window, 30s watchdog) and transfer bubbles |
-| `CropDialog` | square crop dialog after picking an avatar from the sidebar (local display only, not uploaded) |
+| `CropDialog` | square crop dialog after picking an avatar from the sidebar (saved locally per uid, not uploaded) |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | chat session list and scroll view |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | send request / handle request / request list |
 | `FriendInfoPage` / `ContactUserList` / `ConUserItem` | friend detail, contact list |
@@ -572,7 +572,7 @@ is interview-only, no code.
 [x] day32     distributed lock                                         → DistLock
 [x] day33-35  single-node kick / cross-node kick / heartbeat            → NotifyKickUser + HeartBeat
 [x] day31     file transfer                                             → FileTransferMgr + ID_FILE_MSG_REQ/RSP
-[x] day36     Qt avatar cropping                                        → CropDialog (local display only)
+[x] day36     Qt avatar cropping                                        → CropDialog (saved locally per uid)
 [ ] day37     chat message persistence                                  → MySQL stores only friend relations
 [ ] day38     resumable transfer
 [ ] day39     multimedia messages (voice/video)

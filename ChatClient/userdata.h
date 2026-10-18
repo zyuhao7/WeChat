@@ -154,6 +154,11 @@ struct UserInfo
         _chat_msgs = friend_info->_chat_msgs;
     }
 
+    void SetIcon(QString icon)
+    {
+        _icon = icon;
+    }
+
     int _uid;
     QString _name;
     QString _nick;

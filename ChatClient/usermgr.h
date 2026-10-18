@@ -5,6 +5,7 @@
 #include <singleton.h>
 #include "userdata.h"
 #include <vector>
+class QPixmap;
 class UserMgr : public QObject, public Singleton<UserMgr>, public std::enable_shared_from_this<UserMgr>
 {
     Q_OBJECT
@@ -17,6 +18,10 @@ public:
     QString GetName();
 
     QString GetIcon();
+    // The avatar saved for this uid wins over the icon the server returned at login, so a
+    // crop survives the next login as long as the avatar is not uploaded server-side yet.
+    QPixmap LoadAvatar();
+    bool SaveAvatar(const QPixmap& pixmap);
     std::shared_ptr<UserInfo> GetUserInfo();
     void AppendApplyList(QJsonArray array);
     void AppendFriendList(QJsonArray array);
