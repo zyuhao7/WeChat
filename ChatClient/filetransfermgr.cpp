@@ -49,36 +49,47 @@ FileTransferMgr::FileTransferMgr()
 FileTransferMgr::~FileTransferMgr()
 {
     _sending.clear();
+    for (auto& inc : _receiving)
+    {
+        // a half-written .part would shadow the next transfer under the same name
+        inc->file.close();
+        QFile::remove(inc->file.fileName());
+    }
     _receiving.clear();
 }
 
-QString FileTransferMgr::SendFile(int to_uid, const QString& path)
+QString FileTransferMgr::SendFile(int to_uid, const QString& path, QString* error)
 {
-    if (to_uid <= 0)
+    // a rejection before the first byte has no file id for the caller to match a bubble to,
+    // so it also hands the reason back directly
+    const auto reject = [this, error](const QString& reason) {
+        if (error != nullptr)
+            *error = reason;
+        emit sig_send_failed(QString(), reason);
         return QString();
+    };
+
+    if (to_uid <= 0)
+        return reject(QStringLiteral("对方不在线"));
 
     QFileInfo info(path);
     if (!info.exists() || !info.isFile())
     {
-        emit sig_send_failed(QString(), QStringLiteral("文件不存在"));
-        return QString();
+        return reject(QStringLiteral("文件不存在"));
     }
     if (info.size() <= 0)
     {
-        emit sig_send_failed(QString(), QStringLiteral("不能发送空文件"));
-        return QString();
+        return reject(QStringLiteral("不能发送空文件"));
     }
     if (info.size() > MAX_FILE_BYTES)
     {
-        emit sig_send_failed(QString(), QStringLiteral("文件超过 100 MB"));
-        return QString();
+        return reject(QStringLiteral("文件超过 100 MB"));
     }
 
     const QString name = SanitizeFileName(info.fileName());
     if (name.isEmpty())
     {
-        emit sig_send_failed(QString(), QStringLiteral("文件名无效"));
-        return QString();
+        return reject(QStringLiteral("文件名无效"));
     }
 
     auto out = std::make_shared<OutgoingFile>();
@@ -91,8 +102,7 @@ QString FileTransferMgr::SendFile(int to_uid, const QString& path)
     out->file.setFileName(path);
     if (!out->file.open(QIODevice::ReadOnly))
     {
-        emit sig_send_failed(QString(), QStringLiteral("无法读取文件"));
-        return QString();
+        return reject(QStringLiteral("无法读取文件"));
     }
 
     const QString file_id = out->file_id;
@@ -202,7 +212,11 @@ void FileTransferMgr::slot_file_chunk(const QJsonObject& obj)
         return;
     }
     if (inc->arrived.contains(index))
-        return; // the sender resent an index we already wrote
+    {
+        // still a sign of life: a peer that only resends duplicates is not stalled
+        inc->last_chunk = Now();
+        return;
+    }
 
     QByteArray raw = QByteArray::fromBase64(obj["data"].toString().toLatin1());
     if (raw.size() != ChunkLength(size, index))

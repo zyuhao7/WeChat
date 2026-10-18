@@ -241,7 +241,9 @@ void ChatPage::on_send_btn_clicked()
         {
             const QString path = msgList[i].content;
             const QFileInfo info(path);
-            const QString file_id = FileTransferMgr::GetInstance()->SendFile(_user_info->_uid, path);
+            QString send_error;
+            const QString file_id =
+                FileTransferMgr::GetInstance()->SendFile(_user_info->_uid, path, &send_error);
 
             auto file_msg = std::make_shared<TextChatData>(file_id, info.fileName(), user_info->_uid,
                                                            _user_info->_uid, "file");
@@ -252,7 +254,7 @@ void ChatPage::on_send_btn_clicked()
             {
                 // rejected before a byte went out; the manager already emitted the reason
                 auto* bubble = new FileBubble(role, info.fileName(), info.size());
-                bubble->setFailed(QStringLiteral("发送失败"));
+                bubble->setFailed(send_error.isEmpty() ? QStringLiteral("发送失败") : send_error);
                 pChatItem->setWidget(bubble);
                 ui->chat_data_list->appendChatItem(pChatItem);
                 continue;

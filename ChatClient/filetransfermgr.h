@@ -54,8 +54,8 @@ public:
     ~FileTransferMgr();
 
     // Returns the id the transfer is tracked under, or an empty string when the file was
-    // rejected before a byte went out.
-    QString SendFile(int to_uid, const QString& path);
+    // rejected before a byte went out; the reason is then left in error when it is non-null.
+    QString SendFile(int to_uid, const QString& path, QString* error = nullptr);
 
     static QString SanitizeFileName(const QString& name);
     static int ChunkCount(qint64 size);
