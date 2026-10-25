@@ -1,6 +1,7 @@
 #include "tcpmgr.h"
 #include "usermgr.h"
 #include <QAbstractSocket>
+#include <QJsonArray>
 #include <QJsonDocument>
 
 TcpMgr::~TcpMgr()
@@ -472,6 +473,40 @@ void TcpMgr::initHandlers()
         auto msg_ptr = std::make_shared<TextChatMsg>(jsonObj["fromuid"].toInt(),
                                                      jsonObj["touid"].toInt(), jsonObj["text_array"].toArray());
         emit sig_text_chat_msg(msg_ptr);
+    });
+
+    _handlers.insert(ID_GET_CHAT_HISTORY_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
+        if (!jsonDoc.isObject())
+        {
+            qDebug() << "Chat history rsp is not a JSON object";
+            return;
+        }
+
+        QJsonObject jsonObj = jsonDoc.object();
+        const int err = jsonObj.value("error").toInt(ErrorCodes::ERR_JSON);
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "Chat history rsp failed, err is " << err;
+            return;
+        }
+
+        auto rsp = std::make_shared<ChatHistoryRsp>();
+        rsp->_peer_uid = jsonObj.value("touid").toInt();
+        const QJsonArray arrays = jsonObj.value("text_array").toArray();
+        for (const QJsonValue& value : arrays)
+        {
+            const QJsonObject item = value.toObject();
+            auto msg = std::make_shared<TextChatData>(item.value("msgid").toString(),
+                                                      item.value("content").toString(),
+                                                      item.value("fromuid").toInt(),
+                                                      item.value("touid").toInt());
+            msg->_seq = static_cast<qint64>(item.value("seq").toDouble());
+            rsp->_chat_msgs.push_back(msg);
+        }
+        emit sig_chat_history(rsp);
     });
 
     _handlers.insert(ID_HEART_BEAT_RSP, [](ReqId id, int len, QByteArray data) {

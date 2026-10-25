@@ -28,6 +28,7 @@ public:
     std::shared_ptr<UserInfo> GetUserInfo();
     // update the last message
     void UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs);
+    void RefreshLastMsg();
 
 private:
     Ui::ChatUserWid* ui;

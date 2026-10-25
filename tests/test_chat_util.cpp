@@ -114,6 +114,58 @@ TEST(IsValidTextArray, Shapes)
     EXPECT_FALSE(IsValidTextArray(parse(R"({"text_array":[{"content":"a","msgid":"m"},"bad"]})")));
 }
 
+TEST(IsValidTextArray, Bounds)
+{
+    Json::Value text_array(Json::arrayValue);
+    Json::Value item;
+    item["msgid"] = std::string(64, 'a');
+    item["content"] = "hi";
+    text_array.append(item);
+
+    EXPECT_TRUE(IsValidTextArray(text_array));
+
+    text_array[0]["msgid"] = std::string(65, 'a');
+    EXPECT_FALSE(IsValidTextArray(text_array));
+
+    text_array[0]["msgid"] = "";
+    EXPECT_FALSE(IsValidTextArray(text_array));
+
+    text_array[0]["msgid"] = "m1";
+    text_array[0]["content"] = std::string(2049, 'x');
+    EXPECT_FALSE(IsValidTextArray(text_array));
+}
+
+TEST(ParseChatHistoryQuery, FieldsAndBoundaries)
+{
+    auto parse = [](const char* text) {
+        Json::Value root;
+        EXPECT_TRUE(ParseJsonObject(text, root));
+        return root;
+    };
+
+    ChatHistoryQuery query;
+    EXPECT_TRUE(ParseChatHistoryQuery(parse(R"({"touid":3})"), 1, query));
+    EXPECT_EQ(query.peer_uid, 3);
+    EXPECT_EQ(query.last_id, 0);
+    EXPECT_EQ(query.limit, CHAT_HISTORY_MAX_LIMIT);
+
+    EXPECT_TRUE(ParseChatHistoryQuery(parse(R"({"touid":3,"last_id":42,"limit":10})"), 1, query));
+    EXPECT_EQ(query.last_id, 42);
+    EXPECT_EQ(query.limit, 10);
+
+    // a limit above the cap is clamped instead of rejected
+    EXPECT_TRUE(ParseChatHistoryQuery(parse(R"({"touid":3,"limit":1000})"), 1, query));
+    EXPECT_EQ(query.limit, CHAT_HISTORY_MAX_LIMIT);
+
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":1})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":0})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":3,"last_id":-1})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":3,"last_id":"9"})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":3,"limit":0})"), 1, query));
+    EXPECT_FALSE(ParseChatHistoryQuery(parse(R"({"touid":3,"limit":"9"})"), 1, query));
+}
+
 TEST(SendBodyLen, FitsSignedShortFrame)
 {
     EXPECT_EQ(MAX_SEND_BODY_LEN + HEAD_TOTAL_LEN, 32767u);

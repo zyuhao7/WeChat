@@ -42,6 +42,21 @@ CREATE TABLE IF NOT EXISTS friend (
   PRIMARY KEY (self_id, friend_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- text messages are stored by the sender's server before forwarding, so an offline peer
+-- can pull them back when it opens the conversation
+CREATE TABLE IF NOT EXISTS chat_message (
+  id         BIGINT       NOT NULL AUTO_INCREMENT,
+  msg_id     VARCHAR(64)  NOT NULL,
+  from_uid   INT          NOT NULL,
+  to_uid     INT          NOT NULL,
+  content    TEXT         NOT NULL,
+  created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_msg_id (msg_id),
+  KEY idx_from_to (from_uid, to_uid, id),
+  KEY idx_to_from (to_uid, from_uid, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DROP PROCEDURE IF EXISTS reg_user;
 DELIMITER //
 CREATE PROCEDURE reg_user(IN new_name VARCHAR(255), IN new_email VARCHAR(255), IN new_pwd VARCHAR(255), OUT result INT)

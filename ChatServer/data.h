@@ -46,3 +46,17 @@ struct ApplyInfo
     int _sex;
     int _status;
 };
+
+struct ChatMessageInfo
+{
+    ChatMessageInfo(long long seq, std::string msg_id, int from_uid, int to_uid, std::string content)
+        : _seq(seq), _msg_id(msg_id), _from_uid(from_uid), _to_uid(to_uid), _content(content)
+    {
+    }
+
+    long long _seq; // auto-increment id, also the ordering key
+    std::string _msg_id;
+    int _from_uid;
+    int _to_uid;
+    std::string _content;
+};

@@ -161,7 +161,7 @@ and heartbeat; cross-node messages are forwarded over gRPC.
 | `ChatGrpcClient` | ChatGrpcClient.cpp/h | gRPC client, maintains a stub pool keyed by target address |
 | `AsioIOServicePool` | AsioIOServicePool.cpp/h | `io_context` thread pool, round-robin assignment |
 | `RedisMgr` | RedisMgr.cpp/h | hiredis pool + 60s PING keepalive + distributed lock |
-| `MysqlMgr` / `MysqlDao` | MysqlMgr/MysqlDao | MySQL pool (60s `SELECT 1` keepalive) + user/friend DAO |
+| `MysqlMgr` / `MysqlDao` | MysqlMgr/MysqlDao | MySQL pool (60s `SELECT 1` keepalive) + user/friend/chat-history DAO |
 | `DistLock` | DistLock.cpp/h | Redis-based distributed lock (setnx + expire + unique token) |
 
 **Business callbacks (`LogicSystem::RegisterCallBacks`, LogicSystem.cpp:90)**
@@ -172,8 +172,9 @@ and heartbeat; cross-node messages are forwarded over gRPC.
 | 1007 | `ID_SEARCH_USER_REQ` | `SearchInfo` | search by uid (numeric) or username |
 | 1009 | `ID_ADD_FRIEND_REQ` | `AddFriendApply` | write apply, locate peer server, notify |
 | 1013 | `ID_AUTH_FRIEND_REQ` | `AuthFriendApply` | accept friend, write bidirectional relation, notify |
-| 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | check target online, forward text |
+| 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | persist first (`INSERT IGNORE`, idempotent), then check online and forward |
 | 1023 | `ID_HEART_BEAT_REQ` | `HeartBeatHandler` | reply to heartbeat |
+| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | incremental history fetch by `touid` + `last_id` + `limit` |
 
 **Message routing core**: for any message, look up the target's ChatServer via Redis `uip_<touid>`.
 If it equals the local name, push directly through `UserMgr`'s session; otherwise call
@@ -554,7 +555,7 @@ Each service directory also holds `.drawio` architecture/sequence diagrams, open
 
 ## 12. Tutorial Progress (gitbookcpp.llfc.club day01–day45)
 
-The project is implemented lesson by lesson. Current progress reaches **day36**, with day31
+The project is implemented lesson by lesson. Current progress reaches **day37**, with day31
 (file transfer), day32 (distributed lock) and day41 (Qt packet reassembly) also done early. day30
 is interview-only, no code.
 
@@ -573,7 +574,7 @@ is interview-only, no code.
 [x] day33-35  single-node kick / cross-node kick / heartbeat            → NotifyKickUser + HeartBeat
 [x] day31     file transfer                                             → FileTransferMgr + ID_FILE_MSG_REQ/RSP
 [x] day36     Qt avatar cropping                                        → CropDialog (saved locally per uid)
-[ ] day37     chat message persistence                                  → MySQL stores only friend relations
+[x] day37     chat message persistence                                  → chat_message + ID_GET_CHAT_HISTORY_REQ/RSP
 [ ] day38     resumable transfer
 [ ] day39     multimedia messages (voice/video)
 [ ] day40     distributed transaction deadlock analysis
@@ -584,12 +585,13 @@ is interview-only, no code.
 [ ] day45     WebRTC signaling server for video calls
 ```
 
-**Suggested next order**: `day37 chat history persistence` → `day38 resumable transfer` → `day39
-multimedia` → `day40 distributed transactions` → `day42-43 image async download / chat resources`
-→ `day44-45 WebRTC audio/video`.
+**Suggested next order**: `day38 resumable transfer` → `day39 multimedia` → `day40 distributed
+transactions` → `day42-43 image async download / chat resources` → `day44-45 WebRTC audio/video`.
 
-> Note: day37 is the watershed. Messages are currently not persisted — purely online forwarding.
-> Chat-history storage must be added before multimedia and video work.
+> The sender's ChatServer persists each message **before** forwarding, so an offline peer pulls
+> it back when the conversation opens. The API supports incremental fetches via `last_id`; the
+> client currently does a full fetch on first open. Rows dedupe on `msg_id` and order by the
+> auto-increment `id`.
 
 ---
 

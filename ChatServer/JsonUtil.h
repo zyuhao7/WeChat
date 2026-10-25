@@ -158,7 +158,8 @@ inline bool ParseFileChunk(const Json::Value& root, FileChunk& out)
     return IsValidBase64(out.data);
 }
 
-// A text message batch must be a non-empty array of {content: string, msgid: string}.
+// A text message batch must be a non-empty array of {content: string, msgid: string}. The
+// bounds keep a batch inside the 2048-byte receive frame and the message table's columns.
 inline bool IsValidTextArray(const Json::Value& arr)
 {
     if (!arr.isArray() || arr.empty())
@@ -169,6 +170,66 @@ inline bool IsValidTextArray(const Json::Value& arr)
             return false;
         if (!item["content"].isString() || !item["msgid"].isString())
             return false;
+        const std::string msg_id = item["msgid"].asString();
+        if (msg_id.empty() || msg_id.size() > 64)
+            return false;
+        if (item["content"].asString().size() > 2048)
+            return false;
+    }
+    return true;
+}
+
+constexpr int CHAT_HISTORY_MAX_LIMIT = 50;
+
+struct ChatHistoryQuery
+{
+    int peer_uid = 0;
+    long long last_id = 0;
+    int limit = CHAT_HISTORY_MAX_LIMIT;
+};
+
+// {touid, last_id?, limit?} — last_id is the highest stored id the client already has, so
+// a reopened conversation only asks for what is new.
+inline bool ParseChatHistoryQuery(const Json::Value& root, int self_uid, ChatHistoryQuery& out)
+{
+    if (!root.isObject())
+        return false;
+
+    int peer_uid = 0;
+    if (!GetIntField(root, "touid", peer_uid) || !IsValidUid(peer_uid) || peer_uid == self_uid)
+        return false;
+    out.peer_uid = peer_uid;
+
+    if (root.isMember("last_id"))
+    {
+        const Json::Value& v = root["last_id"];
+        long long last_id = 0;
+        if (v.isInt64())
+            last_id = v.asInt64();
+        else if (v.isInt())
+            last_id = v.asInt();
+        else if (v.isUInt64())
+        {
+            const auto unsigned_id = v.asUInt64();
+            if (unsigned_id > static_cast<Json::UInt64>(LLONG_MAX))
+                return false;
+            last_id = static_cast<long long>(unsigned_id);
+        }
+        else
+            return false;
+        if (last_id < 0)
+            return false;
+        out.last_id = last_id;
+    }
+
+    if (root.isMember("limit"))
+    {
+        int limit = 0;
+        if (!GetIntField(root, "limit", limit))
+            return false;
+        if (limit <= 0)
+            return false;
+        out.limit = limit > CHAT_HISTORY_MAX_LIMIT ? CHAT_HISTORY_MAX_LIMIT : limit;
     }
     return true;
 }

@@ -35,6 +35,7 @@ enum ErrorCodes
     TokenInvalid = 1010,   // Token invalid
     UidInvalid = 1011,     // invalid uid
     FileInvalid = 1013,    // file transfer frame failed validation
+    DBFailed = 1014,       // a database read or write failed
 };
 
 // Defer class
@@ -82,6 +83,8 @@ enum MSG_IDS
     ID_FILE_MSG_REQ = 1025,             // file chunk request
     ID_FILE_MSG_RSP = 1026,             // file chunk reply
     ID_NOTIFY_FILE_MSG_REQ = 1027,      // notify the user of a file chunk
+    ID_GET_CHAT_HISTORY_REQ = 1028,     // load stored messages for one conversation
+    ID_GET_CHAT_HISTORY_RSP = 1029,     // stored messages reply
     ID_NOTIFY_OFF_LINE_REQ = 1021,      // notify the user of going offline
     ID_HEART_BEAT_REQ = 1023,           // heartbeat request
     ID_HEARTBEAT_RSP = 1024,            // heartbeat reply

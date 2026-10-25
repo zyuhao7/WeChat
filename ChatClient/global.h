@@ -44,7 +44,9 @@ enum ReqId
     ID_HEART_BEAT_RSP = 1024,           // heartbeat reply
     ID_FILE_MSG_REQ = 1025,             // file chunk request
     ID_FILE_MSG_RSP = 1026,             // file chunk reply
-    ID_NOTIFY_FILE_MSG_REQ = 1027       // notify the user of a file chunk
+    ID_NOTIFY_FILE_MSG_REQ = 1027,      // notify the user of a file chunk
+    ID_GET_CHAT_HISTORY_REQ = 1028,     // load stored messages for one conversation
+    ID_GET_CHAT_HISTORY_RSP = 1029      // stored messages reply
 };
 
 // A file travels as a run of chunk frames; the server relays each one and stores nothing.

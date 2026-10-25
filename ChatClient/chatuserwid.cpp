@@ -79,3 +79,14 @@ void ChatUserWid::UpdateLastMsg(std::vector<std::shared_ptr<TextChatData>> msgs)
     _user_info->_last_msg = last_msg;
     ui->user_chat_lb->setText(_user_info->_last_msg);
 }
+
+void ChatUserWid::RefreshLastMsg()
+{
+    if (!_user_info || _user_info->_chat_msgs.empty())
+        return;
+
+    const auto& msg = _user_info->_chat_msgs.back();
+    _user_info->_last_msg =
+        msg->_msg_type == "file" ? QStringLiteral("[文件] ") + msg->_msg_content : msg->_msg_content;
+    ui->user_chat_lb->setText(_user_info->_last_msg);
+}

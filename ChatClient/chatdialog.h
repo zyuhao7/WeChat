@@ -39,6 +39,8 @@ private:
     void ClearLabelState(StateWidget* lb);
     void SetSelectChatItem(int uid = 0);
     void SetSelectChatPage(int uid = 0);
+    void LoadChatHistory(int peer_uid);
+    void MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp);
     void AppendIncomingMsgs(int from_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
     void ChooseAvatar();
 
@@ -74,6 +76,7 @@ public slots:
     void slot_item_clicked(QListWidgetItem* item);
     ;
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg);              // handle the received chat message
+    void slot_chat_history(std::shared_ptr<ChatHistoryRsp> rsp);            // merge stored messages
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data); // append the sent message
 
     // a file never arrives as a message: the transfer manager reports the chunk stream and
