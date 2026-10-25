@@ -18,19 +18,19 @@
         <mxCell id="M1bn84BjFu1knvPP7h0d-1" value="" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
           <mxGeometry x="355" y="237" width="200" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="M1bn84BjFu1knvPP7h0d-4" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 18px;&quot;&gt;gridlayout&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
+        <mxCell id="M1bn84BjFu1knvPP7h0d-4" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 18px;&quot;&gt;QGridLayout (pGLayout)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
           <mxGeometry x="400" y="140" width="110" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="M1bn84BjFu1knvPP7h0d-5" value="&lt;font size=&quot;3&quot;&gt;namelb&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+        <mxCell id="M1bn84BjFu1knvPP7h0d-5" value="&lt;font size=&quot;3&quot;&gt;m_pNameLabel&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
           <mxGeometry x="415" y="237" width="70" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="M1bn84BjFu1knvPP7h0d-6" value="&lt;font data-font-src=&quot;https://fonts.googleapis.com/css?family=Architects+Daughter&quot; face=&quot;Architects Daughter&quot; style=&quot;font-size: 16px;&quot;&gt;iconlb&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+        <mxCell id="M1bn84BjFu1knvPP7h0d-6" value="&lt;font data-font-src=&quot;https://fonts.googleapis.com/css?family=Architects+Daughter&quot; face=&quot;Architects Daughter&quot; style=&quot;font-size: 16px;&quot;&gt;m_pIconLabel&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
           <mxGeometry x="485" y="237" width="70" height="80" as="geometry" />
         </mxCell>
         <mxCell id="M1bn84BjFu1knvPP7h0d-7" value="&lt;font size=&quot;3&quot;&gt;spacer&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
           <mxGeometry x="355" y="317" width="60" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="M1bn84BjFu1knvPP7h0d-8" value="&lt;font size=&quot;3&quot;&gt;bubble&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+        <mxCell id="M1bn84BjFu1knvPP7h0d-8" value="&lt;font size=&quot;3&quot;&gt;m_pBubble&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
           <mxGeometry x="415" y="317" width="70" height="60" as="geometry" />
         </mxCell>
         <mxCell id="M1bn84BjFu1knvPP7h0d-9" value="&lt;font face=&quot;Georgia&quot;&gt;Self&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
@@ -94,6 +94,12 @@
         </mxCell>
         <mxCell id="M1bn84BjFu1knvPP7h0d-29" value="3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
           <mxGeometry x="900" y="337" width="30" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="msg-note1" value="ChatItemBase 布局（左：对方 / 右：Self）：列 0 是占位 spacer，列 1 是名字 + 气泡，列 2 是 42×42 圆角头像（跨两行，顶部对齐）。Self 版本把 spacer 放第 0 列、名字右对齐，对方版本头像在第 0 列、名字左对齐。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="520" width="860" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="msg-note2" value="setMessageWidget 会 replaceWidget 掉 m_pBubble，所以文本/图片消息只需替换这一块，头像和名字复用。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="590" width="860" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

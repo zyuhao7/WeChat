@@ -1,17 +1,44 @@
-<mxfile host="Electron" modified="2025-04-30T09:00:38.935Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.18 Chrome/120.0.6099.199 Electron/28.1.2 Safari/537.36" etag="9SxLg-M1TeoMXfCddVm9" version="22.1.18" type="device">
-  <diagram name="第 1 页" id="33fIKS-bli0zVtY3DVOk">
-    <mxGraphModel dx="1221" dy="717" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-10-25T08:30:00.000Z" agent="Mozilla/5.0 (X11; Linux x86_64) drawio" version="24.7.17" type="device">
+  <diagram name="选服与 token 下发" id="status-pick-server">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="X3b-dVVXYyg8vzQYwrhZ-22" value="&lt;font face=&quot;Georgia&quot;&gt;StatusServer&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="590" y="230" width="180" height="100" as="geometry" />
+        <mxCell id="st-gate" value="GateServer" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="220" width="180" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="X3b-dVVXYyg8vzQYwrhZ-25" style="edgeStyle=entityRelationEdgeStyle;shape=flexArrow;rounded=0;hachureGap=4;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;elbow=vertical;" edge="1" parent="1" source="X3b-dVVXYyg8vzQYwrhZ-23" target="X3b-dVVXYyg8vzQYwrhZ-22">
+        <mxCell id="st-status" value="StatusServer" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="430" y="210" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="st-redis" value="Redis" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="850" y="210" width="190" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="st-e1" value="gRPC GetChatServer(uid)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="st-gate" target="st-status">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="X3b-dVVXYyg8vzQYwrhZ-23" value="&lt;font face=&quot;Georgia&quot;&gt;GateServer&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="160" y="235" width="180" height="90" as="geometry" />
+        <mxCell id="st-e2" value="HGET logincount &lt;server_name&gt;&lt;br&gt;遍历 config 里所有 chatservers" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="st-status" target="st-redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="st-e3" value="PickServer 取登录数最低者&lt;br&gt;无计数视为该服已下线" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;strokeColor=none;fillColor=none;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="340" as="sourcePoint" />
+            <mxPoint x="540" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="st-e4" value="SETEX utoken_{uid} 600 &lt;uuid token&gt;" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="st-status" target="st-redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="st-e5" value="host + port + token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="st-status" target="st-gate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="st-note1" value="StatusServer 只负责选服和发 token；ChatServer 登录时直接 GET utoken_{uid} 校验，不回调 StatusServer。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="430" width="760" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="st-note2" value="Login(uid, token) RPC 仍在 proto 里，但网关路径不调用它；utoken TTL 600s 只需覆盖“选服 → 连 ChatServer”这段交接。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="490" width="900" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="st-note3" value="logincount 是 HASH：ChatServer 启动时写入自己 name 的计数，退出时删除；StatusServer 读到空值即跳过该服。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="850" y="370" width="470" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

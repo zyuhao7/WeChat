@@ -1,158 +1,116 @@
-<mxfile host="Electron" modified="2025-06-03T13:12:23.181Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.18 Chrome/120.0.6099.199 Electron/28.1.2 Safari/537.36" etag="eHSQ0oOAazUgofxpBFKW" version="22.1.18" type="device">
-  <diagram name="第 1 页" id="9E8fQGYFtgSwDAXrcSRu">
-    <mxGraphModel dx="1221" dy="717" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-10-25T08:50:00.000Z" agent="Mozilla/5.0 (X11; Linux x86_64) drawio" version="24.7.17" type="device">
+  <diagram name="登录后加好友（跨服）" id="login-and-add-friend">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="lxV_ofvJPu97JipaxkNO-1" value="Client1" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="200" y="50" width="190" height="90" as="geometry" />
+        <mxCell id="la-c1" value="Client1" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="140" y="70" width="180" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-2" value="Client2" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="880" y="50" width="210" height="90" as="geometry" />
+        <mxCell id="la-c2" value="Client2" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="940" y="70" width="180" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-3" value="ChatServer1" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="230" y="360" width="300" height="170" as="geometry" />
+        <mxCell id="la-s1" value="ChatServer1" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="140" y="330" width="200" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-4" value="ChatServer2" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
-          <mxGeometry x="790" y="360" width="300" height="170" as="geometry" />
+        <mxCell id="la-s2" value="ChatServer2" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="940" y="330" width="200" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-6" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.207;exitY=1.089;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-1" target="lxV_ofvJPu97JipaxkNO-3">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="620" y="380" as="sourcePoint" />
-            <mxPoint x="670" y="330" as="targetPoint" />
+        <mxCell id="la-redis" value="Redis" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="540" y="650" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="la-login" value="MSG_CHAT_LOGIN (1005)&lt;br&gt;uid + token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.35;exitY=1;entryX=0.35;entryY=0;" edge="1" parent="1" source="la-c1" target="la-s1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="la-loginrsp" value="MSG_CHAT_LOGIN_RSP (1006)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0;exitY=0.25;entryX=0;entryY=0.75;" edge="1" parent="1" source="la-s1" target="la-c1">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="200" y="220" />
+              <mxPoint x="85" y="357" />
+              <mxPoint x="85" y="130" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-12" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;MSG_CHAT_LOGIN&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-6">
-          <mxGeometry x="-0.0709" y="-5" relative="1" as="geometry">
-            <mxPoint x="-20" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-11" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.533;exitY=-0.059;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-3" target="lxV_ofvJPu97JipaxkNO-1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="360" y="350" as="sourcePoint" />
-            <mxPoint x="320" y="170" as="targetPoint" />
+        <mxCell id="la-token" value="GET utoken_{uid} 校验&lt;br&gt;SET uip_{uid} · HINCR logincount" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.25;exitY=1;entryX=0;entryY=0.3;" edge="1" parent="1" source="la-s1" target="la-redis">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="400" y="320" />
-              <mxPoint x="420" y="250" />
+              <mxPoint x="190" y="610" />
+              <mxPoint x="540" y="610" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-13" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;MSG_CHAT_LOGIN_RSP&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-11">
-          <mxGeometry x="0.1922" y="4" relative="1" as="geometry">
-            <mxPoint x="21" y="4" as="offset" />
-          </mxGeometry>
+        <mxCell id="la-addreq" value="ID_ADD_FRIEND_REQ (1009)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.7;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="la-c1" target="la-s1">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-15" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.416;exitY=1.104;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.168;entryY=-0.031;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-1" target="lxV_ofvJPu97JipaxkNO-3">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="620" y="380" as="sourcePoint" />
-            <mxPoint x="670" y="330" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-16" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;ID_ADD_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-15">
-          <mxGeometry x="-0.1106" y="3" relative="1" as="geometry">
-            <mxPoint x="-3" y="-30" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-17" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.372;exitY=-0.039;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-3" target="lxV_ofvJPu97JipaxkNO-1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="620" y="280" as="sourcePoint" />
-            <mxPoint x="670" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-18" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;ID_ADD_FRIEND_RSP&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-17">
-          <mxGeometry x="-0.3185" y="-1" relative="1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-19" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1.008;exitY=0.145;exitDx=0;exitDy=0;exitPerimeter=0;entryX=-0.01;entryY=0.161;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-3" target="lxV_ofvJPu97JipaxkNO-4">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="620" y="280" as="sourcePoint" />
-            <mxPoint x="670" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-20" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 12px;&quot;&gt;NotifyAddFriend&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="595" y="343" width="110" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-21" value="rpc" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="630" y="310" width="60" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-22" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.308;exitY=-0.02;exitDx=0;exitDy=0;exitPerimeter=0;entryX=-0.008;entryY=1.089;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-4" target="lxV_ofvJPu97JipaxkNO-2">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="860" y="340" as="sourcePoint" />
-            <mxPoint x="985" y="200" as="targetPoint" />
+        <mxCell id="la-addrsp" value="ID_ADD_FRIEND_RSP (1010)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0;exitY=0.75;entryX=0;entryY=0.25;" edge="1" parent="1" source="la-s1" target="la-c1">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="870" y="270" />
+              <mxPoint x="40" y="412" />
+              <mxPoint x="40" y="90" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-23" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;ID_NOTIFY_ADD_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-22">
-          <mxGeometry x="0.016" y="6" relative="1" as="geometry">
-            <mxPoint x="-25" y="1" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-24" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.868;exitY=1.022;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-2">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="620" y="380" as="sourcePoint" />
-            <mxPoint x="1060" y="350" as="targetPoint" />
+        <mxCell id="la-uip" value="GET uip_{touid}&lt;br&gt;→ 对方所在服务器名" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.75;exitY=1;entryX=0.36;entryY=0;" edge="1" parent="1" source="la-s1" target="la-redis">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1080" y="260" />
+              <mxPoint x="290" y="620" />
+              <mxPoint x="619" y="620" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-27" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;ID_AUTH_FRIEND_REQ&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-24">
-          <mxGeometry x="-0.08" relative="1" as="geometry">
-            <mxPoint x="9" as="offset" />
-          </mxGeometry>
+        <mxCell id="la-rpcadd" value="gRPC NotifyAddFriend(AddFriendReq)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="la-s1" target="la-s2">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-25" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;当用户点击验证界面确定按钮的时候&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="163" width="180" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-26" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;创建 NewApply&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="785" y="140" width="90" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-28" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.7;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-4">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="630" y="380" as="sourcePoint" />
-            <mxPoint x="1000" y="150" as="targetPoint" />
+        <mxCell id="la-notifyadd" value="ID_NOTIFY_ADD_FRIEND_REQ (1011)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=1;exitY=0.25;entryX=1;entryY=0.75;" edge="1" parent="1" source="la-s2" target="la-c2">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="990" y="250" />
+              <mxPoint x="1200" y="357" />
+              <mxPoint x="1200" y="130" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-29" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;ID_AUTH_FRIEND_RSP&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" vertex="1" connectable="0" parent="lxV_ofvJPu97JipaxkNO-28">
-          <mxGeometry x="0.3352" y="1" relative="1" as="geometry">
-            <mxPoint x="-2" y="-10" as="offset" />
-          </mxGeometry>
+        <mxCell id="la-authreq" value="ID_AUTH_FRIEND_REQ (1013)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.3;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="la-c2" target="la-s2">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-30" value="" style="endArrow=classic;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1.028;entryY=0.765;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="lxV_ofvJPu97JipaxkNO-4" target="lxV_ofvJPu97JipaxkNO-3">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="630" y="380" as="sourcePoint" />
-            <mxPoint x="680" y="330" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-32" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;如果两个客户端在同一个服务器，则直接通过内存发送通知对方&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="490" y="550" width="360" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-34" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;否则调用 Rpc通知对端服务器&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="500" y="580" width="180" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-35" value="&lt;span style=&quot;color: rgb(240, 240, 240); font-family: &amp;quot;Architects Daughter&amp;quot;; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;NotifyAuthFriend&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;fontSize=20;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="605" y="490" width="130" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-36" value="ID_NOTIFY_AUTH_FRIEND_REQ" style="text;whiteSpace=wrap;fontSize=12;fontFamily=Architects Daughter;" vertex="1" parent="1">
-          <mxGeometry x="510" y="150" width="320" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="lxV_ofvJPu97JipaxkNO-37" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="lxV_ofvJPu97JipaxkNO-1">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="449" y="360" as="sourcePoint" />
-            <mxPoint x="430" y="102.36" as="targetPoint" />
+        <mxCell id="la-authrsp" value="ID_AUTH_FRIEND_RSP (1014)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=1;exitY=0.75;entryX=1;entryY=0.25;" edge="1" parent="1" source="la-s2" target="la-c2">
+          <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="530" y="190" />
+              <mxPoint x="1250" y="412" />
+              <mxPoint x="1250" y="90" />
             </Array>
           </mxGeometry>
+        </mxCell>
+        <mxCell id="la-uip2" value="GET uip_{fromuid}" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.25;exitY=1;entryX=0.64;entryY=0;" edge="1" parent="1" source="la-s2" target="la-redis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="620" />
+              <mxPoint x="681" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="la-rpcauth" value="gRPC NotifyAuthFriend(AuthFriendReq)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="la-s2" target="la-s1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1040" y="560" />
+              <mxPoint x="240" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="la-notifyauth" value="ID_NOTIFY_AUTH_FRIEND_REQ (1015)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;exitX=0;exitY=0.15;entryX=0;entryY=0.5;" edge="1" parent="1" source="la-s1" target="la-c1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="20" y="346" />
+              <mxPoint x="20" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="la-note1" value="登录阶段：ChatServer 直接读 Redis 校验 utoken_{uid}（不经 StatusServer），并把 uip_{uid}、logincount 写回 Redis，后面的跨服通知就靠 uip_ 找到对方服务器。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="800" width="1080" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="la-note2" value="同一台 ChatServer 上的两个用户：不调用 gRPC，直接在 UserMgr 内存里找 session 发送 notify；跨服才走 ChatGrpcClient。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="860" width="1080" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="la-note3" value="对方离线时 Notify* 返回 Success 但通知丢弃；申请/好友关系已在 MySQL 落库，客户端下次登录通过好友列表接口拉取。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="920" width="1080" height="50" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

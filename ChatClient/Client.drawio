@@ -35,18 +35,18 @@
             <mxPoint x="1170" y="850" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="7Vn9YL6_saJ21-usapcR-11" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 18px;&quot;&gt;TcpMgr::sig_switch_chatdlg&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="7Vn9YL6_saJ21-usapcR-10" vertex="1" connectable="0">
+        <mxCell id="7Vn9YL6_saJ21-usapcR-11" value="&lt;font face=&quot;Georgia&quot; style=&quot;font-size: 18px;&quot;&gt;TcpMgr::sig_swich_chatdlg&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="7Vn9YL6_saJ21-usapcR-10" vertex="1" connectable="0">
           <mxGeometry x="-0.0638" relative="1" as="geometry">
             <mxPoint x="46" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="7Vn9YL6_saJ21-usapcR-12" value="&lt;font face=&quot;Georgia&quot;&gt;RegisterDialog&lt;br&gt;(注册界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+        <mxCell id="7Vn9YL6_saJ21-usapcR-12" value="&lt;font face=&quot;Georgia&quot;&gt;RegistDialog&lt;br&gt;(注册界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
           <mxGeometry x="650" y="880" width="160" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="7Vn9YL6_saJ21-usapcR-13" value="&lt;font face=&quot;Georgia&quot;&gt;RegisterDialog&lt;br&gt;(忘记密码界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+        <mxCell id="7Vn9YL6_saJ21-usapcR-13" value="&lt;font face=&quot;Georgia&quot;&gt;ResetDialog&lt;br&gt;(重置密码界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
           <mxGeometry x="855" y="880" width="160" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="7Vn9YL6_saJ21-usapcR-14" value="&lt;font face=&quot;Georgia&quot;&gt;RegisterDialog&lt;br&gt;(聊天界面界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
+        <mxCell id="7Vn9YL6_saJ21-usapcR-14" value="&lt;font face=&quot;Georgia&quot;&gt;ChatDialog&lt;br&gt;(主聊天界面)&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
           <mxGeometry x="1120" y="870" width="160" height="100" as="geometry" />
         </mxCell>
         <mxCell id="7Vn9YL6_saJ21-usapcR-17" value="" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.44;exitY=1.08;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.454;entryY=0.044;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="7Vn9YL6_saJ21-usapcR-12" target="7Vn9YL6_saJ21-usapcR-22" edge="1">
@@ -73,6 +73,12 @@
           <mxGeometry x="-0.2649" relative="1" as="geometry">
             <mxPoint x="-20" y="22" as="offset" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="client-note1" value="ChatDialog 组成：ChatPage（会话/聊天）、FriendInfoPage（资料卡）、ApplyFriendPage（新的朋友/申请）、AuthenFriend（好友验证）、AvatarCropDialog（头像裁剪）。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1300" width="720" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="client-note2" value="箭头上的名字即代码里的信号槽：LoginDialog::switchRegister / switchReset，RegistDialog::sigSwitchLogin，ResetDialog::switchLogin，TcpMgr::sig_swich_chatdlg（登录成功 1006 后发出）。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1360" width="820" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

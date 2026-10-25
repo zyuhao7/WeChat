@@ -1,116 +1,68 @@
-<mxfile host="Electron" modified="2025-06-03T10:03:12.967Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.1.18 Chrome/120.0.6099.199 Electron/28.1.2 Safari/537.36" etag="E_4rpADcO4sVZZvR4SMm" version="22.1.18" type="device">
-  <diagram name="第 1 页" id="1Rm9EAXzwzx537tS5Dw1">
-    <mxGraphModel dx="1221" dy="717" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
+<mxfile host="Electron" modified="2026-10-25T08:20:00.000Z" agent="Mozilla/5.0 (X11; Linux x86_64) drawio" version="24.7.17" type="device">
+  <diagram name="登录与选服" id="chat-login-flow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="20000" pageHeight="20000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-1" value="Client" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
-          <mxGeometry x="210" y="330" width="100" height="70" as="geometry" />
+        <mxCell id="cs-client" value="Client" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="180" width="150" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-4" value="GateServer" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
-          <mxGeometry x="590" y="315" width="140" height="100" as="geometry" />
+        <mxCell id="cs-gate" value="GateServer" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="360" y="150" width="170" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-5" value="StatusServer" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
-          <mxGeometry x="1000" y="315" width="140" height="100" as="geometry" />
+        <mxCell id="cs-status" value="StatusServer" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="740" y="150" width="190" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-6" value="ChatServer" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
-          <mxGeometry x="610" y="570" width="140" height="100" as="geometry" />
+        <mxCell id="cs-chat" value="ChatServer" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="380" y="440" width="170" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-14" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="310" y="340" as="sourcePoint" />
-            <mxPoint x="590" y="345" as="targetPoint" />
-            <Array as="points" />
-          </mxGeometry>
+        <mxCell id="cs-mysql" value="MySQL" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="80" y="450" width="190" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-15" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;发送http请求：user_login&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontFamily=Architects Daughter;" parent="1" vertex="1">
-          <mxGeometry x="290" y="290" width="320" height="50" as="geometry" />
+        <mxCell id="cs-redis" value="Redis" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="820" y="430" width="240" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-17" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1.045;exitY=0.13;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.002;entryY=0.17;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="736.02" y="340" as="sourcePoint" />
-            <mxPoint x="1000.0000000000002" y="344" as="targetPoint" />
-            <Array as="points" />
-          </mxGeometry>
+        <mxCell id="cs-e1" value="POST /user_login&lt;br&gt;email + XOR 混淆密码" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-client" target="cs-gate">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-18" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-4" target="OKm6WSy-VbvGJrKmh0Ii-1" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="590" y="460" as="sourcePoint" />
-            <mxPoint x="410" y="414" as="targetPoint" />
-            <Array as="points" />
-          </mxGeometry>
+        <mxCell id="cs-e2" value="CheckPwd(email, pwd)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-gate" target="cs-mysql">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-19" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-5" target="OKm6WSy-VbvGJrKmh0Ii-4" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="770" y="450" as="sourcePoint" />
-            <mxPoint x="1034" y="454" as="targetPoint" />
-            <Array as="points" />
-          </mxGeometry>
+        <mxCell id="cs-e3" value="gRPC GetChatServer(uid)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-gate" target="cs-status">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-22" value="S：ip + port / token" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontFamily=Architects Daughter;" parent="1" vertex="1">
-          <mxGeometry x="370" y="400" width="210" height="30" as="geometry" />
+        <mxCell id="cs-e4" value="HGET logincount&lt;br&gt;SETEX utoken_{uid} 600s" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-status" target="cs-redis">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-24" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=-0.055;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-1" target="OKm6WSy-VbvGJrKmh0Ii-6" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="310" y="470" as="sourcePoint" />
-            <mxPoint x="390" y="470" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="500" y="520" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="cs-e5" value="host + port + token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-status" target="cs-gate">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-26" value="uid + token" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="OKm6WSy-VbvGJrKmh0Ii-24" vertex="1" connectable="0">
-          <mxGeometry x="-0.0126" y="-1" relative="1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
+        <mxCell id="cs-e6" value="host + port + token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-gate" target="cs-client">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-27" value="验证 uid 和token" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=1.074;exitY=0.567;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.45;entryY=1.037;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-6" target="OKm6WSy-VbvGJrKmh0Ii-5" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="920" y="590" as="sourcePoint" />
-            <mxPoint x="1000" y="590" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="860" y="530" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="cs-e7" value="MSG_CHAT_LOGIN (1005)&lt;br&gt;uid + token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-client" target="cs-chat">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-28" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=-0.069;exitY=0.787;exitDx=0;exitDy=0;entryX=0.39;entryY=1.133;entryDx=0;entryDy=0;entryPerimeter=0;exitPerimeter=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-6" target="OKm6WSy-VbvGJrKmh0Ii-1" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="890" y="150" as="sourcePoint" />
-            <mxPoint x="970" y="150" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="460" y="590" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="cs-e8" value="GET utoken_{uid}&lt;br&gt;校验 token" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-chat" target="cs-redis">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-29" value="Login rsp" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=20;fontFamily=Architects Daughter;" parent="OKm6WSy-VbvGJrKmh0Ii-28" vertex="1" connectable="0">
-          <mxGeometry x="0.0817" y="5" relative="1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
+        <mxCell id="cs-e9" value="LoadUserInfoByUid&lt;br&gt;好友列表" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-chat" target="cs-mysql">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-30" value="验证结果" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" target="OKm6WSy-VbvGJrKmh0Ii-6" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="1090" y="420" as="sourcePoint" />
-            <mxPoint x="760" y="660" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="980" y="580" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="cs-e10" value="SET uip_{uid} · acquireLock&lt;br&gt;HINCR logincount" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-chat" target="cs-redis">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-32" value="GetChatServer ：uid" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=Architects Daughter;" parent="1" vertex="1">
-          <mxGeometry x="755" y="290" width="220" height="40" as="geometry" />
+        <mxCell id="cs-e11" value="MSG_CHAT_LOGIN_RSP (1006)" style="endArrow=classic;html=1;rounded=0;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=14;" edge="1" parent="1" source="cs-chat" target="cs-client">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-34" value="" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;rounded=0;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=16;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="OKm6WSy-VbvGJrKmh0Ii-5" edge="1">
-          <mxGeometry width="80" relative="1" as="geometry">
-            <mxPoint x="1170" y="480" as="sourcePoint" />
-            <mxPoint x="1110" y="260" as="targetPoint" />
-            <Array as="points" />
-          </mxGeometry>
+        <mxCell id="cs-note1" value="重复登录：先给本服旧连接下发 ID_NOTIFY_OFF_LINE_REQ 再接管；跨服踢人尚未实现。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="640" width="700" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-35" value="uid：token" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" parent="1" vertex="1">
-          <mxGeometry x="1070" y="190" width="120" height="60" as="geometry" />
+        <mxCell id="cs-note2" value="Redis 键：utoken_{uid}、uip_{uid}、logincount(HASH)、lock_{uid}" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="800" y="620" width="420" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="OKm6WSy-VbvGJrKmh0Ii-36" value="S：ip + port / token" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontFamily=Architects Daughter;" parent="1" vertex="1">
-          <mxGeometry x="775" y="410" width="210" height="30" as="geometry" />
+        <mxCell id="cs-note3" value="GateServer 只在登录时查 MySQL；ChatServer 校验 token 直接读 Redis，不经过 StatusServer。" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;strokeColor=none;fillColor=none;fontFamily=Architects Daughter;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="740" y="40" width="470" height="50" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
