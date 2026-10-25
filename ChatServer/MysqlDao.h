@@ -11,6 +11,7 @@
 #include <memory>
 #include <queue>
 #include <mutex>
+#include <utility>
 
 class SqlConnection
 {
@@ -189,6 +190,10 @@ public:
     std::shared_ptr<UserInfo> GetUser(std::string name);
     bool GetApplyList(int touid, std::vector<std::shared_ptr<ApplyInfo>>& applyList, int offset, int limit);
     bool GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>& user_info);
+    bool AddChatMessages(int from_uid, int to_uid,
+                         const std::vector<std::pair<std::string, std::string>>& messages);
+    bool GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
+                        std::vector<std::shared_ptr<ChatMessageInfo>>& messages);
 
 private:
     std::unique_ptr<MySqlPool> pool_;

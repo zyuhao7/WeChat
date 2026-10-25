@@ -537,3 +537,86 @@ bool MysqlDao::GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>
 
     return true;
 }
+
+bool MysqlDao::AddChatMessages(int from_uid, int to_uid,
+                               const std::vector<std::pair<std::string, std::string>>& messages)
+{
+    if (messages.empty())
+        return true;
+
+    auto con = pool_->getConnection();
+    if (con == nullptr)
+        return false;
+
+    Defer defer([this, &con]() {
+        pool_->returnConnection(std::move(con));
+    });
+
+    try
+    {
+        // INSERT IGNORE makes a retried batch idempotent: the msg_id is generated once by
+        // the sender, so a repeat delivery must not create a second history row
+        std::unique_ptr<sql::PreparedStatement> pstmt(
+            con->_con->prepareStatement("INSERT IGNORE INTO chat_message (msg_id, from_uid, to_uid, content) "
+                                        "VALUES (?, ?, ?, ?)"));
+        for (const auto& msg : messages)
+        {
+            pstmt->setString(1, msg.first);
+            pstmt->setInt(2, from_uid);
+            pstmt->setInt(3, to_uid);
+            pstmt->setString(4, msg.second);
+            if (pstmt->executeUpdate() < 0)
+                return false;
+        }
+        return true;
+    }
+    catch (sql::SQLException& e)
+    {
+        std::cerr << "SQLException: " << e.what();
+        std::cerr << " (MySQL error code: " << e.getErrorCode();
+        std::cerr << ", SQLState: " << e.getSQLState() << " )" << std::endl;
+        return false;
+    }
+}
+
+bool MysqlDao::GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
+                              std::vector<std::shared_ptr<ChatMessageInfo>>& messages)
+{
+    auto con = pool_->getConnection();
+    if (con == nullptr)
+        return false;
+
+    Defer defer([this, &con]() {
+        pool_->returnConnection(std::move(con));
+    });
+
+    try
+    {
+        std::unique_ptr<sql::PreparedStatement> pstmt(
+            con->_con->prepareStatement("SELECT id, msg_id, from_uid, to_uid, content FROM chat_message "
+                                        "WHERE ((from_uid = ? AND to_uid = ?) OR (from_uid = ? AND to_uid = ?)) "
+                                        "AND id > ? ORDER BY id ASC LIMIT ?"));
+        pstmt->setInt(1, self_uid);
+        pstmt->setInt(2, peer_uid);
+        pstmt->setInt(3, peer_uid);
+        pstmt->setInt(4, self_uid);
+        pstmt->setInt64(5, last_id);
+        pstmt->setInt(6, limit);
+
+        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+        while (res->next())
+        {
+            messages.push_back(std::make_shared<ChatMessageInfo>(
+                res->getInt64("id"), res->getString("msg_id"), res->getInt("from_uid"),
+                res->getInt("to_uid"), res->getString("content")));
+        }
+        return true;
+    }
+    catch (sql::SQLException& e)
+    {
+        std::cerr << "SQLException: " << e.what();
+        std::cerr << " (MySQL error code: " << e.getErrorCode();
+        std::cerr << ", SQLState: " << e.getSQLState() << " )" << std::endl;
+        return false;
+    }
+}

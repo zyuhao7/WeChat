@@ -19,6 +19,10 @@ public:
     std::shared_ptr<UserInfo> GetUser(std::string name);
     bool GetApplyList(int touid, std::vector<std::shared_ptr<ApplyInfo>>& applyList, int begin, int limit = 10);
     bool GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>& _info);
+    bool AddChatMessages(int from_uid, int to_uid,
+                         const std::vector<std::pair<std::string, std::string>>& messages);
+    bool GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
+                        std::vector<std::shared_ptr<ChatMessageInfo>>& messages);
 
 private:
     MysqlMgr();

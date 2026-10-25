@@ -102,6 +102,8 @@ void LogicSystem::RegisterCallBacks()
                                                      placeholders::_1, placeholders::_2, placeholders::_3);
     _fun_callbacks[ID_FILE_MSG_REQ] = std::bind(&LogicSystem::DealFileMsg, this,
                                                 placeholders::_1, placeholders::_2, placeholders::_3);
+    _fun_callbacks[ID_GET_CHAT_HISTORY_REQ] = std::bind(&LogicSystem::DealGetChatHistory, this,
+                                                        placeholders::_1, placeholders::_2, placeholders::_3);
     _fun_callbacks[ID_HEART_BEAT_REQ] = std::bind(&LogicSystem::HeartBeatHandler, this,
                                                   placeholders::_1, placeholders::_2, placeholders::_3);
 }
@@ -579,6 +581,20 @@ void LogicSystem::DealChatTextMsg(std::shared_ptr<CSession> session, const short
     rtvalue["fromuid"] = uid;
     rtvalue["touid"] = touid;
 
+    // store before forwarding: a peer that is offline has no session to notify, and this
+    // row is what its client reads back when the conversation is opened again
+    std::vector<std::pair<std::string, std::string>> rows;
+    rows.reserve(arrays.size());
+    for (const auto& item : arrays)
+    {
+        rows.emplace_back(item["msgid"].asString(), item["content"].asString());
+    }
+    if (!MysqlMgr::GetInstance()->AddChatMessages(uid, touid, rows))
+    {
+        // delivery still works while the store does; a failed write only loses history
+        std::cerr << "persist chat messages from " << uid << " to " << touid << " failed" << std::endl;
+    }
+
     // query redis for the server ip of touid
     auto to_str = std::to_string(touid);
     auto to_ip_key = USERIPPREFIX + to_str;
@@ -617,6 +633,72 @@ void LogicSystem::DealChatTextMsg(std::shared_ptr<CSession> session, const short
 
     // send the notification
     ChatGrpcClient::GetInstance()->NotifyTextChatMsg(to_ip_value, text_msg_req, rtvalue);
+}
+
+// Returns stored messages between the caller and one peer, oldest first. The query always
+// includes the caller's own uid, so the peer field cannot be used to read someone else's
+// conversation.
+void LogicSystem::DealGetChatHistory(std::shared_ptr<CSession> session, const short& msg_id,
+                                     const string& msg_data)
+{
+    Json::Value rtvalue;
+    rtvalue["error"] = ErrorCodes::Success;
+
+    Defer defer([&rtvalue, session]() {
+        session->Send(rtvalue.toStyledString(), ID_GET_CHAT_HISTORY_RSP);
+    });
+
+    Json::Value root;
+    if (!ParseJsonObject(msg_data, root))
+    {
+        rtvalue["error"] = ErrorCodes::Error_Json;
+        return;
+    }
+
+    const int uid = session->GetUserId();
+    if (!IsValidUid(uid))
+    {
+        rtvalue["error"] = ErrorCodes::UidInvalid;
+        return;
+    }
+
+    ChatHistoryQuery query;
+    if (!ParseChatHistoryQuery(root, uid, query))
+    {
+        rtvalue["error"] = ErrorCodes::Error_Json;
+        return;
+    }
+
+    std::vector<std::shared_ptr<ChatMessageInfo>> messages;
+    if (!MysqlMgr::GetInstance()->GetChatHistory(uid, query.peer_uid, query.last_id, query.limit,
+                                                 messages))
+    {
+        rtvalue["error"] = ErrorCodes::DBFailed;
+        return;
+    }
+
+    rtvalue["touid"] = query.peer_uid;
+    Json::Value array(Json::arrayValue);
+    // the wire frame length is a signed short; stop before the JSON envelope can overflow it
+    constexpr size_t MAX_BODY_BYTES = 24 * 1024;
+    size_t body_size = rtvalue.toStyledString().size();
+    for (const auto& msg : messages)
+    {
+        Json::Value item;
+        item["msgid"] = msg->_msg_id;
+        item["content"] = msg->_content;
+        item["fromuid"] = msg->_from_uid;
+        item["touid"] = msg->_to_uid;
+        item["seq"] = static_cast<Json::Int64>(msg->_seq);
+
+        const size_t item_size = item.toStyledString().size();
+        if (!array.empty() && body_size + item_size > MAX_BODY_BYTES)
+            break;
+
+        array.append(item);
+        body_size += item_size;
+    }
+    rtvalue["text_array"] = array;
 }
 
 // One chunk per frame: the sender spaces them out, so a whole file never sits in the logic

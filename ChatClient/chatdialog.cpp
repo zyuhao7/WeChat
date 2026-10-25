@@ -30,6 +30,9 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QHash>
+#include <algorithm>
+#include <limits>
 #include <vector>
 
 ChatDialog::ChatDialog(QWidget* parent)
@@ -209,6 +212,8 @@ ChatDialog::ChatDialog(QWidget* parent)
     // connect the peer message notification
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_text_chat_msg,
             this, &ChatDialog::slot_text_chat_msg);
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_chat_history,
+            this, &ChatDialog::slot_chat_history);
 
     connect(ui->chat_page, &ChatPage::sig_append_send_chat_msg, this, &ChatDialog::slot_append_send_chat_msg);
 
@@ -426,6 +431,7 @@ void ChatDialog::SetSelectChatPage(int uid)
         // set the info
         auto user_info = chat_item->GetUserInfo();
         ui->chat_page->SetUserInfo(user_info);
+        LoadChatHistory(user_info->_uid);
         return;
     }
 
@@ -463,9 +469,116 @@ void ChatDialog::SetSelectChatPage(int uid)
         // set the info
         auto user_info = chat_item->GetUserInfo();
         ui->chat_page->SetUserInfo(user_info);
+        LoadChatHistory(user_info->_uid);
 
         return;
     }
+}
+
+void ChatDialog::LoadChatHistory(int peer_uid)
+{
+    if (peer_uid <= 0)
+        return;
+
+    auto friend_info = UserMgr::GetInstance()->GetFriendById(peer_uid);
+    if (!friend_info || friend_info->_history_loaded)
+        return;
+
+    // marked before the request so a fast reopen does not ask twice; the merge below also
+    // dedupes by msg_id, which keeps a live-delivered message from appearing twice
+    friend_info->_history_loaded = true;
+
+    qint64 last_id = 0;
+    for (const auto& msg : friend_info->_chat_msgs)
+    {
+        if (msg)
+            last_id = qMax(last_id, msg->_seq);
+    }
+
+    QJsonObject obj;
+    obj["touid"] = peer_uid;
+    obj["last_id"] = static_cast<double>(last_id);
+    obj["limit"] = 50;
+    emit TcpMgr::GetInstance() -> sig_send_data(
+                                   ReqId::ID_GET_CHAT_HISTORY_REQ, QJsonDocument(obj).toJson(QJsonDocument::Compact));
+}
+
+void ChatDialog::slot_chat_history(std::shared_ptr<ChatHistoryRsp> rsp)
+{
+    MergeChatHistory(std::move(rsp));
+}
+
+void ChatDialog::MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp)
+{
+    if (!rsp || rsp->_peer_uid <= 0)
+        return;
+
+    auto friend_info = UserMgr::GetInstance()->GetFriendById(rsp->_peer_uid);
+    if (!friend_info)
+        return;
+
+    ChatUserWid* chat_wid = nullptr;
+    std::shared_ptr<UserInfo> page_info;
+    auto item_it = _chat_items_added.find(rsp->_peer_uid);
+    if (item_it != _chat_items_added.end())
+    {
+        chat_wid = qobject_cast<ChatUserWid*>(ui->chat_user_list->itemWidget(item_it.value()));
+        if (chat_wid)
+            page_info = chat_wid->GetUserInfo();
+    }
+
+    QHash<QString, std::shared_ptr<TextChatData>> known;
+    for (const auto& msg : friend_info->_chat_msgs)
+    {
+        if (msg)
+            known.insert(msg->_msg_id, msg);
+    }
+    if (page_info)
+    {
+        for (const auto& msg : page_info->_chat_msgs)
+        {
+            if (msg && !known.contains(msg->_msg_id))
+                known.insert(msg->_msg_id, msg);
+        }
+    }
+
+    for (const auto& msg : rsp->_chat_msgs)
+    {
+        if (!msg || msg->_msg_id.isEmpty())
+            continue;
+
+        auto existing = known.find(msg->_msg_id);
+        if (existing != known.end())
+        {
+            // a message delivered live is already on screen; just learn its stored order
+            existing.value()->_seq = msg->_seq;
+            continue;
+        }
+
+        known.insert(msg->_msg_id, msg);
+        friend_info->_chat_msgs.push_back(msg);
+        if (page_info)
+            page_info->_chat_msgs.push_back(msg);
+    }
+
+    // entries without a stored id are live-only (or files) and stay behind the stored ones
+    auto by_seq = [](const std::shared_ptr<TextChatData>& left,
+                     const std::shared_ptr<TextChatData>& right) {
+        const qint64 left_seq = left && left->_seq > 0 ? left->_seq : std::numeric_limits<qint64>::max();
+        const qint64 right_seq = right && right->_seq > 0 ? right->_seq : std::numeric_limits<qint64>::max();
+        return left_seq < right_seq;
+    };
+    std::stable_sort(friend_info->_chat_msgs.begin(), friend_info->_chat_msgs.end(), by_seq);
+    if (page_info)
+        std::stable_sort(page_info->_chat_msgs.begin(), page_info->_chat_msgs.end(), by_seq);
+
+    if (chat_wid)
+        chat_wid->RefreshLastMsg();
+
+    // rebuild only when this conversation is the one on screen; otherwise the merged
+    // history is rendered the next time the item is opened
+    if (page_info && _cur_chat_uid == rsp->_peer_uid)
+        ui->chat_page->SetUserInfo(page_info);
 }
 
 void ChatDialog::ChooseAvatar()
@@ -873,6 +986,7 @@ void ChatDialog::slot_item_clicked(QListWidgetItem* item)
         // // switch to the chat page
         ui->chat_page->SetUserInfo(user_info);
         _cur_chat_uid = user_info->_uid;
+        LoadChatHistory(user_info->_uid);
         return;
     }
 }

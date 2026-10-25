@@ -31,6 +31,7 @@ private:
     void AuthFriendApply(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
     void DealChatTextMsg(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
     void DealFileMsg(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
+    void DealGetChatHistory(std::shared_ptr<CSession> session, const short& msg_id, const std::string& msg_data);
     void HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data);
     void Dispatch(const std::shared_ptr<LogicNode>& msg_node);
     void KickPreviousLogin(int uid, const std::shared_ptr<CSession>& session);

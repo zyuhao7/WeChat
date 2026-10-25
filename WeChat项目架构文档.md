@@ -133,7 +133,7 @@
 | `ChatGrpcClient` | ChatGrpcClient.cpp/h | gRPC 客户端，按目标服务器地址维护 Stub 连接池 |
 | `AsioIOServicePool` | AsioIOServicePool.cpp/h | `io_context` 线程池，连接轮询分配 |
 | `RedisMgr` | RedisMgr.cpp/h | hiredis 连接池 + 60 秒 PING 保活 + 分布式锁 |
-| `MysqlMgr` / `MysqlDao` | MysqlMgr/MysqlDao | MySQL 连接池（60 秒 `SELECT 1` 保活）+ 用户/好友 DAO |
+| `MysqlMgr` / `MysqlDao` | MysqlMgr/MysqlDao | MySQL 连接池（60 秒 `SELECT 1` 保活）+ 用户/好友/聊天记录 DAO |
 | `DistLock` | DistLock.cpp/h | 基于 Redis 的分布式锁（setnx + 过期 + 唯一标识） |
 
 **业务回调（`LogicSystem::RegisterCallBacks`, LogicSystem.cpp:90）：**
@@ -144,8 +144,9 @@
 | 1007 | `ID_SEARCH_USER_REQ` | `SearchInfo` | 按 uid（纯数字）或用户名搜索用户 |
 | 1009 | `ID_ADD_FRIEND_REQ` | `AddFriendApply` | 写申请、定位对方服务器并通知 |
 | 1013 | `ID_AUTH_FRIEND_REQ` | `AuthFriendApply` | 同意好友、写双向好友关系、通知对方 |
-| 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | 校验目标在线，转发文本消息 |
+| 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | 先落库（`INSERT IGNORE` 幂等），再校验目标在线并转发文本消息 |
 | 1023 | `ID_HEART_BEAT_REQ` | `HeartBeatHandler` | 回心跳应答 |
+| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | 按 `touid` + `last_id` + `limit` 增量拉取双方聊天记录 |
 
 **消息路由核心逻辑**：处理任意消息时，先用 Redis `uip_<touid>` 查目标用户所在 ChatServer 名。若等于本机名，直接经 `UserMgr` 取 session 推送；否则调用 `ChatGrpcClient` 走 gRPC 转发到目标节点，由对端 `ChatServiceImpl` 落入其本地 session。
 
@@ -494,7 +495,7 @@ WeChat/
 
 ## 12. 教程进度对照（gitbookcpp.llfc.club day01–day45）
 
-本项目按教程逐日实现，当前进度跟进到 **day36**，另已提前完成 day31（文件传输）、day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
+本项目按教程逐日实现，当前进度跟进到 **day37**，另已提前完成 day31（文件传输）、day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
 
 `[x]` 已实现 / `[ ]` 未实现：
 
@@ -511,7 +512,7 @@ WeChat/
 [x] day33-35  单服踢人/跨服踢人/心跳检测                               → NotifyKickUser + HeartBeat
 [x] day31     文件传输                                                 → FileTransferMgr + ID_FILE_MSG_REQ/RSP
 [x] day36     Qt头像裁剪                                               → CropDialog（按 uid 存本地）
-[ ] day37     聊天信息存储方案                                         → MySQL 仅存好友关系，无聊天记录表
+[x] day37     聊天信息存储方案                                         → chat_message 表 + ID_GET_CHAT_HISTORY_REQ/RSP
 [ ] day38     断点续传
 [ ] day39     多媒体信息传输（语音/视频消息）
 [ ] day40     分布式事务死锁分析
@@ -522,9 +523,9 @@ WeChat/
 [ ] day45     webrtc 信令服务器实现视频通信
 ```
 
-**后续待办顺序**：`day37 聊天记录持久化` → `day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
+**后续待办顺序**：`day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
-> 注意：day37 是分水岭。当前消息不落库、纯在线转发；做多媒体与视频前需先补齐聊天记录存储。
+> 聊天消息由发送方所在 ChatServer **先落库再转发**，因此对端离线也能在下次打开会话时拉回；接口支持按 `last_id` 增量拉取，当前客户端首次打开会话时为全量拉取。消息以 `msg_id` 去重、以自增 `id` 排序。
 
 ---
 

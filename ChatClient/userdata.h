@@ -120,6 +120,7 @@ struct FriendInfo
     QString _back;
     QString _last_msg;
     std::vector<std::shared_ptr<TextChatData>> _chat_msgs;
+    bool _history_loaded = false; // stored history was merged into _chat_msgs
 };
 
 struct UserInfo
@@ -182,6 +183,7 @@ struct TextChatData
     QString _msg_type; // "text" or "file"; a file message carries its name in _msg_content
     qint64 _file_size = 0;
     QString _local_path; // where the file landed, empty until a transfer finishes
+    qint64 _seq = 0;     // database id once the history was loaded; 0 means local-only
 };
 
 struct TextChatMsg
@@ -201,6 +203,12 @@ struct TextChatMsg
     }
     int _to_uid;
     int _from_uid;
+    std::vector<std::shared_ptr<TextChatData>> _chat_msgs;
+};
+
+struct ChatHistoryRsp
+{
+    int _peer_uid = 0;
     std::vector<std::shared_ptr<TextChatData>> _chat_msgs;
 };
 
