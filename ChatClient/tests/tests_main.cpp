@@ -11,7 +11,8 @@ int main(int argc, char* argv[])
     for (QObject* suite : {createUserMgrTest(), createUserListLoadingTest(),
                            createChatDialogTest(), createChatDialogTextMsgTest(),
                            createServerErrorTextTest(), createFileTransferHelpersTest(),
-                           createCropDialogHelpersTest(), createUiWiringTest()})
+                           createCropDialogHelpersTest(), createUiWiringTest(),
+                           createChatViewTest()})
     {
         status |= QTest::qExec(suite, argc, argv);
         delete suite;

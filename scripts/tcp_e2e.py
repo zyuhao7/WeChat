@@ -30,8 +30,16 @@ ID_NOTIFY_AUTH = 1015
 ID_TEXT_REQ = 1017
 ID_TEXT_RSP = 1018
 ID_NOTIFY_TEXT = 1019
+ID_HISTORY_REQ = 1028
+ID_HISTORY_RSP = 1029
 
 results = []
+
+
+def xor_string(s):
+    # the client obfuscates the password before it reaches GateServer
+    code = len(s) % 255
+    return "".join(chr(ord(ch) ^ code) for ch in s)
 
 
 def check(name, ok, detail=""):
@@ -89,7 +97,7 @@ class Conn:
 
 
 def login(email):
-    r = http_post("/user_login", {"email": email, "passwd": "123456"})
+    r = http_post("/user_login", {"email": email, "passwd": xor_string("123456")})
     if r.get("error") != 0:
         raise SystemExit(f"http login failed for {email}: {r}")
     return r
@@ -160,6 +168,19 @@ def main():
     ok = (notify.get("fromuid") == a_cred["uid"]
           and notify.get("text_array", [{}])[0].get("content") == "hello from mock1")
     check("peer got text notify", ok, f"notify={notify}")
+
+    # 5. stored history: the newest page comes back oldest-first with a cursor per row
+    a.send(ID_HISTORY_REQ, {"touid": b_cred["uid"], "limit": 50})
+    rsp = a.expect(ID_HISTORY_RSP, "mock1")
+    msgs = rsp.get("text_array", [])
+    seqs = [m.get("seq") for m in msgs]
+    check("history rsp", rsp.get("error") == 0 and rsp.get("touid") == b_cred["uid"],
+          f"rsp={rsp}")
+    check("history ends with the message just sent",
+          bool(msgs) and msgs[-1].get("content") == "hello from mock1",
+          f"last={msgs[-1] if msgs else None}")
+    check("history is oldest-first and cursored", seqs == sorted(seqs) and all(seqs),
+          f"seqs={seqs}")
 
     a.close()
     b.close()

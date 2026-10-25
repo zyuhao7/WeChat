@@ -669,21 +669,28 @@ void LogicSystem::DealGetChatHistory(std::shared_ptr<CSession> session, const sh
         return;
     }
 
+    // echoed even on failure so the client can clear the matching in-flight flag
+    rtvalue["touid"] = query.peer_uid;
+
     std::vector<std::shared_ptr<ChatMessageInfo>> messages;
+    bool has_more = false;
     if (!MysqlMgr::GetInstance()->GetChatHistory(uid, query.peer_uid, query.last_id, query.limit,
-                                                 messages))
+                                                 messages, has_more))
     {
         rtvalue["error"] = ErrorCodes::DBFailed;
         return;
     }
 
-    rtvalue["touid"] = query.peer_uid;
     Json::Value array(Json::arrayValue);
     // the wire frame length is a signed short; stop before the JSON envelope can overflow it
     constexpr size_t MAX_BODY_BYTES = 24 * 1024;
     size_t body_size = rtvalue.toStyledString().size();
-    for (const auto& msg : messages)
+    // walk newest first so a trimmed page keeps the recent messages; the older ones are still
+    // reachable through the next upward page
+    std::vector<Json::Value> kept;
+    for (auto it = messages.rbegin(); it != messages.rend(); ++it)
     {
+        const auto& msg = *it;
         Json::Value item;
         item["msgid"] = msg->_msg_id;
         item["content"] = msg->_content;
@@ -692,13 +699,19 @@ void LogicSystem::DealGetChatHistory(std::shared_ptr<CSession> session, const sh
         item["seq"] = static_cast<Json::Int64>(msg->_seq);
 
         const size_t item_size = item.toStyledString().size();
-        if (!array.empty() && body_size + item_size > MAX_BODY_BYTES)
+        if (body_size + item_size > MAX_BODY_BYTES)
+        {
+            has_more = true;
             break;
+        }
 
-        array.append(item);
+        kept.push_back(std::move(item));
         body_size += item_size;
     }
+    for (auto it = kept.rbegin(); it != kept.rend(); ++it)
+        array.append(*it);
     rtvalue["text_array"] = array;
+    rtvalue["has_more"] = has_more;
 }
 
 // One chunk per frame: the sender spaces them out, so a whole file never sits in the logic

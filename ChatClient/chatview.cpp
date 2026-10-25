@@ -27,6 +27,30 @@ ChatView::ChatView(QWidget* parent)
     m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     QScrollBar* pVScrollBar = m_pScrollArea->verticalScrollBar();
     connect(pVScrollBar, &QScrollBar::rangeChanged, this, &ChatView::onVScrollBarMoved);
+    connect(pVScrollBar, &QScrollBar::rangeChanged, this, [this](int, int maximum) {
+        if (!_prepend_pending)
+            return;
+        const int delta = maximum - _prepend_anchor_max;
+        if (delta <= 0)
+            return;
+        QScrollBar* bar = m_pScrollArea->verticalScrollBar();
+        bar->setValue(_prepend_anchor_value + delta);
+        _prepend_anchor_max = maximum;
+        _prepend_anchor_value = bar->value();
+        _prepend_settle_timer->start();
+    });
+
+    _prepend_settle_timer = new QTimer(this);
+    _prepend_settle_timer->setSingleShot(true);
+    _prepend_settle_timer->setInterval(50);
+    connect(_prepend_settle_timer, &QTimer::timeout, this, [this]() { _prepend_pending = false; });
+    connect(pVScrollBar, &QScrollBar::valueChanged, this, [this](int value) {
+        QScrollBar* bar = m_pScrollArea->verticalScrollBar();
+        const bool at_top = value == 0 && bar->maximum() > 0;
+        if (at_top && !_at_top_notified)
+            emit sig_reached_top();
+        _at_top_notified = at_top;
+    });
 
     QHBoxLayout* pHLayout_2 = new QHBoxLayout();
     pHLayout_2->addWidget(pVScrollBar, 0, Qt::AlignRight);
@@ -48,7 +72,29 @@ void ChatView::appendChatItem(QWidget* item)
 
 void ChatView::prependChatItem(QWidget* item)
 {
-    Q_UNUSED(item);
+    prependChatItems({item});
+}
+
+void ChatView::prependChatItems(const QList<QWidget*>& items)
+{
+    if (items.isEmpty())
+        return;
+
+    // a pending append would otherwise snap the view back to the bottom after the insert
+    isAppended = false;
+
+    QVBoxLayout* vl = qobject_cast<QVBoxLayout*>(m_pScrollArea->widget()->layout());
+    QScrollBar* bar = m_pScrollArea->verticalScrollBar();
+    _prepend_anchor_max = bar->maximum();
+    _prepend_anchor_value = bar->value();
+    _prepend_pending = true;
+
+    // items arrive oldest first, so index 0 keeps the visual order
+    for (int i = 0; i < items.size(); ++i)
+        vl->insertWidget(i, items[i]);
+
+    // the range may stay unchanged (content still fits), which would leave the anchor pending
+    _prepend_settle_timer->start();
 }
 
 void ChatView::insertChatItem(QWidget* before, QWidget* item)

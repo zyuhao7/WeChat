@@ -28,6 +28,7 @@ SOURCES += test_usermgr.cpp \
            test_filetransfer.cpp \
            test_cropdialog.cpp \
            test_ui_wiring.cpp \
+           test_chat_view.cpp \
            tests_main.cpp \
            $$CLIENT_SOURCES
 
