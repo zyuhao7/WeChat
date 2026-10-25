@@ -120,7 +120,9 @@ struct FriendInfo
     QString _back;
     QString _last_msg;
     std::vector<std::shared_ptr<TextChatData>> _chat_msgs;
-    bool _history_loaded = false; // stored history was merged into _chat_msgs
+    bool _history_loaded = false;   // the newest history page was requested
+    bool _history_loading = false;  // a history request is in flight
+    bool _history_has_more = false; // older pages can still be fetched
 };
 
 struct UserInfo
@@ -209,6 +211,8 @@ struct TextChatMsg
 struct ChatHistoryRsp
 {
     int _peer_uid = 0;
+    bool _has_more = false; // an older page exists before the first returned message
+    bool _failed = false;   // the request failed, so loading flags must be rolled back
     std::vector<std::shared_ptr<TextChatData>> _chat_msgs;
 };
 

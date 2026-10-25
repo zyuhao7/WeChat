@@ -216,6 +216,7 @@ ChatDialog::ChatDialog(QWidget* parent)
             this, &ChatDialog::slot_chat_history);
 
     connect(ui->chat_page, &ChatPage::sig_append_send_chat_msg, this, &ChatDialog::slot_append_send_chat_msg);
+    connect(ui->chat_page, &ChatPage::sig_load_more_history, this, &ChatDialog::slot_load_more_history);
 
     // file transfers report through the manager, not through the chat message path; only
     // the events that need a chat-list entry or a dialog land here
@@ -481,26 +482,57 @@ void ChatDialog::LoadChatHistory(int peer_uid)
         return;
 
     auto friend_info = UserMgr::GetInstance()->GetFriendById(peer_uid);
-    if (!friend_info || friend_info->_history_loaded)
+    if (!friend_info || friend_info->_history_loaded || friend_info->_history_loading)
         return;
 
-    // marked before the request so a fast reopen does not ask twice; the merge below also
-    // dedupes by msg_id, which keeps a live-delivered message from appearing twice
+    // the first page is the newest one; older pages are pulled when the view scrolls to the top
     friend_info->_history_loaded = true;
-
-    qint64 last_id = 0;
-    for (const auto& msg : friend_info->_chat_msgs)
-    {
-        if (msg)
-            last_id = qMax(last_id, msg->_seq);
-    }
+    friend_info->_history_loading = true;
+    _history_request_older[peer_uid] = false;
 
     QJsonObject obj;
     obj["touid"] = peer_uid;
-    obj["last_id"] = static_cast<double>(last_id);
     obj["limit"] = 50;
     emit TcpMgr::GetInstance() -> sig_send_data(
                                    ReqId::ID_GET_CHAT_HISTORY_REQ, QJsonDocument(obj).toJson(QJsonDocument::Compact));
+}
+
+void ChatDialog::LoadOlderChatHistory(int peer_uid)
+{
+    if (peer_uid <= 0)
+        return;
+
+    auto friend_info = UserMgr::GetInstance()->GetFriendById(peer_uid);
+    if (!friend_info || !friend_info->_history_loaded || friend_info->_history_loading ||
+        !friend_info->_history_has_more)
+    {
+        return;
+    }
+
+    // the server returns rows before this id, walking upward from the oldest loaded message
+    qint64 oldest = 0;
+    for (const auto& msg : friend_info->_chat_msgs)
+    {
+        if (msg && msg->_seq > 0)
+            oldest = oldest == 0 ? msg->_seq : qMin(oldest, msg->_seq);
+    }
+    if (oldest <= 0)
+        return;
+
+    friend_info->_history_loading = true;
+    _history_request_older[peer_uid] = true;
+
+    QJsonObject obj;
+    obj["touid"] = peer_uid;
+    obj["last_id"] = static_cast<double>(oldest);
+    obj["limit"] = 50;
+    emit TcpMgr::GetInstance() -> sig_send_data(
+                                   ReqId::ID_GET_CHAT_HISTORY_REQ, QJsonDocument(obj).toJson(QJsonDocument::Compact));
+}
+
+void ChatDialog::slot_load_more_history()
+{
+    LoadOlderChatHistory(_cur_chat_uid);
 }
 
 void ChatDialog::slot_chat_history(std::shared_ptr<ChatHistoryRsp> rsp)
@@ -516,6 +548,17 @@ void ChatDialog::MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp)
     auto friend_info = UserMgr::GetInstance()->GetFriendById(rsp->_peer_uid);
     if (!friend_info)
         return;
+
+    const bool older_page = _history_request_older.take(rsp->_peer_uid);
+    friend_info->_history_loading = false;
+    if (rsp->_failed)
+    {
+        // let the next open retry the newest page; an older page just stays unloaded
+        if (!older_page)
+            friend_info->_history_loaded = false;
+        return;
+    }
+    friend_info->_history_has_more = rsp->_has_more;
 
     ChatUserWid* chat_wid = nullptr;
     std::shared_ptr<UserInfo> page_info;
@@ -542,6 +585,7 @@ void ChatDialog::MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp)
         }
     }
 
+    std::vector<std::shared_ptr<TextChatData>> added;
     for (const auto& msg : rsp->_chat_msgs)
     {
         if (!msg || msg->_msg_id.isEmpty())
@@ -559,6 +603,7 @@ void ChatDialog::MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp)
         friend_info->_chat_msgs.push_back(msg);
         if (page_info)
             page_info->_chat_msgs.push_back(msg);
+        added.push_back(msg);
     }
 
     // entries without a stored id are live-only (or files) and stay behind the stored ones
@@ -578,7 +623,12 @@ void ChatDialog::MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp)
     // rebuild only when this conversation is the one on screen; otherwise the merged
     // history is rendered the next time the item is opened
     if (page_info && _cur_chat_uid == rsp->_peer_uid)
-        ui->chat_page->SetUserInfo(page_info);
+    {
+        if (older_page)
+            ui->chat_page->PrependChatMsgs(added); // keep the reader where they were
+        else
+            ui->chat_page->SetUserInfo(page_info);
+    }
 }
 
 void ChatDialog::ChooseAvatar()

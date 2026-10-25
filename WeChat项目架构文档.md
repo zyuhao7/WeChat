@@ -146,7 +146,7 @@
 | 1013 | `ID_AUTH_FRIEND_REQ` | `AuthFriendApply` | 同意好友、写双向好友关系、通知对方 |
 | 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | 先落库（`INSERT IGNORE` 幂等），再校验目标在线并转发文本消息 |
 | 1023 | `ID_HEART_BEAT_REQ` | `HeartBeatHandler` | 回心跳应答 |
-| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | 按 `touid` + `last_id` + `limit` 增量拉取双方聊天记录 |
+| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | 取最新一页聊天记录，按 `last_id` 向上翻页（每页 ≤50） |
 
 **消息路由核心逻辑**：处理任意消息时，先用 Redis `uip_<touid>` 查目标用户所在 ChatServer 名。若等于本机名，直接经 `UserMgr` 取 session 推送；否则调用 `ChatGrpcClient` 走 gRPC 转发到目标节点，由对端 `ChatServiceImpl` 落入其本地 session。
 
@@ -525,7 +525,7 @@ WeChat/
 
 **后续待办顺序**：`day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
-> 聊天消息由发送方所在 ChatServer **先落库再转发**，因此对端离线也能在下次打开会话时拉回；接口支持按 `last_id` 增量拉取，当前客户端首次打开会话时为全量拉取。消息以 `msg_id` 去重、以自增 `id` 排序。
+> 聊天消息由发送方所在 ChatServer **先落库再转发**，因此对端离线也能在下次打开会话时拉回。打开会话先取最新 50 条，滚动到顶部时以当前最旧 `last_id` 继续向上翻页，响应携带 `has_more`；消息以 `msg_id` 去重、以自增 `id` 排序。
 
 ---
 

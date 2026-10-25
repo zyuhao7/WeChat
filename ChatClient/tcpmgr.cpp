@@ -486,15 +486,19 @@ void TcpMgr::initHandlers()
         }
 
         QJsonObject jsonObj = jsonDoc.object();
+        auto rsp = std::make_shared<ChatHistoryRsp>();
+        rsp->_peer_uid = jsonObj.value("touid").toInt();
         const int err = jsonObj.value("error").toInt(ErrorCodes::ERR_JSON);
         if (err != ErrorCodes::SUCCESS)
         {
+            // still reply so the dialog clears its in-flight flag; the empty page stops paging
             qDebug() << "Chat history rsp failed, err is " << err;
+            rsp->_failed = true;
+            emit sig_chat_history(rsp);
             return;
         }
 
-        auto rsp = std::make_shared<ChatHistoryRsp>();
-        rsp->_peer_uid = jsonObj.value("touid").toInt();
+        rsp->_has_more = jsonObj.value("has_more").toBool(false);
         const QJsonArray arrays = jsonObj.value("text_array").toArray();
         for (const QJsonValue& value : arrays)
         {

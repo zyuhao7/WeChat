@@ -188,8 +188,8 @@ struct ChatHistoryQuery
     int limit = CHAT_HISTORY_MAX_LIMIT;
 };
 
-// {touid, last_id?, limit?} — last_id is the highest stored id the client already has, so
-// a reopened conversation only asks for what is new.
+// {touid, last_id?, limit?} — last_id is an exclusive upper bound: 0 asks for the newest page,
+// and the client passes the oldest id it already has to walk upward through older pages.
 inline bool ParseChatHistoryQuery(const Json::Value& root, int self_uid, ChatHistoryQuery& out)
 {
     if (!root.isObject())

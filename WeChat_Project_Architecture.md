@@ -174,7 +174,7 @@ and heartbeat; cross-node messages are forwarded over gRPC.
 | 1013 | `ID_AUTH_FRIEND_REQ` | `AuthFriendApply` | accept friend, write bidirectional relation, notify |
 | 1017 | `ID_TEXT_CHAT_MSG_REQ` | `DealChatTextMsg` | persist first (`INSERT IGNORE`, idempotent), then check online and forward |
 | 1023 | `ID_HEART_BEAT_REQ` | `HeartBeatHandler` | reply to heartbeat |
-| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | incremental history fetch by `touid` + `last_id` + `limit` |
+| 1028 | `ID_GET_CHAT_HISTORY_REQ` | `DealGetChatHistory` | newest history page, then upward paging by `last_id` (≤50 per page) |
 
 **Message routing core**: for any message, look up the target's ChatServer via Redis `uip_<touid>`.
 If it equals the local name, push directly through `UserMgr`'s session; otherwise call
@@ -589,9 +589,9 @@ is interview-only, no code.
 transactions` → `day42-43 image async download / chat resources` → `day44-45 WebRTC audio/video`.
 
 > The sender's ChatServer persists each message **before** forwarding, so an offline peer pulls
-> it back when the conversation opens. The API supports incremental fetches via `last_id`; the
-> client currently does a full fetch on first open. Rows dedupe on `msg_id` and order by the
-> auto-increment `id`.
+> it back when the conversation opens. Opening a chat loads the newest 50 rows; scrolling to the
+> top walks further back using the oldest `last_id`, and the response carries `has_more`. Rows
+> dedupe on `msg_id` and order by the auto-increment `id`.
 
 ---
 

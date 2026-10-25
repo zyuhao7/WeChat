@@ -12,6 +12,7 @@ class ChatPage;
 }
 
 class FileBubble;
+class ChatItemBase;
 
 class ChatPage : public QWidget
 {
@@ -22,6 +23,7 @@ public:
     ~ChatPage();
     void SetUserInfo(std::shared_ptr<UserInfo> user_info);
     void AppendChatMsg(std::shared_ptr<TextChatData> msg);
+    void PrependChatMsgs(const std::vector<std::shared_ptr<TextChatData>>& msgs);
     // a transfer whose chat is open learns its percentage and then its final path without
     // rebuilding the history
     void UpdateFileProgress(const QString& file_id, int percent);
@@ -37,6 +39,7 @@ private slots:
 
 private:
     void clearItems();
+    ChatItemBase* MakeChatItem(std::shared_ptr<TextChatData> msg);
     QWidget* MakeBubble(ChatRole role, std::shared_ptr<TextChatData> msg);
     FileBubble* AddFileBubble(ChatRole role, std::shared_ptr<TextChatData> msg);
     Ui::ChatPage* ui;
@@ -46,6 +49,7 @@ private:
     QHash<QString, std::shared_ptr<TextChatData>> _file_msgs; // so the path can stick
 signals:
     void sig_append_send_chat_msg(std::shared_ptr<TextChatData> msg);
+    void sig_load_more_history(); // the view reached the oldest loaded message
 };
 
 #endif // CHATPAGE_H

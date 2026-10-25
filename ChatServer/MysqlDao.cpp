@@ -1,5 +1,7 @@
 #include "MysqlDao.h"
 #include "ConfigMgr.h"
+#include <algorithm>
+#include <limits>
 
 MysqlDao::MysqlDao()
 {
@@ -579,9 +581,12 @@ bool MysqlDao::AddChatMessages(int from_uid, int to_uid,
     }
 }
 
-bool MysqlDao::GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
-                              std::vector<std::shared_ptr<ChatMessageInfo>>& messages)
+bool MysqlDao::GetChatHistory(int self_uid, int peer_uid, long long before_id, int limit,
+                              std::vector<std::shared_ptr<ChatMessageInfo>>& messages, bool& has_more)
 {
+    messages.clear();
+    has_more = false;
+
     auto con = pool_->getConnection();
     if (con == nullptr)
         return false;
@@ -592,16 +597,20 @@ bool MysqlDao::GetChatHistory(int self_uid, int peer_uid, long long last_id, int
 
     try
     {
+        // newest first so the first page is the recent conversation; one extra row tells the
+        // caller whether an older page exists
+        const long long cursor =
+            before_id > 0 ? before_id : std::numeric_limits<long long>::max();
         std::unique_ptr<sql::PreparedStatement> pstmt(
             con->_con->prepareStatement("SELECT id, msg_id, from_uid, to_uid, content FROM chat_message "
                                         "WHERE ((from_uid = ? AND to_uid = ?) OR (from_uid = ? AND to_uid = ?)) "
-                                        "AND id > ? ORDER BY id ASC LIMIT ?"));
+                                        "AND id < ? ORDER BY id DESC LIMIT ?"));
         pstmt->setInt(1, self_uid);
         pstmt->setInt(2, peer_uid);
         pstmt->setInt(3, peer_uid);
         pstmt->setInt(4, self_uid);
-        pstmt->setInt64(5, last_id);
-        pstmt->setInt(6, limit);
+        pstmt->setInt64(5, cursor);
+        pstmt->setInt(6, limit + 1);
 
         std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
         while (res->next())
@@ -610,6 +619,13 @@ bool MysqlDao::GetChatHistory(int self_uid, int peer_uid, long long last_id, int
                 res->getInt64("id"), res->getString("msg_id"), res->getInt("from_uid"),
                 res->getInt("to_uid"), res->getString("content")));
         }
+
+        if (static_cast<int>(messages.size()) > limit)
+        {
+            has_more = true;
+            messages.pop_back();
+        }
+        std::reverse(messages.begin(), messages.end());
         return true;
     }
     catch (sql::SQLException& e)

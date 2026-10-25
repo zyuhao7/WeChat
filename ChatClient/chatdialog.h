@@ -5,6 +5,7 @@
 #include "userdata.h"
 #include "statelabel.h"
 #include <QDialog>
+#include <QHash>
 #include <QLabel>
 #include <QList>
 #include <QListWidgetItem>
@@ -40,6 +41,7 @@ private:
     void SetSelectChatItem(int uid = 0);
     void SetSelectChatPage(int uid = 0);
     void LoadChatHistory(int peer_uid);
+    void LoadOlderChatHistory(int peer_uid);
     void MergeChatHistory(std::shared_ptr<ChatHistoryRsp> rsp);
     void AppendIncomingMsgs(int from_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
     void ChooseAvatar();
@@ -53,6 +55,7 @@ private:
     QMap<int, QListWidgetItem*> _chat_items_added;
     int _cur_chat_uid;
     QTimer* _timer;
+    QHash<int, bool> _history_request_older; // peer uid -> the in-flight page is an older one
 
 public slots:
     void slot_loading_chat_user();
@@ -77,6 +80,7 @@ public slots:
     ;
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg);              // handle the received chat message
     void slot_chat_history(std::shared_ptr<ChatHistoryRsp> rsp);            // merge stored messages
+    void slot_load_more_history();                                          // the view scrolled to the top
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg_data); // append the sent message
 
     // a file never arrives as a message: the transfer manager reports the chunk stream and

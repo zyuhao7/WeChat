@@ -34,6 +34,7 @@ ChatPage::ChatPage(QWidget* parent)
     // add the Enter-to-send-message signal
     connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);
     connect(ui->file_lb, &ClickedLabel::clicked, this, &ChatPage::on_file_lb_clicked);
+    connect(ui->chat_data_list, &ChatView::sig_reached_top, this, &ChatPage::sig_load_more_history);
 }
 
 ChatPage::~ChatPage()
@@ -57,38 +58,49 @@ void ChatPage::SetUserInfo(std::shared_ptr<UserInfo> user_info)
 
 void ChatPage::AppendChatMsg(std::shared_ptr<TextChatData> msg)
 {
-    auto self_info = UserMgr::GetInstance()->GetUserInfo();
-    ChatRole role;
-    if (msg->_from_uid == self_info->_uid)
-    {
-        role = ChatRole::Self;
-        ChatItemBase* pChatItem = new ChatItemBase(role);
+    if (auto* item = MakeChatItem(msg))
+        ui->chat_data_list->appendChatItem(item);
+}
 
+void ChatPage::PrependChatMsgs(const std::vector<std::shared_ptr<TextChatData>>& msgs)
+{
+    QList<QWidget*> items;
+    for (const auto& msg : msgs)
+    {
+        if (auto* item = MakeChatItem(msg))
+            items.append(item);
+    }
+    ui->chat_data_list->prependChatItems(items);
+}
+
+ChatItemBase* ChatPage::MakeChatItem(std::shared_ptr<TextChatData> msg)
+{
+    auto self_info = UserMgr::GetInstance()->GetUserInfo();
+    if (!msg || !self_info)
+        return nullptr;
+
+    ChatRole role = msg->_from_uid == self_info->_uid ? ChatRole::Self : ChatRole::Other;
+    ChatItemBase* pChatItem = new ChatItemBase(role);
+    if (role == ChatRole::Self)
+    {
         pChatItem->setUserName(self_info->_name);
         pChatItem->setUserIcon(QPixmap(self_info->_icon));
-
-        QWidget* pBubble = MakeBubble(role, msg);
-        pChatItem->setWidget(pBubble);
-        ui->chat_data_list->appendChatItem(pChatItem);
     }
     else
     {
-        role = ChatRole::Other;
-        ChatItemBase* pChatItem = new ChatItemBase(role);
         auto friend_info = UserMgr::GetInstance()->GetFriendById(msg->_from_uid);
         if (friend_info == nullptr)
         {
             delete pChatItem;
-            return;
+            return nullptr;
         }
 
         pChatItem->setUserName(friend_info->_name);
         pChatItem->setUserIcon(QPixmap(friend_info->_icon));
-
-        QWidget* pBubble = MakeBubble(role, msg);
-        pChatItem->setWidget(pBubble);
-        ui->chat_data_list->appendChatItem(pChatItem);
     }
+
+    pChatItem->setWidget(MakeBubble(role, msg));
+    return pChatItem;
 }
 
 QWidget* ChatPage::MakeBubble(ChatRole role, std::shared_ptr<TextChatData> msg)

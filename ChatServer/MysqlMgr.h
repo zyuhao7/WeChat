@@ -21,8 +21,9 @@ public:
     bool GetFriendList(int self_id, std::vector<std::shared_ptr<UserInfo>>& _info);
     bool AddChatMessages(int from_uid, int to_uid,
                          const std::vector<std::pair<std::string, std::string>>& messages);
-    bool GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
-                        std::vector<std::shared_ptr<ChatMessageInfo>>& messages);
+    // before_id is an exclusive upper bound; 0 returns the newest page
+    bool GetChatHistory(int self_uid, int peer_uid, long long before_id, int limit,
+                        std::vector<std::shared_ptr<ChatMessageInfo>>& messages, bool& has_more);
 
 private:
     MysqlMgr();

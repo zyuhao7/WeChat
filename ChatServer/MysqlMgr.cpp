@@ -71,8 +71,8 @@ bool MysqlMgr::AddChatMessages(int from_uid, int to_uid,
     return _dao.AddChatMessages(from_uid, to_uid, messages);
 }
 
-bool MysqlMgr::GetChatHistory(int self_uid, int peer_uid, long long last_id, int limit,
-                              std::vector<std::shared_ptr<ChatMessageInfo>>& messages)
+bool MysqlMgr::GetChatHistory(int self_uid, int peer_uid, long long before_id, int limit,
+                              std::vector<std::shared_ptr<ChatMessageInfo>>& messages, bool& has_more)
 {
-    return _dao.GetChatHistory(self_uid, peer_uid, last_id, limit, messages);
+    return _dao.GetChatHistory(self_uid, peer_uid, before_id, limit, messages, has_more);
 }
