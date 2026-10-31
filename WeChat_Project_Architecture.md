@@ -337,9 +337,12 @@ flowchart TB
 
 ### 4.6 Project config
 
-`Chat.pro`: `QT += core gui network widgets`, `CONFIG += c++11`, `RC_ICONS = icon.ico`, output to
-`./bin`. Resources in `rc.qrc` (icons/images); external `config.ini` and `style/stylesheet.qss` are
-copied into `bin` after build.
+`ChatClient.pro` (`TEMPLATE = subdirs`) groups four projects: the ElaWidgetTools static lib,
+the `chatcore` static lib (client sources without `main.cpp`), the app (`Chat.pro`) and the
+tests (`tests/tests.pro`). Everything uses `CONFIG += c++17`; the app outputs to `build/bin`.
+Resources in `rc.qrc` (icons/images) are compiled into `chatcore`. `config.ini` and `static/`
+are copied next to the binary by the launch script, or by `Chat.pro`'s `copy` / `xcopy`
+post-link steps on Windows.
 
 ---
 
@@ -646,10 +649,19 @@ node server.js                    # listens on 0.0.0.0:50052
 
 ### 9.4 Client (Qt)
 
-The client is a qmake project: open `ChatClient/Chat.pro` in Qt Creator, or
-`qmake && make` from a Qt kit shell. `Chat.pro` currently contains Windows-only post-link
-steps (`copy` / `xcopy`) and an MSVC-only flag, so building on Linux/macOS requires trimming
-those. The client build is **not verified in the Linux backend environment**.
+The client is a qmake project rooted at `ChatClient/ChatClient.pro`, which uses `SUBDIRS` to
+build the ElaWidgetTools static lib, `chatcore` (all client sources except `main.cpp`), the app
+(`Chat.pro`, only `main.cpp`) and the tests:
+
+```bash
+cd ChatClient && mkdir -p build && cd build
+qmake6 ../ChatClient.pro && make -j4   # build/bin/Chat, build/tests/client_tests
+```
+
+The app and tests link the same static libs, so editing a test only recompiles that `test_*.cpp`.
+`rc.qrc` lives in `chatcore`; `main.cpp` registers it with `Q_INIT_RESOURCE(rc)`.
+`scripts/start_client.sh` copies `config.ini` and `static/` next to the binary. The Linux/WSLg
+build is verified.
 
 ### 9.5 Data stores
 

@@ -14,8 +14,8 @@ SRC="$ROOT/ChatClient"
 BUILD="${BUILD:-$SRC/build}"
 
 command -v qmake6 >/dev/null || { echo "qmake6 not found" >&2; exit 1; }
-[ -f "$BUILD/Makefile" ] || {
-  echo "no $BUILD/Makefile; run: cd ChatClient/build && qmake6 ../Chat.pro && make" >&2
+[ -f "$BUILD/core/Makefile" ] || {
+  echo "no $BUILD/core/Makefile; run: cd ChatClient/build && qmake6 ../ChatClient.pro && make" >&2
   exit 1
 }
 
@@ -38,7 +38,7 @@ OUT="$SRC/compile_commands.json"
   for cpp in "$SRC"/*.cpp; do
     [ "$first" = 1 ] || printf ',\n'
     first=0
-    obj="$BUILD/$(basename "${cpp%.cpp}").o"
+    obj="$BUILD/core/$(basename "${cpp%.cpp}").o"
     printf ' {"directory": "%s", "file": "%s", "arguments": %s}' \
       "$BUILD" "$cpp" "$(json_args g++ "${BASE[@]}" "${DEFINES[@]}" "${INCS[@]}" -c "$cpp" -o "$obj")"
   done
