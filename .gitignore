@@ -20,6 +20,10 @@ VerifyServer/node_modules/
 # VerifyServer credentials: copy config.example.json to config.json and fill in
 VerifyServer/config.json
 
+# Claude Code personal config
+CLAUDE.local.md
+.claude/
+
 # 编辑器
 .vscode/
 .idea/
