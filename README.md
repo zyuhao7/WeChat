@@ -36,20 +36,20 @@
 ## 🏗️ Architecture and ports
 
 ```
-        Client (Qt)
-        │      │
-   HTTP │      │ TCP long connection
-  (8080)│      │ (8090)
-        ▼      ▼
-   ┌─────────┐  ┌──────────────────────┐
-   │GateServer│  │      ChatServer      │
-   │HTTP edge │  │ TCP 8090 / gRPC 50055│
-   └────┬────┘  └───────┬──────────────┘
-        │ gRPC          │ gRPC 50056 (node-to-node)
-   ┌────▼─────┐   ┌─────▼──────┐
-   │StatusServer│  │ ChatServer2│
-   │ gRPC 50053│  │   peer     │
-   └──────────┘   └────────────┘
+          Client (Qt)
+          │       │
+     HTTP │       │ TCP long connection
+    (8080)│       │ (8090)
+          ▼       ▼
+   ┌──────────┐  ┌───────────────────────┐
+   │GateServer│  │      ChatServer       │
+   │HTTP edge │  │ TCP 8090 / gRPC 50055 │
+   └────┬─────┘  └────────┬──────────────┘
+        │ gRPC            │ gRPC 50056 (node-to-node)
+   ┌────▼───────┐   ┌─────▼──────┐
+   │StatusServer│   │ ChatServer2│
+   │ gRPC 50053 │   │   peer     │
+   └────────────┘   └────────────┘
         │
         ├── VerifyServer (gRPC 50052, email codes, Node.js)
         ├── MySQL 3306 (users / friends / messages)
