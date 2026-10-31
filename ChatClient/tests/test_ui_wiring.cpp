@@ -187,13 +187,13 @@ private slots:
         connect(&page, &ChatPage::sig_append_send_chat_msg, &page,
                 [&](std::shared_ptr<TextChatData>) { ++emitted; });
 
-        emit TcpMgr::GetInstance()->sig_reconnecting(1, 1000);
+        emit TcpMgr::GetInstance() -> sig_reconnecting(1, 1000);
         QVERIFY(!send->isEnabled());
         QTest::mouseClick(send, Qt::LeftButton);
         QCOMPARE(emitted, 0);
         QCOMPARE(edit->toPlainText(), QStringLiteral("hello"));
 
-        emit TcpMgr::GetInstance()->sig_reconnected();
+        emit TcpMgr::GetInstance() -> sig_reconnected();
         QVERIFY(send->isEnabled());
         QTest::mouseClick(send, Qt::LeftButton);
         QCOMPARE(emitted, 1);

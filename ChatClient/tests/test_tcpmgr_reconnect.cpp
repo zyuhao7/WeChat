@@ -16,7 +16,8 @@ class FakeChatServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit FakeChatServer(QObject* parent = nullptr) : QObject(parent)
+    explicit FakeChatServer(QObject* parent = nullptr)
+        : QObject(parent)
     {
         QObject::connect(&_server, &QTcpServer::newConnection, this, [this]() {
             while (QTcpSocket* socket = _server.nextPendingConnection())
