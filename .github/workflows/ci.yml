@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -96,19 +97,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
 
-      - name: Build
+      - name: Build client and tests
         run: |
           mkdir -p build
           cd build
-          qmake6 ../ChatClient/Chat.pro
-          make -j"$(nproc)"
-
-      - name: Build tests
-        run: |
-          mkdir -p build/client-tests
-          cd build/client-tests
-          qmake6 ../../ChatClient/tests/tests.pro
+          qmake6 ../ChatClient/ChatClient.pro
           make -j"$(nproc)"
 
       - name: Test
-        run: QT_QPA_PLATFORM=offscreen ./build/client-tests/client_tests
+        run: QT_QPA_PLATFORM=offscreen ./build/tests/client_tests

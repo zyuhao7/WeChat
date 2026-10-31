@@ -1,0 +1,14 @@
+name: CI (dev_xh)
+
+# Runs the same jobs as ci.yml on the development branch. This file is
+# intentionally kept off master: when merging dev_xh, drop it from the merge.
+on:
+  push:
+    branches: [dev_xh]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
