@@ -8,7 +8,7 @@ BIN="$ROOT/ChatClient/build/bin"
 
 if [ ! -x "$BIN/Chat" ]; then
   echo "client not built; run:" >&2
-  echo "  cd $ROOT/ChatClient && mkdir -p build && cd build && qmake6 ../Chat.pro && make -j4" >&2
+  echo "  cd $ROOT/ChatClient && mkdir -p build && cd build && qmake6 ../ChatClient.pro && make -j4" >&2
   exit 1
 fi
 

@@ -9,6 +9,10 @@ int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
 
+    // rc.qrc lives in the static chatcore lib; the link only keeps it when the
+    // initializer is referenced from the executable.
+    Q_INIT_RESOURCE(rc);
+
     // Initialize the Fluent (ElaWidgetTools) framework: registers its resources
     // and applies the base font/attributes used by all Ela widgets.
     eApp->init();

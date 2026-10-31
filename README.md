@@ -130,9 +130,12 @@ node server.js              # listens on 0.0.0.0:50052
 ```bash
 cd ChatClient
 mkdir -p build && cd build
-qmake6 ../Chat.pro
+qmake6 ../ChatClient.pro
 make -j4                    # output: ChatClient/build/bin/Chat
 ```
+
+This builds the vendored ElaWidgetTools and the client sources as shared static libs, then
+links both the app and the test binary against them.
 
 Or use the launcher, which also copies the `config.ini` and `static/` the app expects next to
 the binary:
@@ -173,15 +176,20 @@ The backend uses GoogleTest + CTest and the client uses Qt Test; both run in CI 
 cmake -S . -B build && cmake --build build -j4
 ctest --test-dir build --output-on-failure
 
-# Client: 4 suites (UserMgr, list paging, friend requests, text messages)
-mkdir -p build/client-tests && cd build/client-tests
-qmake6 ../../ChatClient/tests/tests.pro && make -j"$(nproc)"
-QT_QPA_PLATFORM=offscreen ./client_tests
+# Client: 10 suites (UserMgr, list paging, dialogs, text messages, file transfer,
+# crop helpers, UI wiring, chat view, reconnect)
+cd ChatClient/build
+QT_QPA_PLATFORM=offscreen ./tests/client_tests
 ```
+
+The client tests are built together with the app by `ChatClient.pro`; only the `test_*.cpp`
+files are recompiled when a test changes.
 
 ## 🔄 Continuous integration
 
-`.github/workflows/ci.yml` runs two jobs on every push to master and on every pull request:
+`.github/workflows/ci.yml` runs four jobs on every push to master and on every pull request.
+`.github/workflows/ci-dev-xh.yml` reuses the same workflow for pushes to `dev_xh`; it is
+development-only and is dropped when merging into master.
 
 - **backend**: install backend dependencies → CMake build → `ctest`
 - **client**: install Qt6 → build the client → build the tests → run them with

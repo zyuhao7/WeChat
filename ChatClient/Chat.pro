@@ -4,9 +4,10 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-# Modern Fluent UI toolkit (ElaWidgetTools), compiled directly into the app.
-include(third_party/ElaWidgetTools/ElaWidgetTools.pri)
-
+# The Fluent toolkit and the shared client sources are built once by
+# ChatClient.pro as static libs; this project only adds main().
+LIBS += -L$$OUT_PWD/lib -lchatcore -lElaWidgetTools
+include(third_party/ElaWidgetTools/ElaWidgetToolsDep.pri)
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -14,7 +15,7 @@ include(third_party/ElaWidgetTools/ElaWidgetTools.pri)
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 RC_ICONS = icon.ico
-DESTDIR = ./bin
+DESTDIR = $$OUT_PWD/bin
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -22,128 +23,12 @@ DESTDIR = ./bin
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    adduseritem.cpp \
-    applyfriend.cpp \
-    applyfrienditem.cpp \
-    applyfriendlist.cpp \
-    applyfriendpage.cpp \
-    authenfriend.cpp \
-    bubbleframe.cpp \
-    chatdialog.cpp \
-    chatitembase.cpp \
-    chatpage.cpp \
-    chatuserlist.cpp \
-    chatuserwid.cpp \
-    chatview.cpp \
-    clickedbtn.cpp \
-    clickedlabel.cpp \
-    clickedoncelabel.cpp \
-    contactuserlist.cpp \
-    conuseritem.cpp \
-    cropdialog.cpp \
-    customizeedit.cpp \
-    findfaildlg.cpp \
-    findsuccessdlg.cpp \
-    filebubble.cpp \
-    filetransfermgr.cpp \
-    friendinfopage.cpp \
-    friendlabel.cpp \
-    global.cpp \
-    grouptipitem.cpp \
-    httpmgr.cpp \
-    liquidglass.cpp \
-    listitembase.cpp \
-    loadingdlg.cpp \
-    logindialog.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    messagetextedit.cpp \
-    picturebubble.cpp \
-    registdialog.cpp \
-    resetdialog.cpp \
-    searchlist.cpp \
-    statewidget.cpp \
-    tcpmgr.cpp \
-    textbubble.cpp \
-    timerbtn.cpp \
-    userdata.cpp \
-    usermgr.cpp
-
-HEADERS += \
-    adduseritem.h \
-    applyfriend.h \
-    applyfrienditem.h \
-    applyfriendlist.h \
-    applyfriendpage.h \
-    authenfriend.h \
-    bubbleframe.h \
-    chatdialog.h \
-    chatitembase.h \
-    chatpage.h \
-    chatuserlist.h \
-    chatuserwid.h \
-    chatview.h \
-    clickedbtn.h \
-    clickedlabel.h \
-    clickedoncelabel.h \
-    contactuserlist.h \
-    conuseritem.h \
-    cropdialog.h \
-    customizeedit.h \
-    findfaildlg.h \
-    findsuccessdlg.h \
-    filebubble.h \
-    filetransfermgr.h \
-    friendinfopage.h \
-    friendlabel.h \
-    global.h \
-    grouptipitem.h \
-    httpmgr.h \
-    liquidglass.h \
-    listitembase.h \
-    loadingdlg.h \
-    logindialog.h \
-    mainwindow.h \
-    messagetextedit.h \
-    picturebubble.h \
-    registdialog.h \
-    resetdialog.h \
-    searchlist.h \
-    singleton.h \
-    statewidget.h \
-    tcpmgr.h \
-    textbubble.h \
-    timerbtn.h \
-    userdata.h \
-    usermgr.h
-
-FORMS += \
-    adduseritem.ui \
-    applyfriend.ui \
-    applyfrienditem.ui \
-    applyfriendpage.ui \
-    authenfriend.ui \
-    chatdialog.ui \
-    chatpage.ui \
-    chatuserwid.ui \
-    conuseritem.ui \
-    findfaildlg.ui \
-    findsuccessdlg.ui \
-    friendinfopage.ui \
-    friendlabel.ui \
-    grouptipitem.ui \
-    loadingdlg.ui \
-    logindialog.ui \
-    registdialog.ui \
-    resetdialog.ui
+    main.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-RESOURCES += \
-    rc.qrc
 
 DISTFILES += \
     config.ini
@@ -157,7 +42,7 @@ CONFIG(debug, debug|release) {
     #replace "/" in the input dir with "\"
     TargetConfig = $$replace(TargetConfig, /, \\)
     #replace "/" in the output dir with "\"
-    OutputDir =  $${OUT_PWD}/$${DESTDIR}
+    OutputDir =  $$DESTDIR
     OutputDir = $$replace(OutputDir, /, \\)
     #run the copy command
     win32: QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\" &
@@ -178,7 +63,7 @@ CONFIG(debug, debug|release) {
     #replace "/" in the input dir with "\"
     TargetConfig = $$replace(TargetConfig, /, \\)
     #replace "/" in the output dir with "\"
-    OutputDir =  $${OUT_PWD}/$${DESTDIR}
+    OutputDir =  $$DESTDIR
     OutputDir = $$replace(OutputDir, /, \\)
     #run the copy command
     win32: QMAKE_POST_LINK += copy /Y \"$$TargetConfig\" \"$$OutputDir\"

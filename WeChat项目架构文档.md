@@ -296,7 +296,11 @@ flowchart TB
 
 ### 4.6 工程配置
 
-`Chat.pro`：`QT += core gui network widgets`，`CONFIG += c++11`，`RC_ICONS = icon.ico`，输出到 `./bin`。资源 `rc.qrc`（图标/图片），外部 `config.ini` 与 `style/stylesheet.qss` 构建后拷贝到 `bin`。
+`ChatClient.pro`（`TEMPLATE = subdirs`）组织四个子工程：ElaWidgetTools 静态库、`chatcore`
+静态库（客户端源码，不含 `main.cpp`）、`Chat.pro`（应用）与 `tests/tests.pro`。统一
+`CONFIG += c++17`，应用输出到 `build/bin`。资源 `rc.qrc`（图标/图片）编译进 `chatcore`；
+`config.ini` 与 `static/` 由启动脚本复制到二进制旁，Windows 下由 `Chat.pro` 的 `copy` /
+`xcopy` 后置步骤处理。
 
 ---
 
@@ -597,9 +601,18 @@ node server.js                    # 监听 0.0.0.0:50052
 
 ### 9.4 客户端（Qt）
 
-客户端为 qmake 工程：用 Qt Creator 打开 `ChatClient/Chat.pro`，或在 Qt 工具链 shell 中
-`qmake && make`。当前 `Chat.pro` 含 Windows 专用的构建后置步骤（`copy` / `xcopy`）和 MSVC 专用
-参数，在 Linux/macOS 上构建需先删除这些。**客户端构建未在本 Linux 后端环境验证。**
+客户端为 qmake 工程，根工程 `ChatClient/ChatClient.pro` 用 `SUBDIRS` 依次构建
+`third_party/ElaWidgetTools`（静态库）、`chatcore.pro`（除 `main.cpp` 外的客户端源码静态库）、
+`Chat.pro`（仅 `main.cpp` 的应用）与 `tests/tests.pro`：
+
+```bash
+cd ChatClient && mkdir -p build && cd build
+qmake6 ../ChatClient.pro && make -j4   # build/bin/Chat、build/tests/client_tests
+```
+
+两个静态库由应用和测试共用，改测试时只需重编译对应 `test_*.cpp`。`rc.qrc` 在 `chatcore`
+静态库中，`main.cpp` 通过 `Q_INIT_RESOURCE(rc)` 注册。`config.ini` 与 `static/` 由
+`scripts/start_client.sh` 复制到二进制旁。Linux/WSLg 构建已实际验证。
 
 ### 9.5 数据存储
 
