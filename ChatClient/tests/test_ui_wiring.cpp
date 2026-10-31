@@ -90,6 +90,23 @@ private slots:
         QVERIFY(tip->text().contains(QStringLiteral("6")));
     }
 
+    void enterInEitherFieldSubmitsTheLogin()
+    {
+        LoginDialog dialog;
+        dialog.show();
+        auto* email = dialog.findChild<QLineEdit*>("email_edit");
+        auto* pass = dialog.findChild<QLineEdit*>("pass_edit");
+        auto* tip = dialog.findChild<QLabel*>("err_tip");
+
+        // empty form: the same validation as the button must run on Enter
+        QTest::keyClick(pass, Qt::Key_Return);
+        QVERIFY(!tip->text().isEmpty());
+
+        tip->clear();
+        QTest::keyClick(email, Qt::Key_Return);
+        QVERIFY(!tip->text().isEmpty());
+    }
+
     void escapeKeepsTheEmbeddedDialogVisible()
     {
         LoginDialog dialog;

@@ -17,6 +17,9 @@ LoginDialog::LoginDialog(QWidget* parent)
     ui->setupUi(this);
     ui->pass_edit->setEchoMode(QLineEdit::Password);
     connect(ui->reg_btn, &QPushButton::clicked, this, &LoginDialog::switchRegister);
+    // Enter in either field submits the form
+    connect(ui->email_edit, &QLineEdit::returnPressed, this, &LoginDialog::on_login_btn_clicked);
+    connect(ui->pass_edit, &QLineEdit::returnPressed, this, &LoginDialog::on_login_btn_clicked);
 
     ui->forget_label->SetState("normal", "hover", "", "selected", "selected_hover", "");
     ui->forget_label->setCursor(Qt::PointingHandCursor);

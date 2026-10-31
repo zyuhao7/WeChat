@@ -5,8 +5,8 @@
 
 #include <QVBoxLayout>
 #include <QLayout>
-#include <QMessageBox>
 #include <QStackedWidget>
+#include "ElaMessageBar.h"
 
 // Title-bar height; the page container lives in the central area below it.
 static const int kAppBarHeight = 48;
@@ -174,10 +174,11 @@ void MainWindow::SlotSwitchChat()
 
 void MainWindow::SlotOffline()
 {
-    // pop up the message box via a static method
-    QMessageBox::information(this, "下线提醒", "同账号异地登录, 该客户端下线!");
     TcpMgr::GetInstance()->CloseConnection();
     offlineLogin();
+    // in-window toast: a modal QMessageBox can surface as a stray top-level window
+    ElaMessageBar::warning(ElaMessageBarType::TopLeft, QStringLiteral("下线提醒"),
+                           QStringLiteral("已在别处登录"), 3000, this);
 }
 
 void MainWindow::SlotReconnecting(int attempt, int delayMs)
@@ -195,9 +196,10 @@ void MainWindow::SlotReconnected()
 void MainWindow::SlotReconnectFailed()
 {
     setWindowTitle("Chat");
-    QMessageBox::information(this, "网络异常", "自动重连失败，请重新登录。");
     TcpMgr::GetInstance()->CloseConnection();
     offlineLogin();
+    ElaMessageBar::warning(ElaMessageBarType::TopLeft, QStringLiteral("网络异常"),
+                           QStringLiteral("请重新登录"), 3000, this);
 }
 
 void MainWindow::offlineLogin()
