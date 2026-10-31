@@ -10,14 +10,48 @@ TcpMgr::~TcpMgr()
 
 void TcpMgr::CloseConnection()
 {
-    _socket.abort();
+    // intentional shutdown: stop the backoff loop so abort() cannot trigger a reconnect
+    _manual_close = true;
+    _kicked = false;
+    _reconnecting = false;
+    _logged_in = false;
+    _reconnect_attempt = 0;
+    _reconnect_timer.stop();
+    if (_socket.state() != QAbstractSocket::UnconnectedState)
+        _socket.abort();
 }
 
 TcpMgr::TcpMgr()
-    : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
+    : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0),
+      _server_info{}, _reconnect_attempt(0), _logged_in(false), _reconnecting(false),
+      _reconnect_suppressed(false), _manual_close(false), _kicked(false)
 {
+    _reconnect_timer.setSingleShot(true);
+    QObject::connect(&_reconnect_timer, &QTimer::timeout, [this]() {
+        if (_manual_close || _kicked || !_logged_in)
+            return;
+        if (_socket.state() != QAbstractSocket::UnconnectedState)
+        {
+            // aborting a half-open socket must not be mistaken for a fresh failure
+            _reconnect_suppressed = true;
+            _socket.abort();
+            _reconnect_suppressed = false;
+        }
+        _buffer.clear();
+        _b_recv_pending = false;
+        _message_id = 0;
+        _message_len = 0;
+        _socket.connectToHost(_host, _port);
+    });
+
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
         qDebug() << "Connected to server!";
+        if (_reconnecting)
+        {
+            // the chat server accepted the socket; restore the session with the stored token
+            SendChatLogin();
+            return;
+        }
         // send the message after the connection is established
         emit sig_con_success(true);
     });
@@ -69,79 +103,33 @@ TcpMgr::TcpMgr()
         }
     });
 
-    // versions after 5.15
-    QObject::connect(&_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred), [&](QAbstractSocket::SocketError socketError) {
+    QObject::connect(&_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred), [this](QAbstractSocket::SocketError socketError) {
         Q_UNUSED(socketError)
         qDebug() << "Error:" << _socket.errorString();
+        if (_logged_in && !_manual_close && !_kicked)
+        {
+            ScheduleReconnect();
+        }
+        else if (!_logged_in && !_reconnecting)
+        {
+            // initial connect failed: let the login dialog re-enable its button
+            emit sig_con_success(false);
+        }
     });
 
-    // QObject::connect(&_socket, &QTcpSocket::errorOccurred,
-    //                  [&](QTcpSocket::SocketError socketError) {
-    //                      qDebug() << "Error:" << _socket.errorString();
-    //                      switch (socketError) {
-    //                      case QTcpSocket::ConnectionRefusedError:
-    //                          qDebug() << "Connection Refused!";
-    //                          emit sig_con_success(false);
-    //                          break;
-    //                      case QTcpSocket::RemoteHostClosedError:
-    //                          qDebug() << "Remote Host Closed Connection!";
-    //                          break;
-    //                      case QTcpSocket::HostNotFoundError:
-    //                          qDebug() << "Host Not Found!";
-    //                          emit sig_con_success(false);
-    //                          break;
-    //                      case QTcpSocket::SocketTimeoutError:
-    //                          qDebug() << "Connection Timeout!";
-    //                          emit sig_con_success(false);
-    //                          break;
-    //                      case QTcpSocket::NetworkError:
-    //                          qDebug() << "Network Error!";
-    //                          break;
-    //                      default:
-    //                          qDebug() << "Other Error!";
-    //                          break;
-    //                      }
-    //                  });
-
-    // handle the error (for Qt versions before 5.15)
-    // QObject::connect(&_socket, static_cast<void (QTcpSocket::*)(QTcpSocket::SocketError)>(&QTcpSocket::error),
-    //                     [&](QTcpSocket::SocketError socketError) {
-    //        qDebug() << "Error:" << _socket.errorString() ;
-    //        switch (socketError) {
-    //            case QTcpSocket::ConnectionRefusedError:
-    //                qDebug() << "Connection Refused!";
-    //                emit sig_con_success(false);
-    //                break;
-    //            case QTcpSocket::RemoteHostClosedError:
-    //                qDebug() << "Remote Host Closed Connection!";
-    //                break;
-    //            case QTcpSocket::HostNotFoundError:
-    //                qDebug() << "Host Not Found!";
-    //                emit sig_con_success(false);
-    //                break;
-    //            case QTcpSocket::SocketTimeoutError:
-    //                qDebug() << "Connection Timeout!";
-    //                emit sig_con_success(false);
-    //                break;
-    //            case QTcpSocket::NetworkError:
-    //                qDebug() << "Network Error!";
-    //                break;
-    //            default:
-    //                qDebug() << "Other Error!";
-    //                break;
-    //        }
-    //  });
-
     // handle the disconnection
-    QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
+    QObject::connect(&_socket, &QTcpSocket::disconnected, [this]() {
         qDebug() << "Disconnected from server.";
         // drop any half-parsed frame so the next session starts clean
         _buffer.clear();
         _b_recv_pending = false;
         _message_id = 0;
         _message_len = 0;
-        // emit a signal to notify the UI
+        // still notify listeners (file transfers fail fast); the UI path is driven by
+        // sig_reconnecting / sig_reconnect_failed, not by this raw event
         emit sig_connection_closed();
+        if (_logged_in && !_manual_close && !_kicked)
+            ScheduleReconnect();
     });
 
     //  // connect the send signal used to send data
@@ -151,8 +139,49 @@ TcpMgr::TcpMgr()
     initHandlers();
 }
 
+// caller guarantees the session was authenticated and the close was not intentional
+void TcpMgr::ScheduleReconnect()
+{
+    if (_reconnect_suppressed || _reconnect_timer.isActive())
+        return;
+    if (_reconnect_attempt >= TcpReconnect::kMaxAttempts)
+    {
+        qDebug() << "reconnect gave up after" << _reconnect_attempt << "attempts";
+        _reconnecting = false;
+        _logged_in = false;
+        emit sig_reconnect_failed();
+        return;
+    }
+
+    ++_reconnect_attempt;
+    _reconnecting = true;
+    const int delay = TcpReconnect::delayMs(_reconnect_attempt);
+    qDebug() << "reconnect attempt" << _reconnect_attempt << "in" << delay << "ms";
+    _reconnect_timer.start(delay);
+    emit sig_reconnecting(_reconnect_attempt, delay);
+}
+
+void TcpMgr::SendChatLogin()
+{
+    QJsonObject jsonObj;
+    jsonObj["uid"] = _server_info.Uid;
+    jsonObj["token"] = _server_info.Token;
+    slot_send_data(ReqId::ID_CHAT_LOGIN, QJsonDocument(jsonObj).toJson(QJsonDocument::Indented));
+}
+
 void TcpMgr::initHandlers()
 {
+    _handlers.insert(ID_NOTIFY_OFF_LINE_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        Q_UNUSED(data);
+        // another login owns the uid now; reconnecting would just kick it back
+        _kicked = true;
+        _reconnecting = false;
+        _reconnect_timer.stop();
+        emit sig_notify_offline();
+    });
+
     _handlers.insert(ID_CHAT_LOGIN_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
         qDebug() << "handle id is " << id;
@@ -173,7 +202,18 @@ void TcpMgr::initHandlers()
         {
             int err = ErrorCodes::ERR_JSON;
             qDebug() << "Login Failed, err is Json Parse Err" << err;
-            emit sig_login_failed(err);
+            if (_reconnecting)
+            {
+                // the stored token is no longer valid; stop retrying and fall back to login
+                _reconnecting = false;
+                _logged_in = false;
+                _reconnect_timer.stop();
+                emit sig_reconnect_failed();
+            }
+            else
+            {
+                emit sig_login_failed(err);
+            }
             return;
         }
 
@@ -181,9 +221,25 @@ void TcpMgr::initHandlers()
         if (err != ErrorCodes::SUCCESS)
         {
             qDebug() << "Login Failed, err is " << err;
-            emit sig_login_failed(err);
+            if (_reconnecting)
+            {
+                _reconnecting = false;
+                _logged_in = false;
+                _reconnect_timer.stop();
+                emit sig_reconnect_failed();
+            }
+            else
+            {
+                emit sig_login_failed(err);
+            }
             return;
         }
+
+        const bool resumed = _reconnecting;
+        _reconnecting = false;
+        _reconnect_attempt = 0;
+        _reconnect_timer.stop();
+        _logged_in = true;
 
         auto uid = jsonObj["uid"].toInt();
         auto name = jsonObj["name"].toString();
@@ -207,7 +263,10 @@ void TcpMgr::initHandlers()
             UserMgr::GetInstance()->AppendFriendList(jsonObj["friend_list"].toArray());
         }
 
-        emit sig_swich_chatdlg();
+        if (resumed)
+            emit sig_reconnected();
+        else
+            emit sig_swich_chatdlg();
     });
 
     _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data) {
@@ -592,6 +651,14 @@ void TcpMgr::slot_tcp_connect(ServerInfo si)
     qDebug() << "Connecting to server...";
     _host = si.Host;
     _port = static_cast<uint16_t>(si.Port.toUInt());
+    // keep the credentials so an interrupted session can log back in without the user
+    _server_info = si;
+    _logged_in = false;
+    _reconnecting = false;
+    _reconnect_attempt = 0;
+    _manual_close = false;
+    _kicked = false;
+    _reconnect_timer.stop();
     // a stale socket (still closing after a heartbeat timeout, or mid
     // lookup for a previous host) turns connectToHost into a no-op.
     if (_socket.state() != QAbstractSocket::UnconnectedState)

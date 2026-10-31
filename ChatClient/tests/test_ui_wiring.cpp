@@ -11,6 +11,7 @@
 #include "messagetextedit.h"
 #include "registdialog.h"
 #include "resetdialog.h"
+#include "tcpmgr.h"
 #include "usermgr.h"
 
 // These tests drive the real widgets, so a refactor that drops a connect() or renames a
@@ -168,6 +169,34 @@ private slots:
         QTest::mouseClick(send, Qt::LeftButton);
 
         QCOMPARE(emitted, 0);
+    }
+
+    void sendingIsHeldBackWhileReconnecting()
+    {
+        UserMgr::GetInstance()->SetUserInfo(std::make_shared<UserInfo>(6, "tester", ""));
+        ChatPage page;
+        page.SetUserInfo(std::make_shared<UserInfo>(9, "peer", ""));
+
+        auto* edit = page.findChild<MessageTextEdit*>("chatEdit");
+        auto* send = page.findChild<QPushButton*>("send_btn");
+        QVERIFY(edit);
+        QVERIFY(send);
+        edit->setPlainText(QStringLiteral("hello"));
+
+        int emitted = 0;
+        connect(&page, &ChatPage::sig_append_send_chat_msg, &page,
+                [&](std::shared_ptr<TextChatData>) { ++emitted; });
+
+        emit TcpMgr::GetInstance()->sig_reconnecting(1, 1000);
+        QVERIFY(!send->isEnabled());
+        QTest::mouseClick(send, Qt::LeftButton);
+        QCOMPARE(emitted, 0);
+        QCOMPARE(edit->toPlainText(), QStringLiteral("hello"));
+
+        emit TcpMgr::GetInstance()->sig_reconnected();
+        QVERIFY(send->isEnabled());
+        QTest::mouseClick(send, Qt::LeftButton);
+        QCOMPARE(emitted, 1);
     }
 };
 

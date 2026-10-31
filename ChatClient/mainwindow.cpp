@@ -60,8 +60,10 @@ MainWindow::MainWindow(QWidget* parent)
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_swich_chatdlg, this, &MainWindow::SlotSwitchChat);
     // connect the server kick message
     connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_notify_offline, this, &MainWindow::SlotOffline);
-    // connect the server-disconnect / heartbeat-timeout / exception connection info
-    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_connection_closed, this, &MainWindow::SlotExcepConOffline);
+    // automatic reconnect after an unexpected drop
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnecting, this, &MainWindow::SlotReconnecting);
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnected, this, &MainWindow::SlotReconnected);
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnect_failed, this, &MainWindow::SlotReconnectFailed);
 }
 
 MainWindow::~MainWindow()
@@ -174,13 +176,26 @@ void MainWindow::SlotOffline()
 {
     // pop up the message box via a static method
     QMessageBox::information(this, "下线提醒", "同账号异地登录, 该客户端下线!");
+    TcpMgr::GetInstance()->CloseConnection();
     offlineLogin();
 }
 
-void MainWindow::SlotExcepConOffline()
+void MainWindow::SlotReconnecting(int attempt, int delayMs)
 {
-    // pop up the message box via a static method
-    QMessageBox::information(this, "下线提醒", "心跳超时/临界异常, 该客户端下线!");
+    setWindowTitle(QString("Chat - 连接中断，第 %1 次重连（%2 秒后）")
+                       .arg(attempt)
+                       .arg(delayMs / 1000));
+}
+
+void MainWindow::SlotReconnected()
+{
+    setWindowTitle("Chat");
+}
+
+void MainWindow::SlotReconnectFailed()
+{
+    setWindowTitle("Chat");
+    QMessageBox::information(this, "网络异常", "自动重连失败，请重新登录。");
     TcpMgr::GetInstance()->CloseConnection();
     offlineLogin();
 }
