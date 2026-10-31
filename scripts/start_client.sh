@@ -47,8 +47,24 @@ export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"
 # toolkits at it (Qt/GTK read these; XMODIFIERS covers the XIM fallback).
 # wayland/waylandim are disabled: WSLg's compositor denies the input-method
 # protocol and the resulting fatal Wayland error kills the whole daemon.
+#
+# fcitx5 talks to its clients over the session bus, so a dead bus leaves it
+# running but unreachable: Ctrl+Space then does nothing and every field stays
+# ASCII. Make sure a bus is listening before starting the daemon.
 if command -v fcitx5 >/dev/null 2>&1; then
-  pgrep -x fcitx5 >/dev/null 2>&1 || fcitx5 -d --disable wayland,waylandim >/dev/null 2>&1 || true
+  if ! dbus-send --session --print-reply --dest=org.freedesktop.DBus / \
+      org.freedesktop.DBus.GetId >/dev/null 2>&1; then
+    runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus"
+    # nothing answers on the old socket, so removing it cannot cut off a live daemon
+    [ -S "$runtime/bus" ] && rm -f "$runtime/bus"
+    dbus-daemon --session --fork --address="$DBUS_SESSION_BUS_ADDRESS" >/dev/null 2>&1
+  fi
+  # a daemon attached to a bus that has since died cannot be reached either
+  if ! fcitx5-remote -n >/dev/null 2>&1; then
+    pkill -x fcitx5 >/dev/null 2>&1 || true
+    fcitx5 -d --disable wayland,waylandim >/dev/null 2>&1 || true
+  fi
   export QT_IM_MODULE="${QT_IM_MODULE:-fcitx}"
   export GTK_IM_MODULE="${GTK_IM_MODULE:-fcitx}"
   export XMODIFIERS="${XMODIFIERS:-@im=fcitx}"
