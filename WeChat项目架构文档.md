@@ -8,35 +8,41 @@
 
 系统分为**客户端**与**服务端**两大部分。服务端由四个独立进程组成，通过 gRPC 与 Redis/MySQL 协作：
 
-```
-                        ┌─────────────────────────────┐
-                        │        ChatClient (Qt)       │
-                        │   Qt Widgets + QSS 仿微信 UI │
-                        └───────┬──────────────┬───────┘
-                                │              │
-                     HTTP (8080)│              │TCP 长连接 (8090)
-                    登录/注册/改密│              │protobuf 自定义帧协议
-                                ▼              ▼
-                    ┌───────────────┐   ┌──────────────────┐
-                    │  GateServer    │   │   ChatServer      │
-                    │ Boost.Asio+Beast│  │ Boost.Asio (TCP)  │
-                    │ HTTP 网关      │   │ gRPC 服务端(50055)│
-                    └──┬────┬────┬───┘   └───┬──────┬────────┘
-              gRPC     │    │    │  gRPC     │      │  gRPC(跨服)
-          (50052)      │    │    └──────────►│      │
-                       ▼    │  (50053)       │      ▼
-             ┌──────────────┐│ ┌──────────────┴─┐ ┌──────────────┐
-             │ VerifyServer ││ │  StatusServer  │ │ ChatServer 2 │
-             │  Node.js     ││ │  gRPC 服务端   │ │  (peer 节点) │
-             │  邮件验证码  ││ │  负载均衡/发号 │ │  gRPC(50056) │
-             └──────┬───────┘│ └───────┬────────┘ └──────┬───────┘
-                    │        │         │                  │
-                    └────────┴─────────┴──────────────────┘
-                                     │
-                          ┌──────────┴──────────┐
-                          │   Redis    MySQL    │
-                          │ 缓存/会话   持久存储 │
-                          └─────────────────────┘
+```mermaid
+flowchart TB
+    Client["ChatClient (Qt)<br/>Qt Widgets + QSS 仿微信 UI"]
+    subgraph Gate["GateServer · HTTP 网关 :8080"]
+        direction LR
+        CServer["CServer / HttpConnection"] --> Logic["LogicSystem<br/>路由 + 鉴权"]
+    end
+    subgraph Verify["VerifyServer · Node.js :50052"]
+        V["验证码生成 + SMTP"]
+    end
+    subgraph Status["StatusServer · C++ :50053"]
+        S["选服 + token 发号"]
+    end
+    subgraph Chat1["ChatServer 1 · TCP :8090 / gRPC :50055"]
+        CS1["CSession + LogicSystem + UserMgr"]
+    end
+    subgraph Chat2["ChatServer 2 · 对等节点 :50056"]
+        CS2["CSession + LogicSystem + UserMgr"]
+    end
+    Redis[("Redis<br/>token · 路由 · 在线数")]
+    MySQL[("MySQL<br/>用户 · 好友 · 聊天记录")]
+
+    Client -->|HTTP| CServer
+    Client -->|TCP 长连接| CS1
+    Logic -->|gRPC| V
+    Logic -->|gRPC| S
+    Logic --> MySQL
+    Logic --> Redis
+    V --> Redis
+    S --> Redis
+    CS1 --> Redis
+    CS1 --> MySQL
+    CS1 <-->|gRPC 跨服转发| CS2
+    CS2 --> Redis
+    CS2 --> MySQL
 ```
 
 **核心设计思想：**
@@ -83,6 +89,19 @@
   | POST | `/user_login` | `CheckPwd` 校验密码 → `StatusGrpcClient::GetChatServer(uid)` 取 token 与目标 ChatServer 地址 → 返回 host/port/token |
 
 - **依赖的下游**：VerifyServer（gRPC 50052）、StatusServer（gRPC 50053）、MySQL、Redis。
+
+```mermaid
+flowchart LR
+    Client["Client"] -->|HTTP GET/POST| CServer["CServer<br/>accept"]
+    CServer --> Conn["HttpConnection<br/>异步读写 · 60s 空闲超时"]
+    Conn -->|HandleGet / HandlePost| Logic["LogicSystem<br/>路由表"]
+    Logic -->|/user_register · /reset_pwd · /user_login| MySQL[("MySQL")]
+    Logic -->|"校验 / 消费 code_{email}"| Redis[("Redis")]
+    Logic -->|/get_verify_code| VG["VerifyGrpcClient"] -->|gRPC :50052| VS["VerifyServer"]
+    Logic -->|/user_login| SG["StatusGrpcClient"] -->|gRPC :50053| SS["StatusServer"]
+    Conn -->|WriteResponse · shutdown_send| Client
+```
+
 - **配置** `GateServer/config.ini`：`[GateServer] Port`、`[VerifyServer]`、`[StatusServer]`、`[Mysql]`、`[Redis]`。
 
 ### 3.2 StatusServer — 状态/调度服务（C++）
@@ -97,6 +116,24 @@
     3. 生成 UUID token，写入 Redis `utoken_<uid>`；
     4. 返回 `host / port / token`。
   - `Login(uid, token)`：比对 Redis `utoken_<uid>`，供 ChatServer 二次校验。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as GateServer
+    participant S as StatusServer
+    participant R as Redis
+    G->>S: gRPC GetChatServer(uid)
+    loop 遍历配置的 ChatServer
+        S->>R: HGET logincount {server_name}
+        R-->>S: 在线数，空值视为已下线
+    end
+    Note over S: PickServer 选在线数最少者
+    S->>R: SETEX utoken_{uid} 600 UUID token
+    S-->>G: host + port + token
+    Note over S,G: Login(uid, token) RPC 保留，但网关不调用；ChatServer 直接读 Redis 校验
+```
+
 - **配置**：需读取 `[chatservers] Name = chatserver1,chatserver2` 及每个节点的 Host/Port。仓库现已提供 `StatusServer/config.ini` 示例，部署时按实际环境调整。
 
 ### 3.3 VerifyServer — 邮件验证码服务（Node.js）
@@ -105,6 +142,32 @@
 
 - **入口**：`VerifyServer/server.js`，gRPC 监听 `0.0.0.0:50052`（与 config.ini 及 C++ 侧一致）。
 - **逻辑**：先用 `verify.js` 校验邮箱格式，再用 `SET NX EX` 抢占每邮箱 60 秒的重发名额；若 `code_<email>` 仍在有效期内则复用（重发得到同一个验证码），否则生成 6 位补零随机码并以 600 秒 TTL 写入，随后调用 `email.js`（nodemailer，`smtp.yeah.net:465` 加密发送）。发送失败或写入 Redis 失败会释放名额。GateServer 侧验证码为一次性，注册/重置成功即删除。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as GateServer
+    participant V as VerifyServer
+    participant R as Redis
+    participant E as SMTP / 用户邮箱
+    G->>V: gRPC GetVerifyCode(email)
+    alt 邮箱格式非法
+        V-->>G: InvalidEmail (3)
+    else 格式合法
+        V->>R: SET verify_cooldown_{email} 1 EX 60 NX
+        alt 名额已被占用
+            V-->>G: TooFrequent (4)
+        else 抢到名额
+            V->>R: GET code_{email}
+            Note over V: 有旧码则复用，否则生成 6 位随机码
+            V->>R: SET code_{email} 6位码 EX 600
+            V->>E: SMTP 发送验证码
+            V-->>G: Success (0)
+        end
+    end
+    Note over G,R: 注册/重置时 GateServer 自己 GET code_{email} 比对，成功后 DEL 消费
+```
+
 - **错误码**：`InvalidEmail = 3` / `TooFrequent = 4` 由 GateServer 原样透传，客户端在 `error` 字段中可见。
 - **`redis.js`**：基于 ioredis，带 10 秒心跳与自动重连，封装 `GetRedis / QueryRedis / SetRedisExpire / SetRedisNxExpire / DelRedis`。
 - **配置** `VerifyServer/config.json`：`email.host/user/pass`、`redis.host/port/passwd`。该文件未被 git 跟踪（已 gitignore），复制 `config.example.json` 填写即可。
@@ -150,7 +213,7 @@
 
 **消息路由核心逻辑**：处理任意消息时，先用 Redis `uip_<touid>` 查目标用户所在 ChatServer 名。若等于本机名，直接经 `UserMgr` 取 session 推送；否则调用 `ChatGrpcClient` 走 gRPC 转发到目标节点，由对端 `ChatServiceImpl` 落入其本地 session。
 
-**心跳与离线**：每 60 秒巡检所有 session，`_last_heartbeat` 超过 60 秒判为过期 → `Close()` → `DealExceptionSesseion()`。后者用**分布式锁** `lock_<uid>` 保护，校验 Redis `usession_<uid>` 是否仍等于本 session（防误删新登录会话），再清理 `usession_`/`uip_` 键并移除会话。
+**心跳与离线**：每 60 秒巡检所有 session，`_last_heartbeat` 超过 300 秒判为过期 → `Close()` → `DealExceptionSesseion()`。后者用**分布式锁** `lock_<uid>` 保护，校验 Redis `usession_<uid>` 是否仍等于本 session（防误删新登录会话），再清理 `usession_`/`uip_` 键并移除会话。
 
 ---
 
@@ -160,8 +223,18 @@
 
 `main.cpp` 加载 QSS 样式、读取 `config.ini` 拼出 `gate_url_prefix`，构造 `MainWindow`。`MainWindow` 以状态机切换中央控件：
 
-```
-LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialog（主界面，≥1050x900）
+```mermaid
+flowchart LR
+    L["LoginDialog"] -->|switchRegister| RG["RegistDialog<br/>注册"]
+    L -->|switchReset| RS["ResetDialog<br/>重置密码"]
+    RG -->|sigSwitchLogin| L
+    RS -->|switchLogin| L
+    L -->|MSG_CHAT_LOGIN_RSP 成功<br/>TcpMgr::sig_swich_chatdlg| CD["ChatDialog<br/>主界面 ≥1050×900"]
+    CD --> CP["ChatPage"]
+    CD --> FI["FriendInfoPage"]
+    CD --> AF["ApplyFriendPage"]
+    CD --> AU["AuthenFriend"]
+    CD --> AV["CropDialog"]
 ```
 
 `ChatDialog` 为用户登录后的 IM 主壳（聊天列表 / 联系人 / 搜索 / 聊天页 / 心跳）。
@@ -203,6 +276,22 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 - `ChatItemBase`：网格布局行（昵称 + 42×42 头像 + 气泡），按 `ChatRole::Self/Other` 左右镜像。
 - `TextBubble`：透明只读 QTextEdit，`eventFilter` 动态调整高度与宽度。
 - `PictureBubble`：缩放 QLabel（最大 160×90）。
+
+```mermaid
+flowchart TB
+    subgraph Grid["ChatItemBase · QGridLayout（Self 时左右镜像）"]
+        direction LR
+        Spacer["列 0<br/>spacer"]
+        Name["第 0 行 · 第 1 列<br/>m_pNameLabel"]
+        Icon["第 0-1 行 · 第 2 列<br/>m_pIconLabel 42×42"]
+        Bubble["第 1 行 · 第 1 列<br/>m_pBubble"]
+    end
+    Spacer --- Name
+    Name --- Bubble
+    Bubble -->|setMessageWidget| Frame["BubbleFrame<br/>圆角矩形 + 三角尾巴"]
+    Frame --> Text["TextBubble<br/>只读 QTextEdit"]
+    Frame --> Pic["PictureBubble<br/>QLabel 最大 160×90"]
+```
 - `ChatView`：QScrollArea + QVBoxLayout，追加消息时自动滚到底部。
 
 ### 4.6 工程配置
@@ -272,50 +361,154 @@ LoginDialog ⇄ RegistDialog / ResetDialog ──登录成功──► ChatDialo
 
 ### 6.1 注册
 
-```
-Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► SMTP 发信
-                                        └─► Redis code_<email> (TTL 600)
-Client ──POST /user_register──► Gate ─► 校验 code_<email> ─► MysqlMgr::RegUser ─► 建号
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant G as GateServer
+    participant V as VerifyServer
+    participant R as Redis
+    participant M as MySQL
+    C->>G: POST /get_verify_code {email}
+    G->>V: gRPC GetVerifyCode(email)
+    V->>R: 写 code_{email}，TTL 600s
+    V-->>G: Success
+    G-->>C: 已发送
+    Note over V: VerifyServer 通过 SMTP 直接发到用户邮箱
+    C->>G: POST /user_register {email, code, pwd}
+    G->>R: GET code_{email}
+    R-->>G: 验证码
+    alt 不存在或不匹配
+        G-->>C: VerifyExpired / VerifyCodeErr
+    else 匹配
+        G->>M: MysqlMgr::RegUser
+        G->>R: DEL code_{email}
+        G-->>C: 注册成功
+    end
 ```
 
 ### 6.2 登录与建连（核心链路）
 
-```
-Client ──POST /user_login──► GateServer
-                               ├─ MysqlMgr::CheckPwd(uid, pwd)
-                               └─ gRPC StatusServer.GetChatServer(uid)
-                                     ├─ 选在线数最少的 ChatServer
-                                     ├─ 生成 UUID token → Redis utoken_<uid>
-                                     └─ 返回 host/port/token
-Client ◄─ {error, uid, token, host, port}
-Client ──TCP 连接 ChatServer:8090，发送 MSG_CHAT_LOGIN {uid, token}
-ChatServer.LoginHandler
-   ├─ 校验 Redis utoken_<uid>
-   ├─ 拉取用户信息 + 好友列表 + 申请列表
-   ├─ （顶号）若 uip_<uid> 已存在且为本机 → 踢掉旧会话
-   ├─ Redis: uip_<uid>=本机名，usession_<uid>=sessionId
-   └─ UserMgr: uid → session 绑定，回 MSG_CHAT_LOGIN_RSP
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant G as GateServer
+    participant M as MySQL
+    participant S as StatusServer
+    participant R as Redis
+    participant CS as ChatServer
+
+    C->>G: POST /user_login (email + XOR 密码)
+    G->>M: CheckPwd(email, pwd)
+    M-->>G: uid
+    G->>S: gRPC GetChatServer(uid)
+    S->>R: HGET logincount (遍历所有 ChatServer)
+    R-->>S: 各服在线数
+    Note over S: PickServer 选在线数最少者，无计数视为已下线
+    S->>R: SETEX utoken_{uid} 600 (UUID token)
+    S-->>G: host + port + token
+    G-->>C: {error, uid, token, host, port}
+
+    C->>CS: TCP 连接 8090，MSG_CHAT_LOGIN (1005) {uid, token}
+    CS->>R: GET utoken_{uid}
+    R-->>CS: token
+    alt token 不匹配
+        CS-->>C: MSG_CHAT_LOGIN_RSP (1006) 错误
+    else token 匹配
+        CS->>M: LoadUserInfoByUid + 好友列表 + 申请列表
+        M-->>CS: 用户信息
+        CS->>R: SET uip_{uid} = 本机名，usession_{uid} = sessionId
+        Note over CS: uip_{uid} 已是本机旧会话时，先下发 ID_NOTIFY_OFF_LINE_REQ 顶号
+        CS->>R: HINCR logincount (本机名)
+        CS-->>C: MSG_CHAT_LOGIN_RSP (1006) 成功
+    end
 ```
 
-### 6.3 发文本消息
+### 6.3 加好友与通过验证
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Client A
+    participant SA as ChatServer A
+    participant R as Redis
+    participant M as MySQL
+    participant SB as ChatServer B
+    participant B as Client B
+
+    A->>SA: ID_ADD_FRIEND_REQ (1009) {touid}
+    SA->>M: AddFriendApply(uid, touid)
+    SA->>R: GET uip_{touid}
+    R-->>SA: 对方服务器名
+    alt 同服
+        SA-->>B: ID_NOTIFY_ADD_FRIEND_REQ (1011)
+    else 跨服
+        SA->>SB: gRPC NotifyAddFriend(AddFriendReq)
+        SB-->>B: ID_NOTIFY_ADD_FRIEND_REQ (1011)
+    end
+    SA-->>A: ID_ADD_FRIEND_RSP (1010)
+    Note over SB,B: 对方离线时找不到 session，通知丢弃，但申请已落库
+    B->>SB: ID_AUTH_FRIEND_REQ (1013) {touid = A}
+    SB->>M: AuthFriendApply + AddFriend 双向写库
+    SB->>R: GET uip_{fromuid}
+    R-->>SB: 申请人服务器名
+    alt 同服
+        SB-->>A: ID_NOTIFY_AUTH_FRIEND_REQ (1015)
+    else 跨服
+        SB->>SA: gRPC NotifyAuthFriend(AuthFriendReq)
+        SA-->>A: ID_NOTIFY_AUTH_FRIEND_REQ (1015)
+    end
+    SB-->>B: ID_AUTH_FRIEND_RSP (1014)
 ```
-Client A ──1017 ID_TEXT_CHAT_MSG_REQ──► ChatServer A
-   ├─ 查 Redis uip_<B>
-   ├─ 同机：UserMgr 取 B 的 session → 直接 Send(1019)
-   └─ 跨机：ChatGrpcClient.NotifyTextChatMsg(目标节点)
-             └─ ChatServer B 的 ChatServiceImpl → 推给 B 的 session(1019)
-   └─ 同时回 A: 1018 RSP
+
+### 6.4 发文本消息
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Client A
+    participant SA as ChatServer A
+    participant M as MySQL
+    participant R as Redis
+    participant SB as ChatServer B
+    participant B as Client B
+    A->>SA: ID_TEXT_CHAT_MSG_REQ (1017) {touid, text_array}
+    SA->>M: AddChatMessages（失败只丢历史）
+    SA->>R: GET uip_{touid}
+    R-->>SA: 对方服务器名
+    alt 同服
+        SA-->>B: ID_NOTIFY_TEXT_CHAT_MSG_REQ (1019)
+    else 跨服
+        SA->>SB: gRPC NotifyTextChatMsg
+        SB-->>B: ID_NOTIFY_TEXT_CHAT_MSG_REQ (1019)
+    end
+    SA-->>A: ID_TEXT_CHAT_MSG_RSP (1018)
 ```
 
-加好友申请、认证通过同理，均采用「Redis 定位 → 同机直推 / 跨机 gRPC」模式。
+### 6.5 心跳与离线
 
-### 6.4 心跳与离线
-
-```
-Client 每 10s ──1023 心跳──► ChatServer 回 1024，并刷新 session._last_heartbeat
-ChatServer 每 60s 巡检：超过 60s 未心跳 → 关连接 → DealExceptionSesseion
-   └─ 分布式锁 lock_<uid> 保护下校验 usession_<uid>，清理路由与在线数
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant CS as ChatServer
+    participant R as Redis
+    C->>CS: 每 10s ID_HEART_BEAT_REQ (1023)
+    CS-->>C: ID_HEART_BEAT_RSP (1024)
+    Note over CS: 收到任意帧都会刷新 _last_heartbeat
+    loop 每 60s 巡检
+        CS->>CS: 超过 300s 无消息 → Close
+        CS->>R: acquireLock(lock_{uid})
+        CS->>R: GET usession_{uid}
+        alt 仍等于本 session
+            CS->>R: DEL usession_{uid} · uip_{uid}
+        else 已被新登录替换
+            Note over CS: 不删键，避免误删新会话
+        end
+        CS->>R: releaseLock(lock_{uid})
+    end
+    Note over CS,R: 巡检同时按本机在线 uid 数 HSet logincount
 ```
 
 ---
@@ -489,7 +682,7 @@ WeChat/
 └── WeChat_Project_Architecture.md（英文版）
 ```
 
-各服务目录中还包含 `.drawio` 架构/时序图文件，可用 draw.io 打开查看设计图。
+架构与关键流程的完整图集见 [`docs/diagrams.md`](docs/diagrams.md)（Mermaid，GitHub/GitLab/VS Code 可直接渲染）。各服务目录下旧的 `.drawio` 文件已由该图集取代并移除。
 
 ---
 

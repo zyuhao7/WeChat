@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
                            createChatDialogTest(), createChatDialogTextMsgTest(),
                            createServerErrorTextTest(), createFileTransferHelpersTest(),
                            createCropDialogHelpersTest(), createUiWiringTest(),
-                           createChatViewTest()})
+                           createChatViewTest(), createTcpMgrReconnectTest()})
     {
         status |= QTest::qExec(suite, argc, argv);
         delete suite;

@@ -49,7 +49,9 @@ public slots:
     void SlotSwitchLogin2();
     void SlotSwitchChat();
     void SlotOffline();
-    void SlotExcepConOffline();
+    void SlotReconnecting(int attempt, int delayMs);
+    void SlotReconnected();
+    void SlotReconnectFailed();
 
 protected:
     void resizeEvent(QResizeEvent* event) override;

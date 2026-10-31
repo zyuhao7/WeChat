@@ -44,6 +44,7 @@ private:
     FileBubble* AddFileBubble(ChatRole role, std::shared_ptr<TextChatData> msg);
     Ui::ChatPage* ui;
     std::shared_ptr<UserInfo> _user_info;
+    bool _reconnecting = false;
     QMap<QString, QWidget*> _bubble_map;
     QHash<QString, FileBubble*> _file_bubbles;                // keyed by file id
     QHash<QString, std::shared_ptr<TextChatData>> _file_msgs; // so the path can stick

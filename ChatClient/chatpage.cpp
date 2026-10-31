@@ -17,6 +17,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QUuid>
+#include "ElaMessageBar.h"
 
 ChatPage::ChatPage(QWidget* parent)
     : QWidget(parent),
@@ -35,6 +36,19 @@ ChatPage::ChatPage(QWidget* parent)
     connect(ui->chatEdit, &MessageTextEdit::send, this, &ChatPage::on_send_btn_clicked);
     connect(ui->file_lb, &ClickedLabel::clicked, this, &ChatPage::on_file_lb_clicked);
     connect(ui->chat_data_list, &ChatView::sig_reached_top, this, &ChatPage::sig_load_more_history);
+
+    // a message typed while the socket is down would be dropped silently, so hold the draft back
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnecting, this, [this](int, int) {
+        _reconnecting = true;
+        ui->send_btn->setEnabled(false);
+    });
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnected, this, [this]() {
+        _reconnecting = false;
+        ui->send_btn->setEnabled(true);
+    });
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_reconnect_failed, this, [this]() {
+        _reconnecting = false;
+    });
 }
 
 ChatPage::~ChatPage()
@@ -182,6 +196,14 @@ void ChatPage::on_send_btn_clicked()
     if (_user_info == nullptr)
     {
         qDebug() << "friend_info is empty";
+        return;
+    }
+
+    if (_reconnecting)
+    {
+        // keep the draft: the socket is down, so sending now would look delivered but go nowhere
+        ElaMessageBar::warning(ElaMessageBarType::TopRight, QStringLiteral("未发送"),
+                               QStringLiteral("连接已断开，正在重连，消息未发送"), 3000, this);
         return;
     }
 
