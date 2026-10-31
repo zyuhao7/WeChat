@@ -13,35 +13,41 @@
 The system splits into a **client** and a **server**. The server is four independent processes
 that cooperate over gRPC and talk to Redis / MySQL:
 
-```
-                        ┌─────────────────────────────┐
-                        │        ChatClient (Qt)       │
-                        │   Qt Widgets + QSS 仿微信 UI │
-                        └───────┬──────────────┬───────┘
-                                │              │
-                     HTTP (8080)│              │TCP long conn (8090)
-                     login/reg/pwd              │custom protobuf frame
-                                ▼              ▼
-                    ┌───────────────┐   ┌──────────────────┐
-                    │  GateServer    │   │   ChatServer      │
-                    │ Boost.Asio+Beast│  │ Boost.Asio (TCP)  │
-                    │ HTTP gateway   │   │ gRPC server(50055)│
-                    └──┬────┬────┬───┘   └───┬──────┬────────┘
-              gRPC     │    │    │  gRPC     │      │  gRPC(peer)
-          (50052)      │    │    └──────────►│      │
-                       ▼    │  (50053)       │      ▼
-             ┌──────────────┐│ ┌──────────────┴─┐ ┌──────────────┐
-             │ VerifyServer ││ │  StatusServer  │ │ ChatServer 2 │
-             │  Node.js     ││ │  gRPC server   │ │  (peer node) │
-             │  email codes ││ │  LB / ID alloc │ │  gRPC(50056) │
-             └──────┬───────┘│ └───────┬────────┘ └──────┬───────┘
-                    │        │         │                  │
-                    └────────┴─────────┴──────────────────┘
-                                     │
-                          ┌──────────┴──────────┐
-                          │   Redis    MySQL    │
-                          │ cache/session  store│
-                          └─────────────────────┘
+```mermaid
+flowchart TB
+    Client["ChatClient (Qt)<br/>Qt Widgets + QSS, WeChat-like UI"]
+    subgraph Gate["GateServer · HTTP gateway :8080"]
+        direction LR
+        CServer["CServer / HttpConnection"] --> Logic["LogicSystem<br/>routing + auth"]
+    end
+    subgraph Verify["VerifyServer · Node.js :50052"]
+        V["code generation + SMTP"]
+    end
+    subgraph Status["StatusServer · C++ :50053"]
+        S["server selection + token issue"]
+    end
+    subgraph Chat1["ChatServer 1 · TCP :8090 / gRPC :50055"]
+        CS1["CSession + LogicSystem + UserMgr"]
+    end
+    subgraph Chat2["ChatServer 2 · peer node :50056"]
+        CS2["CSession + LogicSystem + UserMgr"]
+    end
+    Redis[("Redis<br/>token · routing · online count")]
+    MySQL[("MySQL<br/>users · friends · history")]
+
+    Client -->|HTTP| CServer
+    Client -->|TCP long-lived| CS1
+    Logic -->|gRPC| V
+    Logic -->|gRPC| S
+    Logic --> MySQL
+    Logic --> Redis
+    V --> Redis
+    S --> Redis
+    CS1 --> Redis
+    CS1 --> MySQL
+    CS1 <-->|gRPC cross-server forwarding| CS2
+    CS2 --> Redis
+    CS2 --> MySQL
 ```
 
 **Core design ideas**
@@ -97,6 +103,19 @@ and verify-code requests.
   | POST | `/user_login` | `CheckPwd` → `StatusGrpcClient::GetChatServer(uid)` → return host/port/token |
 
 - **Downstream deps**: VerifyServer (gRPC 50052), StatusServer (gRPC 50053), MySQL, Redis.
+
+```mermaid
+flowchart LR
+    Client["Client"] -->|HTTP GET/POST| CServer["CServer<br/>accept"]
+    CServer --> Conn["HttpConnection<br/>async read/write · 60s idle timeout"]
+    Conn -->|HandleGet / HandlePost| Logic["LogicSystem<br/>route table"]
+    Logic -->|/user_register · /reset_pwd · /user_login| MySQL[("MySQL")]
+    Logic -->|"check / consume code_{email}"| Redis[("Redis")]
+    Logic -->|/get_verify_code| VG["VerifyGrpcClient"] -->|gRPC :50052| VS["VerifyServer"]
+    Logic -->|/user_login| SG["StatusGrpcClient"] -->|gRPC :50053| SS["StatusServer"]
+    Conn -->|WriteResponse · shutdown_send| Client
+```
+
 - **Config** `GateServer/config.ini`: `[GateServer] Port`, `[VerifyServer]`, `[StatusServer]`,
   `[Mysql]`, `[Redis]`.
 
@@ -114,6 +133,24 @@ and verify-code requests.
     3. generate a UUID token, write Redis `utoken_<uid>`;
     4. return `host / port / token`.
   - `Login(uid, token)`: compares against Redis `utoken_<uid>`; used by ChatServer for a second check.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as GateServer
+    participant S as StatusServer
+    participant R as Redis
+    G->>S: gRPC GetChatServer(uid)
+    loop over configured ChatServers
+        S->>R: HGET logincount {server_name}
+        R-->>S: online count, missing value means offline
+    end
+    Note over S: PickServer chooses the lowest online count
+    S->>R: SETEX utoken_{uid} 600 UUID token
+    S-->>G: host + port + token
+    Note over S,G: Login(uid, token) RPC is kept but not called by the gateway. ChatServer reads Redis directly.
+```
+
 - **Config**: needs `[chatservers] Name = chatserver1,chatserver2` plus a section per node with
   Host/Port. A sample `StatusServer/config.ini` is included; adjust for the deployment.
 
@@ -128,6 +165,32 @@ and verify-code requests.
   6-digit zero-padded code and store it with a 600s TTL, then call `email.js` (nodemailer,
   `smtp.yeah.net:465`, TLS). A failed send or a lost Redis write releases the slot. GateServer treats
   the code as single-use and deletes it after a successful register/reset.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as GateServer
+    participant V as VerifyServer
+    participant R as Redis
+    participant E as SMTP / user inbox
+    G->>V: gRPC GetVerifyCode(email)
+    alt invalid email format
+        V-->>G: InvalidEmail (3)
+    else valid
+        V->>R: SET verify_cooldown_{email} 1 EX 60 NX
+        alt slot already taken
+            V-->>G: TooFrequent (4)
+        else slot claimed
+            V->>R: GET code_{email}
+            Note over V: reuse the old code if present, else generate 6 digits
+            V->>R: SET code_{email} 6-digit code EX 600
+            V->>E: send code via SMTP
+            V-->>G: Success (0)
+        end
+    end
+    Note over G,R: GateServer compares code_{email} itself on register/reset, then DELs it
+```
+
 - **Error codes**: `InvalidEmail = 3` / `TooFrequent = 4` are passed straight through GateServer, so
   the client sees them as `error` values.
 - **`redis.js`**: ioredis-based with a 10s heartbeat and its own reconnect, exposing
@@ -181,7 +244,7 @@ If it equals the local name, push directly through `UserMgr`'s session; otherwis
 `ChatGrpcClient` to forward over gRPC, where the peer `ChatServiceImpl` drops it into its local
 session.
 
-**Heartbeat & offline**: every 60s sweep all sessions; `_last_heartbeat` older than 60s is expired →
+**Heartbeat & offline**: every 60s sweep all sessions; `_last_heartbeat` older than 300s is expired →
 `Close()` → `DealExceptionSesseion()`. The latter is guarded by the **distributed lock** `lock_<uid>`,
 verifies Redis `usession_<uid>` still equals this session (to avoid deleting a newly logged-in
 session), then clears `usession_`/`uip_` and removes the session.
@@ -195,8 +258,18 @@ session), then clears `usession_`/`uip_` and removes the session.
 `main.cpp` loads the QSS stylesheet, reads `config.ini` to build `gate_url_prefix`, and constructs
 `MainWindow`. `MainWindow` switches its central widget as a state machine:
 
-```
-LoginDialog ⇄ RegistDialog / ResetDialog ──login ok──► ChatDialog (main UI, ≥1050x900)
+```mermaid
+flowchart LR
+    L["LoginDialog"] -->|switchRegister| RG["RegistDialog<br/>register"]
+    L -->|switchReset| RS["ResetDialog<br/>reset password"]
+    RG -->|sigSwitchLogin| L
+    RS -->|switchLogin| L
+    L -->|MSG_CHAT_LOGIN_RSP success<br/>TcpMgr::sig_swich_chatdlg| CD["ChatDialog<br/>main window, min 1050x900"]
+    CD --> CP["ChatPage"]
+    CD --> FI["FriendInfoPage"]
+    CD --> AF["ApplyFriendPage"]
+    CD --> AU["AuthenFriend"]
+    CD --> AV["CropDialog"]
 ```
 
 `ChatDialog` is the post-login IM shell (chat list / contacts / search / chat page / heartbeat).
@@ -245,6 +318,22 @@ plain data structs: `SearchInfo`, `AddFriendApply`, `ApplyInfo`, `AuthInfo`, `Fr
 - `TextBubble`: transparent read-only QTextEdit; `eventFilter` adjusts height/width dynamically.
 - `PictureBubble`: scaled QLabel (max 160×90).
 - `ChatView`: QScrollArea + QVBoxLayout; auto-scrolls to bottom when appending.
+
+```mermaid
+flowchart TB
+    subgraph Grid["ChatItemBase · QGridLayout (mirrored when Self)"]
+        direction LR
+        Spacer["column 0<br/>spacer"]
+        Name["row 0 · column 1<br/>m_pNameLabel"]
+        Icon["rows 0-1 · column 2<br/>m_pIconLabel 42x42"]
+        Bubble["row 1 · column 1<br/>m_pBubble"]
+    end
+    Spacer --- Name
+    Name --- Bubble
+    Bubble -->|setMessageWidget| Frame["BubbleFrame<br/>rounded rect + tail"]
+    Frame --> Text["TextBubble<br/>read-only QTextEdit"]
+    Frame --> Pic["PictureBubble<br/>QLabel max 160x90"]
+```
 
 ### 4.6 Project config
 
@@ -318,50 +407,154 @@ services:
 
 ### 6.1 Registration
 
-```
-Client ──POST /get_verify_code──► Gate ──gRPC──► VerifyServer ──► SMTP send
-                                        └─► Redis code_<email> (TTL 600)
-Client ──POST /user_register──► Gate ─► check code_<email> ─► MysqlMgr::RegUser ─► create account
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant G as GateServer
+    participant V as VerifyServer
+    participant R as Redis
+    participant M as MySQL
+    C->>G: POST /get_verify_code {email}
+    G->>V: gRPC GetVerifyCode(email)
+    V->>R: write code_{email}, TTL 600s
+    V-->>G: Success
+    G-->>C: sent
+    Note over V: VerifyServer delivers it to the inbox over SMTP
+    C->>G: POST /user_register {email, code, pwd}
+    G->>R: GET code_{email}
+    R-->>G: stored code
+    alt missing or mismatched
+        G-->>C: VerifyExpired / VerifyCodeErr
+    else matched
+        G->>M: MysqlMgr::RegUser
+        G->>R: DEL code_{email}
+        G-->>C: registered
+    end
 ```
 
 ### 6.2 Login & connection (core path)
 
-```
-Client ──POST /user_login──► GateServer
-                               ├─ MysqlMgr::CheckPwd(uid, pwd)
-                               └─ gRPC StatusServer.GetChatServer(uid)
-                                     ├─ pick ChatServer with fewest online
-                                     ├─ UUID token → Redis utoken_<uid>
-                                     └─ return host/port/token
-Client ◄─ {error, uid, token, host, port}
-Client ──TCP connect ChatServer:8090, send MSG_CHAT_LOGIN {uid, token}
-ChatServer.LoginHandler
-   ├─ verify Redis utoken_<uid>
-   ├─ load user info + friend list + apply list
-   ├─ (kick-old) if uip_<uid> exists and is this node → kick old session
-   ├─ Redis: uip_<uid>=this node, usession_<uid>=sessionId
-   └─ UserMgr: bind uid → session, reply MSG_CHAT_LOGIN_RSP
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant G as GateServer
+    participant M as MySQL
+    participant S as StatusServer
+    participant R as Redis
+    participant CS as ChatServer
+
+    C->>G: POST /user_login (email + XOR password)
+    G->>M: CheckPwd(email, pwd)
+    M-->>G: uid
+    G->>S: gRPC GetChatServer(uid)
+    S->>R: HGET logincount (all ChatServers)
+    R-->>S: online count per node
+    Note over S: PickServer chooses the least-loaded node, no count means offline
+    S->>R: SETEX utoken_{uid} 600 (UUID token)
+    S-->>G: host + port + token
+    G-->>C: {error, uid, token, host, port}
+
+    C->>CS: TCP connect 8090, MSG_CHAT_LOGIN (1005) {uid, token}
+    CS->>R: GET utoken_{uid}
+    R-->>CS: token
+    alt token mismatch
+        CS-->>C: MSG_CHAT_LOGIN_RSP (1006) error
+    else token matches
+        CS->>M: LoadUserInfoByUid + friend list + apply list
+        M-->>CS: user info
+        CS->>R: SET uip_{uid} = this node, usession_{uid} = sessionId
+        Note over CS: if uip_{uid} is an old session on this node, send ID_NOTIFY_OFF_LINE_REQ first
+        CS->>R: HINCR logincount (this node)
+        CS-->>C: MSG_CHAT_LOGIN_RSP (1006) success
+    end
 ```
 
-### 6.3 Sending a text message
+### 6.3 Adding a friend & accepting
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Client A
+    participant SA as ChatServer A
+    participant R as Redis
+    participant M as MySQL
+    participant SB as ChatServer B
+    participant B as Client B
+
+    A->>SA: ID_ADD_FRIEND_REQ (1009) {touid}
+    SA->>M: AddFriendApply(uid, touid)
+    SA->>R: GET uip_{touid}
+    R-->>SA: peer server name
+    alt same node
+        SA-->>B: ID_NOTIFY_ADD_FRIEND_REQ (1011)
+    else cross node
+        SA->>SB: gRPC NotifyAddFriend(AddFriendReq)
+        SB-->>B: ID_NOTIFY_ADD_FRIEND_REQ (1011)
+    end
+    SA-->>A: ID_ADD_FRIEND_RSP (1010)
+    Note over SB,B: If the peer is offline there is no session, so the notify is dropped, but the request is already persisted
+    B->>SB: ID_AUTH_FRIEND_REQ (1013) {touid = A}
+    SB->>M: AuthFriendApply + AddFriend, both directions
+    SB->>R: GET uip_{fromuid}
+    R-->>SB: requester's server name
+    alt same node
+        SB-->>A: ID_NOTIFY_AUTH_FRIEND_REQ (1015)
+    else cross node
+        SB->>SA: gRPC NotifyAuthFriend(AuthFriendReq)
+        SA-->>A: ID_NOTIFY_AUTH_FRIEND_REQ (1015)
+    end
+    SB-->>B: ID_AUTH_FRIEND_RSP (1014)
 ```
-Client A ──1017 ID_TEXT_CHAT_MSG_REQ──► ChatServer A
-   ├─ look up Redis uip_<B>
-   ├─ same node: UserMgr session of B → Send(1019) directly
-   └─ cross node: ChatGrpcClient.NotifyTextChatMsg(target)
-             └─ ChatServer B's ChatServiceImpl → push to B's session (1019)
-   └─ also reply A: 1018 RSP
+
+### 6.4 Sending a text message
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Client A
+    participant SA as ChatServer A
+    participant M as MySQL
+    participant R as Redis
+    participant SB as ChatServer B
+    participant B as Client B
+    A->>SA: ID_TEXT_CHAT_MSG_REQ (1017) {touid, text_array}
+    SA->>M: AddChatMessages (failure only loses history)
+    SA->>R: GET uip_{touid}
+    R-->>SA: peer server name
+    alt same node
+        SA-->>B: ID_NOTIFY_TEXT_CHAT_MSG_REQ (1019)
+    else cross node
+        SA->>SB: gRPC NotifyTextChatMsg
+        SB-->>B: ID_NOTIFY_TEXT_CHAT_MSG_REQ (1019)
+    end
+    SA-->>A: ID_TEXT_CHAT_MSG_RSP (1018)
 ```
 
-Friend requests and auth follow the same "Redis locate → same-node push / cross-node gRPC" pattern.
+### 6.5 Heartbeat & offline
 
-### 6.4 Heartbeat & offline
-
-```
-Client every 10s ──1023 heartbeat──► ChatServer replies 1024, refreshes session._last_heartbeat
-ChatServer sweeps every 60s: no heartbeat > 60s → close → DealExceptionSesseion
-   └─ under distributed lock lock_<uid>, verify usession_<uid>, clear route & online count
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant CS as ChatServer
+    participant R as Redis
+    C->>CS: ID_HEART_BEAT_REQ (1023) every 10s
+    CS-->>C: ID_HEART_BEAT_RSP (1024)
+    Note over CS: any received frame refreshes _last_heartbeat
+    loop sweep every 60s
+        CS->>CS: no traffic for over 300s, then Close
+        CS->>R: acquireLock(lock_{uid})
+        CS->>R: GET usession_{uid}
+        alt still this session
+            CS->>R: DEL usession_{uid} · uip_{uid}
+        else replaced by a new login
+            Note over CS: keep the keys so the new session is not deleted
+        end
+        CS->>R: releaseLock(lock_{uid})
+    end
+    Note over CS,R: the same sweep HSets logincount per node
 ```
 
 ---
@@ -549,7 +742,9 @@ WeChat/
 └── WeChat_Project_Architecture.md (this document)
 ```
 
-Each service directory also holds `.drawio` architecture/sequence diagrams, openable in draw.io.
+The complete diagram set lives in [`docs/diagrams.md`](docs/diagrams.md) (Mermaid, rendered natively
+by GitHub/GitLab/VS Code preview). The legacy `.drawio` files in each service directory have been
+replaced by that document and removed.
 
 ---
 

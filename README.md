@@ -78,6 +78,7 @@ WeChat/
 ├── StatusServer/        Status and scheduling: token issuance, load-balanced ChatServer pick
 ├── VerifyServer/        Node.js email verification-code service
 ├── ChatServer/          Long-connection and messaging service (TCP + gRPC + Redis / MySQL)
+├── docs/diagrams.md     Architecture and flow diagrams (Mermaid)
 ├── run/chatserver2/     A second ChatServer node, used to exercise cross-node logic
 ├── scripts/             Start/stop scripts and end-to-end scripts
 ├── sql/db01.sql         MySQL schema and stored procedures
@@ -86,7 +87,8 @@ WeChat/
 └── .github/workflows/   CI configuration
 ```
 
-Each service directory also holds `.drawio` architecture / sequence diagrams, openable in draw.io.
+Architecture and sequence diagrams are collected in [`docs/diagrams.md`](docs/diagrams.md) as
+Mermaid blocks, rendered directly by GitHub, GitLab and VS Code Markdown preview.
 
 ## 🔧 Build and run
 
