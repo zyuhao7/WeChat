@@ -284,7 +284,10 @@ flowchart LR
     sent/received with `QDataStream`, partial packets buffered in `_b_recv_pending`.
   - **Dispatch**: `_handlers` maps msg id → slot (`HandleMsg`).
   - **Heartbeat**: `ChatDialog` sends `ID_HEART_BEAT_REQ` every 10s.
-  - **Disconnect**: no auto-reconnect; on `disconnected` it warns and forces back to login.
+  - **Reconnect**: an interrupted logged-in connection retries with exponential backoff
+    (1s, 2s, 4s … capped at 30s, 8 attempts). Sends are blocked while reconnecting and the
+    session is kept; a successful retry resumes silently. A kicked session or a rejected token
+    stops the loop and returns to login.
   - Connection params (Host/Port/Token/Uid) come from the login HTTP response.
 
 ### 4.3 Application state
@@ -732,7 +735,6 @@ proving the GateServer → MySQL → StatusServer(gRPC) → Redis chain works.
   `config.example.json` as the template — but its old values are still recoverable from git history
   and the leaked credentials still need rotating. `ChatServer/config.ini` etc. contain plaintext
   local-dev Redis passwords. Move to environment variables or placeholders before committing/deploying.
-- **No client auto-reconnect**: on disconnect it returns straight to login; no exponential backoff.
 - **`ipcount_`** is defined in `const.h` but never used — likely legacy.
 - **Console output encoding**: GBK-commented sources print garbled Chinese in a UTF-8 terminal.
 

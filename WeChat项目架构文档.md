@@ -246,7 +246,7 @@ flowchart LR
   - **帧格式**：4 字节头 = 2 字节消息 ID + 2 字节长度（大端），后接 JSON body；用 `QDataStream` 收发，半包用 `_b_recv_pending` 缓存。
   - **分发**：`_handlers` 按消息 ID 映射到槽函数（`HandleMsg`）。
   - **心跳**：由 `ChatDialog` 每 10 秒发 `ID_HEART_BEAT_REQ`。
-  - **断线**：不自动重连，`disconnected` → 提示并强制回登录页。
+  - **断线重连**：已登录连接意外断开后按 1s / 2s / 4s … 指数退避重试，最多 8 次（单次上限 30s）；重连期间保留会话并拦截发送，成功后静默恢复；被顶号或 token 失效则停止重连并回登录页。
   - 连接参数（Host/Port/Token/Uid）来自登录 HTTP 响应。
 
 ### 4.3 应用状态
@@ -674,7 +674,6 @@ curl -X POST http://127.0.0.1:8080/user_login -H 'Content-Type: application/json
 ### 10.2 遗留注意
 
 - **硬编码的敏感信息**：`VerifyServer/config.json` 现已不被 git 跟踪（已 gitignore），模板为 `config.example.json`；但旧值仍可从 git 历史中找回，泄露的凭据仍需轮换。`ChatServer/config.ini` 等含明文 Redis 密码（本地开发用）。提交或部署前应改用环境变量或占位符。
-- **客户端无自动重连**：断线后直接回登录页，未实现指数退避重连。
 - **`ipcount_` 键**在 `const.h` 中定义但无任何使用，疑为历史遗留。
 - **proto 生成代码版本**：各服务的 `message.pb.cc/.h` 为预生成产物，若本机 protoc 版本差异较大，建议用 `protoc` + `grpc_cpp_plugin` 重新生成。
 

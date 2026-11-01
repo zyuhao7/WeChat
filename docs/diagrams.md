@@ -256,7 +256,7 @@ stateDiagram-v2
     Online --> Closed: 300s 无任何消息
     Online --> Closed: 客户端断开 / 服务停止
     Closed --> [*]
-    note right of Online: 跨服踢人尚未实现，1021 只发给本机旧会话
+    note right of Online: 同服旧会话直接发 1021；跨服经 gRPC NotifyKickUser 通知旧节点清理会话并发 1021
 ```
 
 ## 11. 分布式锁
