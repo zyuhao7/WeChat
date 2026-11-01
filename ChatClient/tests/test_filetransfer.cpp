@@ -107,6 +107,45 @@ private slots:
         QCOMPARE(error, QStringLiteral("对方不在线"));
     }
 
+    void ackedHolesStayResumePoint()
+    {
+        OutgoingFile out;
+        out.total = 5;
+        out.acked_flags.assign(5, 0);
+
+        // an out-of-order ack must not advance past the missing chunk
+        out.MarkAcked(3);
+        QCOMPARE(out.acked, 1);
+        QCOMPARE(out.resume_from, 0);
+
+        out.MarkAcked(0);
+        QCOMPARE(out.resume_from, 1);
+
+        out.MarkAcked(1);
+        out.MarkAcked(2);
+        QCOMPARE(out.acked, 4);
+        QCOMPARE(out.resume_from, 4);
+
+        out.MarkAcked(4);
+        QCOMPARE(out.acked, 5);
+        QCOMPARE(out.resume_from, 5);
+
+        // duplicates and out-of-range indices are ignored
+        out.MarkAcked(4);
+        out.MarkAcked(-1);
+        out.MarkAcked(9);
+        QCOMPARE(out.acked, 5);
+        QCOMPARE(out.resume_from, 5);
+    }
+
+    void peerUnavailableErrorsKeepTheChunk()
+    {
+        QVERIFY(FileTransferMgr::IsPeerUnavailableError(1011));
+        QVERIFY(FileTransferMgr::IsPeerUnavailableError(1002));
+        QVERIFY(!FileTransferMgr::IsPeerUnavailableError(0));
+        QVERIFY(!FileTransferMgr::IsPeerUnavailableError(1013));
+    }
+
     void formatSizePicksAReadableUnit()
     {
         QCOMPARE(FileBubble::FormatSize(0), QString("0 B"));

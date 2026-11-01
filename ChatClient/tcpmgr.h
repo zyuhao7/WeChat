@@ -42,6 +42,7 @@ class TcpMgr : public QObject, public Singleton<TcpMgr>, public std::enable_shar
 public:
     ~TcpMgr();
     void CloseConnection();
+    bool IsReconnecting() const { return _reconnecting; }
 
 private:
     friend class Singleton<TcpMgr>;

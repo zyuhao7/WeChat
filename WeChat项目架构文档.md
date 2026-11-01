@@ -262,7 +262,7 @@ flowchart LR
 | `ResetDialog` | 验证码重置密码 |
 | `ChatDialog` | IM 主界面外壳，承载聊天/联系人/搜索/心跳 |
 | `ChatPage` | 单个好友的聊天页（历史 + 输入区） |
-| `FileTransferMgr` / `FileBubble` | 分块文件收发（16 块发送窗口、30s 超时看门狗）与传输气泡 |
+| `FileTransferMgr` / `FileBubble` | 分块文件收发（16 块发送窗口、断线重连续传、5s 巡检看门狗）与传输气泡 |
 | `CropDialog` | 点击侧边栏头像后选择图片并方形框选裁剪（按 uid 存本地，未上传服务器） |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | 聊天会话列表与滚动视图 |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | 发起加好友 / 处理好友申请 / 申请列表 |
@@ -700,7 +700,7 @@ WeChat/
 
 ## 12. 教程进度对照（gitbookcpp.llfc.club day01–day45）
 
-本项目按教程逐日实现，当前进度跟进到 **day37**，另已提前完成 day31（文件传输）、day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
+本项目按教程逐日实现，当前进度跟进到 **day38**，另已提前完成 day31（文件传输）、day32（分布式锁）与 day41（Qt 粘包处理）。day30 为面试技巧，无代码产出。
 
 `[x]` 已实现 / `[ ]` 未实现：
 
@@ -718,7 +718,7 @@ WeChat/
 [x] day31     文件传输                                                 → FileTransferMgr + ID_FILE_MSG_REQ/RSP
 [x] day36     Qt头像裁剪                                               → CropDialog（按 uid 存本地）
 [x] day37     聊天信息存储方案                                         → chat_message 表 + ID_GET_CHAT_HISTORY_REQ/RSP
-[ ] day38     断点续传
+[x] day38     断点续传                                                 → FileTransferMgr 会话内重连续传（含对端节点重启）
 [ ] day39     多媒体信息传输（语音/视频消息）
 [ ] day40     分布式事务死锁分析
 [x] day41     Qt粘包分析和解决                                         → tcpmgr _b_recv_pending
@@ -728,7 +728,7 @@ WeChat/
 [ ] day45     webrtc 信令服务器实现视频通信
 ```
 
-**后续待办顺序**：`day38 断点续传` → `day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
+**后续待办顺序**：`day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
 > 聊天消息由发送方所在 ChatServer **先落库再转发**，因此对端离线也能在下次打开会话时拉回。打开会话先取最新 50 条，滚动到顶部时以当前最旧 `last_id` 继续向上翻页，响应携带 `has_more`；消息以 `msg_id` 去重、以自增 `id` 排序。
 

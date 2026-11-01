@@ -319,7 +319,7 @@ sequenceDiagram
         SB->>B: ID_NOTIFY_FILE_MSG_REQ (1027)
     end
     SA-->>A: ID_FILE_MSG_RSP (1026) {fileid, index, error}
-    Note over SA: 一帧一个分片，服务端无状态转发；对端中途离线立即回 UidInvalid
+    Note over SA: 一帧一个分片，服务端无状态转发；对端暂时离线（同服会话消失或跨服节点不可达，服务端统一回 1011）时发送端保留未确认分片并在 60s 内重试，同一客户端会话内连接恢复后从最低未确认分片续传
 ```
 
 ## 14. 客户端 TCP 帧与粘包处理

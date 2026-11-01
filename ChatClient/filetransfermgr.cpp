@@ -20,6 +20,11 @@ const int SEND_WINDOW = 16;
 // offline, the relay dropped a frame, or the app was suspended.
 const qint64 STALL_MS = 30 * 1000;
 const int WATCHDOG_MS = 5 * 1000;
+// A receiver that is reconnecting looks offline to the relay. Keep the chunks queued and
+// retry often enough to catch its return, but not forever: after this window the peer is
+// treated as gone and the transfer fails.
+const qint64 PEER_RETRY_MS = 5 * 1000;
+const qint64 PEER_GRACE_MS = 60 * 1000;
 
 qint64 Now()
 {
@@ -40,6 +45,8 @@ FileTransferMgr::FileTransferMgr()
     connect(tcp.get(), &TcpMgr::sig_file_rsp, this, &FileTransferMgr::slot_file_rsp);
     connect(tcp.get(), &TcpMgr::sig_file_msg, this, &FileTransferMgr::slot_file_chunk);
     connect(tcp.get(), &TcpMgr::sig_connection_closed, this, &FileTransferMgr::slot_connection_closed);
+    connect(tcp.get(), &TcpMgr::sig_reconnected, this, &FileTransferMgr::slot_reconnected);
+    connect(tcp.get(), &TcpMgr::sig_reconnect_failed, this, &FileTransferMgr::slot_reconnect_failed);
 
     _watchdog.setInterval(WATCHDOG_MS);
     connect(&_watchdog, &QTimer::timeout, this, &FileTransferMgr::slot_check_timeouts);
@@ -98,6 +105,7 @@ QString FileTransferMgr::SendFile(int to_uid, const QString& path, QString* erro
     out->name = name;
     out->size = info.size();
     out->total = ChunkCount(out->size);
+    out->acked_flags.assign(out->total, 0);
     out->last_ack = Now();
     out->file.setFileName(path);
     if (!out->file.open(QIODevice::ReadOnly))
@@ -153,16 +161,32 @@ void FileTransferMgr::slot_file_rsp(int error, const QString& file_id, int index
     auto out = it.value();
     if (error != ErrorCodes::SUCCESS)
     {
-        // the peer is gone, so the rest of the file has nowhere to go
-        const QString reason = error == 1011 ? QStringLiteral("对方不在线，文件未发送") : serverErrorText(error);
-        FailSend(file_id, reason);
+        if (IsPeerUnavailableError(error))
+        {
+            // the receiver is offline, usually just reconnecting: drop the in-flight
+            // window and retry from the first unacked chunk after a short delay
+            const bool was_in_flight = out->in_flight.remove(index);
+            if (!was_in_flight && out->peer_offline_since != 0)
+                return; // stale reply from a window that is already being retried
+            if (out->peer_offline_since == 0)
+                out->peer_offline_since = Now();
+            out->peer_retry_at = Now() + PEER_RETRY_MS;
+            out->in_flight.clear();
+            out->next_index = out->resume_from;
+            out->last_ack = Now();
+            return;
+        }
+        // any other rejection is final
+        FailSend(file_id, serverErrorText(error));
         return;
     }
     if (!out->in_flight.remove(index))
         return; // duplicate reply; the index has already been counted
 
-    ++out->acked;
+    out->MarkAcked(index);
     out->last_ack = Now();
+    out->peer_offline_since = 0;
+    out->peer_retry_at = 0;
     if (out->acked >= out->total)
     {
         _sending.erase(it);
@@ -244,21 +268,54 @@ void FileTransferMgr::slot_file_chunk(const QJsonObject& obj)
 
 void FileTransferMgr::slot_check_timeouts()
 {
+    if (_suspended)
+        return;
+
     const qint64 now = Now();
 
     QStringList dead_send;
+    QStringList retry_send;
     for (auto it = _sending.begin(); it != _sending.end(); ++it)
     {
-        if (now - it.value()->last_ack > STALL_MS)
+        auto out = it.value();
+        if (out->peer_offline_since != 0)
+        {
+            if (now - out->peer_offline_since > PEER_GRACE_MS)
+                dead_send.append(it.key());
+            else if (now >= out->peer_retry_at)
+            {
+                out->peer_retry_at = now + PEER_RETRY_MS;
+                retry_send.append(it.key());
+            }
+            // the peer being away is not a stalled socket: only the grace window applies
+            continue;
+        }
+        if (now - out->last_ack > STALL_MS)
             dead_send.append(it.key());
     }
     for (const auto& id : dead_send)
-        FailSend(id, QStringLiteral("传输超时"));
+    {
+        auto it = _sending.find(id);
+        const bool peer_away = it != _sending.end() && it.value()->peer_offline_since != 0;
+        FailSend(id, peer_away ? QStringLiteral("对方不在线，文件未发送")
+                               : QStringLiteral("传输超时"));
+    }
+    for (const auto& id : retry_send)
+    {
+        auto it = _sending.find(id);
+        if (it == _sending.end())
+            continue;
+        auto out = it.value();
+        out->in_flight.clear();
+        out->next_index = out->resume_from;
+        Pump(*out);
+    }
 
     QStringList dead_recv;
     for (auto it = _receiving.begin(); it != _receiving.end(); ++it)
     {
-        if (now - it.value()->last_chunk > STALL_MS)
+        // give a reconnecting sender the same window the send side gives a peer
+        if (now - it.value()->last_chunk > PEER_GRACE_MS)
             dead_recv.append(it.key());
     }
     for (const auto& id : dead_recv)
@@ -267,17 +324,73 @@ void FileTransferMgr::slot_check_timeouts()
 
 void FileTransferMgr::slot_connection_closed()
 {
-    QStringList ids;
-    for (auto it = _sending.begin(); it != _sending.end(); ++it)
-        ids.append(it.key());
-    for (const auto& id : ids)
-        FailSend(id, QStringLiteral("连接已断开"));
+    // an automatic reconnect keeps the session and both partial files; only a final
+    // close (logout, kick, retries exhausted) tears the transfers down
+    if (TcpMgr::GetInstance()->IsReconnecting())
+    {
+        PauseAll();
+        return;
+    }
+    FailAll(QStringLiteral("连接已断开"));
+}
 
-    ids.clear();
-    for (auto it = _receiving.begin(); it != _receiving.end(); ++it)
-        ids.append(it.key());
+void FileTransferMgr::slot_reconnected()
+{
+    ResumeAll();
+}
+
+void FileTransferMgr::slot_reconnect_failed()
+{
+    FailAll(QStringLiteral("连接已断开"));
+}
+
+void FileTransferMgr::PauseAll()
+{
+    _suspended = true;
+    const qint64 now = Now();
+    for (auto& out : _sending)
+    {
+        // every in-flight frame died with the socket: resend from the first unacked chunk
+        out->in_flight.clear();
+        out->next_index = out->resume_from;
+        out->peer_offline_since = 0;
+        out->peer_retry_at = 0;
+        out->last_ack = now;
+    }
+    for (auto& inc : _receiving)
+        inc->last_chunk = now;
+}
+
+void FileTransferMgr::ResumeAll()
+{
+    _suspended = false;
+    const qint64 now = Now();
+    for (auto& inc : _receiving)
+        inc->last_chunk = now;
+    // Pump may fail and erase an entry, so take the ids first
+    const QStringList ids = _sending.keys();
     for (const auto& id : ids)
-        FailRecv(id, QStringLiteral("连接已断开"));
+    {
+        auto it = _sending.find(id);
+        if (it == _sending.end())
+            continue;
+        auto out = it.value();
+        out->last_ack = now;
+        out->peer_offline_since = 0;
+        out->peer_retry_at = 0;
+        Pump(*out);
+    }
+}
+
+void FileTransferMgr::FailAll(const QString& reason)
+{
+    _suspended = false;
+    const QStringList send_ids = _sending.keys();
+    for (const auto& id : send_ids)
+        FailSend(id, reason);
+    const QStringList recv_ids = _receiving.keys();
+    for (const auto& id : recv_ids)
+        FailRecv(id, reason);
 }
 
 void FileTransferMgr::FailSend(const QString& file_id, const QString& reason)
@@ -345,6 +458,15 @@ void FileTransferMgr::FinishRecv(const QString& file_id)
         return;
     }
     emit sig_recv_finished(file_id, inc->from_uid, inc->name, inc->path);
+}
+
+bool FileTransferMgr::IsPeerUnavailableError(int error)
+{
+    // UidInvalid: the node has no live session for the receiver (offline, or its node is
+    // restarting and has not accepted the login yet). RPCFailed: the node could not reach its
+    // peer to relay the chunk, which current servers fold into UidInvalid but older ones
+    // report raw. Both are transient and the chunk is still held.
+    return error == 1011 || error == 1002;
 }
 
 QString FileTransferMgr::SanitizeFileName(const QString& name)

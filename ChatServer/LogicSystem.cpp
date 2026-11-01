@@ -807,6 +807,11 @@ void LogicSystem::DealFileMsg(std::shared_ptr<CSession> session, const short& ms
 
     FileMsgRsp rsp = ChatGrpcClient::GetInstance()->NotifyFileMsg(to_ip_value, file_req);
     rtvalue["error"] = rsp.error();
+    // A failed relay means the peer node is unreachable (typically restarting), not that the
+    // chunk was rejected. Report the same "receiver offline" as the same-node path so the
+    // sender keeps the chunk and retries instead of failing the whole file.
+    if (rsp.error() == ErrorCodes::RPCFailed)
+        rtvalue["error"] = ErrorCodes::UidInvalid;
 }
 
 void LogicSystem::HeartBeatHandler(std::shared_ptr<CSession> session, const short& msg_id, const string& msg_data)
