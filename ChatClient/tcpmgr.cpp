@@ -125,11 +125,11 @@ TcpMgr::TcpMgr()
         _b_recv_pending = false;
         _message_id = 0;
         _message_len = 0;
-        // still notify listeners (file transfers fail fast); the UI path is driven by
-        // sig_reconnecting / sig_reconnect_failed, not by this raw event
-        emit sig_connection_closed();
+        // schedule first so listeners can tell a recoverable drop from a final one;
+        // the UI path is driven by sig_reconnecting / sig_reconnect_failed, not this raw event
         if (_logged_in && !_manual_close && !_kicked)
             ScheduleReconnect();
+        emit sig_connection_closed();
     });
 
     //  // connect the send signal used to send data

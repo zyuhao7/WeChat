@@ -284,7 +284,10 @@ flowchart LR
     sent/received with `QDataStream`, partial packets buffered in `_b_recv_pending`.
   - **Dispatch**: `_handlers` maps msg id → slot (`HandleMsg`).
   - **Heartbeat**: `ChatDialog` sends `ID_HEART_BEAT_REQ` every 10s.
-  - **Disconnect**: no auto-reconnect; on `disconnected` it warns and forces back to login.
+  - **Reconnect**: an interrupted logged-in connection retries with exponential backoff
+    (1s, 2s, 4s … capped at 30s, 8 attempts). Sends are blocked while reconnecting and the
+    session is kept; a successful retry resumes silently. A kicked session or a rejected token
+    stops the loop and returns to login.
   - Connection params (Host/Port/Token/Uid) come from the login HTTP response.
 
 ### 4.3 Application state
@@ -303,7 +306,7 @@ plain data structs: `SearchInfo`, `AddFriendApply`, `ApplyInfo`, `AuthInfo`, `Fr
 | `ResetDialog` | password reset via code |
 | `ChatDialog` | IM shell hosting chat/contacts/search/heartbeat |
 | `ChatPage` | one friend's chat page (history + input) |
-| `FileTransferMgr` / `FileBubble` | chunked file send/receive (16-chunk send window, 30s watchdog) and transfer bubbles |
+| `FileTransferMgr` / `FileBubble` | chunked file send/receive (16-chunk window, resume after reconnect, 5s watchdog) and transfer bubbles |
 | `CropDialog` | square crop dialog after picking an avatar from the sidebar (saved locally per uid, not uploaded) |
 | `ChatView` / `ChatUserWid` / `ChatUserList` | chat session list and scroll view |
 | `ApplyFriend` / `AuthenFriend` / `ApplyFriendPage` | send request / handle request / request list |
@@ -732,7 +735,6 @@ proving the GateServer → MySQL → StatusServer(gRPC) → Redis chain works.
   `config.example.json` as the template — but its old values are still recoverable from git history
   and the leaked credentials still need rotating. `ChatServer/config.ini` etc. contain plaintext
   local-dev Redis passwords. Move to environment variables or placeholders before committing/deploying.
-- **No client auto-reconnect**: on disconnect it returns straight to login; no exponential backoff.
 - **`ipcount_`** is defined in `const.h` but never used — likely legacy.
 - **Console output encoding**: GBK-commented sources print garbled Chinese in a UTF-8 terminal.
 
@@ -762,7 +764,7 @@ replaced by that document and removed.
 
 ## 12. Tutorial Progress (gitbookcpp.llfc.club day01–day45)
 
-The project is implemented lesson by lesson. Current progress reaches **day37**, with day31
+The project is implemented lesson by lesson. Current progress reaches **day38**, with day31
 (file transfer), day32 (distributed lock) and day41 (Qt packet reassembly) also done early. day30
 is interview-only, no code.
 
@@ -782,7 +784,7 @@ is interview-only, no code.
 [x] day31     file transfer                                             → FileTransferMgr + ID_FILE_MSG_REQ/RSP
 [x] day36     Qt avatar cropping                                        → CropDialog (saved locally per uid)
 [x] day37     chat message persistence                                  → chat_message + ID_GET_CHAT_HISTORY_REQ/RSP
-[ ] day38     resumable transfer
+[x] day38     resumable transfer                                        → FileTransferMgr in-session resume, incl. peer node restart
 [ ] day39     multimedia messages (voice/video)
 [ ] day40     distributed transaction deadlock analysis
 [x] day41     Qt packet reassembly analysis                             → tcpmgr _b_recv_pending
@@ -792,8 +794,8 @@ is interview-only, no code.
 [ ] day45     WebRTC signaling server for video calls
 ```
 
-**Suggested next order**: `day38 resumable transfer` → `day39 multimedia` → `day40 distributed
-transactions` → `day42-43 image async download / chat resources` → `day44-45 WebRTC audio/video`.
+**Suggested next order**: `day39 multimedia` → `day40 distributed transactions` → `day42-43 image
+async download / chat resources` → `day44-45 WebRTC audio/video`.
 
 > The sender's ChatServer persists each message **before** forwarding, so an offline peer pulls
 > it back when the conversation opens. Opening a chat loads the newest 50 rows; scrolling to the

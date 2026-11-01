@@ -9,6 +9,7 @@
 #include <QString>
 #include <QTimer>
 #include <memory>
+#include <vector>
 
 #include "global.h"
 #include "singleton.h"
@@ -16,7 +17,8 @@
 // The server relays every chunk and stores nothing, so a whole transfer lives in these two
 // maps. The sender slices its file and keeps a bounded window of chunks in flight; the
 // receiver writes each chunk at its own offset and only renames the file once every index
-// has arrived.
+// has arrived. An automatic reconnect keeps both sides in place and resumes from the lowest
+// unacknowledged chunk; only a final close tears them down.
 struct OutgoingFile
 {
     QString file_id;
@@ -26,9 +28,25 @@ struct OutgoingFile
     int total = 0;
     int next_index = 0; // the next chunk still to hand to the socket
     int acked = 0;
+    int resume_from = 0;           // lowest index never acknowledged
+    std::vector<char> acked_flags; // per-index confirmation, so a hole is never skipped
     QFile file;
     QSet<int> in_flight;
     qint64 last_ack = 0;
+    qint64 peer_offline_since = 0; // first "peer offline" reply since the last success
+    qint64 peer_retry_at = 0;
+
+    // A receiver ignores duplicates, so an acknowledgement is only monotonic when it is
+    // counted per index: a hole left by a lost frame must stay the resume point.
+    void MarkAcked(int index)
+    {
+        if (index < 0 || index >= total || acked_flags[static_cast<size_t>(index)])
+            return;
+        acked_flags[static_cast<size_t>(index)] = 1;
+        ++acked;
+        while (resume_from < total && acked_flags[static_cast<size_t>(resume_from)])
+            ++resume_from;
+    }
 };
 
 struct IncomingFile
@@ -61,12 +79,16 @@ public:
     static int ChunkCount(qint64 size);
     static qint64 ChunkLength(qint64 size, int index);
     static QString DefaultSaveDir();
+    // A chunk the server could not hand to a live receiver: keep it and retry.
+    static bool IsPeerUnavailableError(int error);
 
 public slots:
     void slot_file_rsp(int error, const QString& file_id, int index);
     void slot_file_chunk(const QJsonObject& obj);
     void slot_check_timeouts();
     void slot_connection_closed();
+    void slot_reconnected();
+    void slot_reconnect_failed();
 
 signals:
     void sig_send_progress(QString file_id, int percent);
@@ -80,6 +102,9 @@ signals:
 private:
     FileTransferMgr();
     void Pump(OutgoingFile& out);
+    void PauseAll();
+    void ResumeAll();
+    void FailAll(const QString& reason);
     void FailSend(const QString& file_id, const QString& reason);
     void FailRecv(const QString& file_id, const QString& reason);
     std::shared_ptr<IncomingFile> OpenIncoming(const QString& file_id, int from_uid, int to_uid,
@@ -90,6 +115,7 @@ private:
     QHash<QString, std::shared_ptr<OutgoingFile>> _sending;
     QHash<QString, std::shared_ptr<IncomingFile>> _receiving;
     QTimer _watchdog;
+    bool _suspended = false;
 };
 
 #endif // FILETRANSFERMGR_H
