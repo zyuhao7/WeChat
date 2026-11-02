@@ -20,12 +20,28 @@ if [ ! -x "$BUILD/GateServer" ]; then
   exit 1
 fi
 
+# Keep one previous copy of a log that grew too large before (re)starting its
+# service. Rotation only happens here: a running process still owns its fd.
+LOG_MAX_BYTES=$((50 * 1024 * 1024))
+rotate_log() {
+  local log="$LOGDIR/$1.log"
+  [ -f "$log" ] || return 0
+  local size
+  size=$(stat -c %s "$log" 2>/dev/null || echo 0)
+  if [ "$size" -ge "$LOG_MAX_BYTES" ]; then
+    mv -f "$log" "$log.1"
+    : >"$log"
+    echo "rotated $1.log ($size bytes) -> $1.log.1"
+  fi
+}
+
 start() {
   local name="$1" dir="$2"; shift 2
   if [ -f "$LOGDIR/$name.pid" ] && kill -0 "$(cat "$LOGDIR/$name.pid")" 2>/dev/null; then
     echo "$name already running (pid $(cat "$LOGDIR/$name.pid"))"
     return
   fi
+  rotate_log "$name"
   ( cd "$dir" && exec nohup "$@" ) >"$LOGDIR/$name.log" 2>&1 &
   local pid=$!
   echo "$pid" >"$LOGDIR/$name.pid"
@@ -61,6 +77,7 @@ done
 start gate "$ROOT/GateServer" "$BUILD/GateServer"
 
 if [ "${1:-}" = "--client" ]; then
+  rotate_log client
   ( exec "$ROOT/scripts/start_client.sh" ) >"$LOGDIR/client.log" 2>&1 &
   cpid=$!
   echo "$cpid" >"$LOGDIR/client.pid"

@@ -9,6 +9,23 @@
 #include "RedisMgr.h"
 using namespace std;
 
+namespace
+{
+// A file is relayed as thousands of chunk frames. Their base64 bodies would dwarf every other
+// log line, so those keep only a one-line summary per frame.
+bool IsFileChunkMsg(int msg_id)
+{
+    return msg_id == ID_FILE_MSG_REQ || msg_id == ID_NOTIFY_FILE_MSG_REQ;
+}
+
+short MsgIdOf(const shared_ptr<MsgNode>& node)
+{
+    short msg_id = 0;
+    memcpy(&msg_id, node->_data, HEAD_ID_LEN);
+    return boost::asio::detail::socket_ops::network_to_host_short(msg_id);
+}
+} // namespace
+
 CSession::CSession(boost::asio::io_context& ioc, CServer* server)
     : _socket(ioc),
       _server(server),
@@ -142,7 +159,11 @@ void CSession::AsyncReadBody(int total_len)
             memcpy(_recv_msg_node->_data, _data, bytes_transfered);
             _recv_msg_node->_cur_len += bytes_transfered;
             _recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
-            cout << "receive data is" << _recv_msg_node->_data << std::endl;
+            if (IsFileChunkMsg(_recv_msg_node->GetMsgId()))
+                cout << "receive file chunk, msg id " << _recv_msg_node->GetMsgId()
+                     << ", len " << _recv_msg_node->_cur_len << endl;
+            else
+                cout << "receive data is" << _recv_msg_node->_data << std::endl;
             // refresh the session heartbeat time
             UpdateHeartbeat();
 
@@ -198,13 +219,16 @@ void CSession::AsyncReadHead(int total_len)
 
             // convert network byte order to host byte order
             msg_id = boost::asio::detail::socket_ops::network_to_host_short(msg_id);
-            std::cout << "msg_id is " << msg_id << endl;
+            const bool file_chunk = IsFileChunkMsg(msg_id);
+            if (!file_chunk)
+                std::cout << "msg_id is " << msg_id << endl;
             short msg_len = 0;
             memcpy(&msg_len, _recv_head_node->_data + HEAD_ID_LEN, HEAD_DATA_LEN);
 
             // convert network byte order to host byte order
             msg_len = boost::asio::detail::socket_ops::network_to_host_short(msg_len);
-            std::cout << "msg_len is " << msg_len << endl;
+            if (!file_chunk)
+                std::cout << "msg_len is " << msg_len << endl;
 
             // both fields index into buffers downstream, so reject a high-bit value as well
             if (!IsValidMsgHeader(msg_id, msg_len))
@@ -329,7 +353,13 @@ void CSession::HandleWrite(const boost::system::error_code& ec, std::shared_ptr<
         if (!ec)
         {
             std::lock_guard<std::mutex> lock(_send_lock);
-            cout << "send data " << _send_que.front()->_data + HEAD_TOTAL_LEN << endl;
+            auto& node = _send_que.front();
+            const short msg_id = MsgIdOf(node);
+            if (IsFileChunkMsg(msg_id))
+                cout << "send file chunk, msg id " << msg_id << ", len " << node->_total_len - HEAD_TOTAL_LEN
+                     << endl;
+            else
+                cout << "send data " << node->_data + HEAD_TOTAL_LEN << endl;
             _send_que.pop();
             if (!_send_que.empty())
             {

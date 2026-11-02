@@ -96,7 +96,11 @@ TcpMgr::TcpMgr()
             _b_recv_pending = false;
             // read the message body
             QByteArray messageBody = _buffer.mid(0, _message_len);
-            qDebug() << "receive body msg is " << messageBody;
+            // a file arrives as thousands of chunk frames; their base64 bodies would dwarf
+            // every other log line, so keep only the header line above for those
+            if (_message_id != ID_FILE_MSG_REQ && _message_id != ID_FILE_MSG_RSP &&
+                _message_id != ID_NOTIFY_FILE_MSG_REQ)
+                qDebug() << "receive body msg is " << messageBody;
 
             _buffer = _buffer.mid(_message_len);
             HandleMsg(ReqId(_message_id), _message_len, messageBody);
@@ -694,5 +698,6 @@ void TcpMgr::slot_send_data(ReqId reqId, QByteArray dataBytes)
 
     // send data
     _socket.write(block);
-    qDebug() << "tcp mgr send byte data is " << block;
+    if (id != ID_FILE_MSG_REQ)
+        qDebug() << "tcp mgr send byte data is " << block;
 }
