@@ -575,6 +575,30 @@ sequenceDiagram
   Redis, with a distributed lock guaranteeing kick/cleanup consistency.
 - **Keepalive**: Redis PING 60s, MySQL `SELECT 1` 60s, HTTP idle timeout 60s, app heartbeat sweep 60s.
 
+### 7.1 Transaction boundaries & deadlocks (day40)
+
+Durable writes live in MySQL; Redis holds only sessions and routing (`utoken_`, `uip_`, `usession_`), so no atomic transaction spans MySQL and Redis. Cross-node notifications are **best effort**: failures fall back to re-fetching on login or when a conversation opens (friend list, pending applies, chat history), which is eventual consistency — no 2PC or outbox needed.
+
+- **Friend dual-insert deadlock (fixed)**: `MysqlDao::AddFriend` used to run two `INSERT IGNORE`
+  statements in one transaction, always `(from,to)` then `(to,from)`. When A and B approve each
+  other concurrently, transactions arriving at the same MySQL from different ChatServers lock
+  `(A,B)→(B,A)` and `(B,A)→(A,B)` in opposite orders, forming a wait cycle; MySQL rolls one back
+  (1213). It now issues **one multi-row `INSERT IGNORE` with both rows sorted by `self_id`**, so
+  every transaction acquires locks in the same order and the cycle disappears.
+- **Transient lock-error retry (fixed)**: `AddFriend` retries 1213 (deadlock victim) and 1205
+  (lock-wait timeout) up to 3 times with 10/20 ms backoff. MySQL has already rolled the
+  transaction back and `INSERT IGNORE` is idempotent, so re-running is safe.
+- **Registration transaction**: GateServer's `RegUserTransaction` only updates the single
+  `user_id` row and has no reverse ordering, so it cannot form a cycle; extreme contention may
+  still yield 1205, which is queueing rather than deadlock.
+- **Single-statement writes**: friend applies and chat-history batches are atomic as one
+  autocommit statement; `INSERT ... ON DUPLICATE KEY UPDATE` / `INSERT IGNORE` are idempotent, so
+  retries cannot duplicate rows.
+- **Cross-store failure semantics**: MySQL is written before Redis lookup and notification. If the
+  Redis lookup or gRPC notify fails, persisted data survives and only the instant notification is
+  lost; the peer recovers it on the next login (friend applies) or conversation open (history).
+  The cost is notification latency until that pull.
+
 ---
 
 ## 8. Ports & Config Summary
@@ -786,7 +810,7 @@ is interview-only, no code.
 [x] day37     chat message persistence                                  → chat_message + ID_GET_CHAT_HISTORY_REQ/RSP
 [x] day38     resumable transfer                                        → FileTransferMgr in-session resume, incl. peer node restart
 [ ] day39     multimedia messages (voice/video)
-[ ] day40     distributed transaction deadlock analysis
+[x] day40     distributed transaction deadlock analysis                 → ordered dual insert + 1213/1205 retry
 [x] day41     Qt packet reassembly analysis                             → tcpmgr _b_recv_pending
 [ ] day42     notify client to async-download chat images
 [ ] day43     user loads chat resources
@@ -794,8 +818,8 @@ is interview-only, no code.
 [ ] day45     WebRTC signaling server for video calls
 ```
 
-**Suggested next order**: `day39 multimedia` → `day40 distributed transactions` → `day42-43 image
-async download / chat resources` → `day44-45 WebRTC audio/video`.
+**Suggested next order**: `day39 multimedia` → `day42-43 image async download / chat resources` →
+`day44-45 WebRTC audio/video`.
 
 > The sender's ChatServer persists each message **before** forwarding, so an offline peer pulls
 > it back when the conversation opens. Opening a chat loads the newest 50 rows; scrolling to the

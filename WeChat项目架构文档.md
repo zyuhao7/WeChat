@@ -525,6 +525,16 @@ sequenceDiagram
 - **共享状态**：`UserMgr`、`CServer::_sessions` 均加锁；跨机状态收敛到 Redis，并用分布式锁保证顶号/清理的一致性。
 - **保活**：Redis 连接 60s PING、MySQL 连接 60s `SELECT 1`、HTTP 连接 60s 空闲超时、应用层 60s 心跳巡检。
 
+### 7.1 事务边界与死锁分析（day40）
+
+持久化写入集中在 MySQL；Redis 只存会话与路由（`utoken_`、`uip_`、`usession_`），因此不存在跨 MySQL/Redis 的原子事务。跨节点通知是**尽力而为**：失败后由登录或打开会话时的重新拉取兜底（好友列表、待处理申请、聊天历史），属最终一致，不需要 2PC 或 outbox。
+
+- **好友双向插入的死锁（已修）**：`MysqlDao::AddFriend` 原先在同一事务里执行两条 `INSERT IGNORE`，顺序固定为 `(from,to)` 后 `(to,from)`。A、B 互相通过时，两笔事务可能从不同 ChatServer 进入同一 MySQL，分别按 `(A,B)→(B,A)` 与 `(B,A)→(A,B)` 加行锁，形成循环等待，MySQL 回滚一方（1213）。现改为**单条多行 `INSERT IGNORE`，两行按 `self_id` 升序排列**，所有事务加锁顺序一致，不再成环。
+- **瞬时锁错误重试（已修）**：`AddFriend` 对 1213（死锁牺牲者）和 1205（锁等待超时）做最多 3 次、10/20ms 退避的重试；此时事务已回滚，且 `INSERT IGNORE` 幂等，重跑安全。
+- **注册事务**：GateServer 的 `RegUserTransaction` 只更新 `user_id` 单行，不存在反向顺序，不会循环等待；极端争用下可能 1205，属于排队而非死锁。
+- **单语句写入**：好友申请、聊天历史各自在 autocommit 下单语句原子；`INSERT ... ON DUPLICATE KEY UPDATE` / `INSERT IGNORE` 本身幂等，重试不会产生重复数据。
+- **跨存储失败语义**：先写 MySQL 再查 Redis 发通知。Redis 查询或 gRPC 通知失败时，已落库的数据保留、只丢即时提醒；对端下次登录（好友申请）或打开会话（聊天历史）会补齐，代价是提醒最多延迟到下一次拉取。
+
 ---
 
 ## 8. 端口与配置汇总
@@ -720,7 +730,7 @@ WeChat/
 [x] day37     聊天信息存储方案                                         → chat_message 表 + ID_GET_CHAT_HISTORY_REQ/RSP
 [x] day38     断点续传                                                 → FileTransferMgr 会话内重连续传（含对端节点重启）
 [ ] day39     多媒体信息传输（语音/视频消息）
-[ ] day40     分布式事务死锁分析
+[x] day40     分布式事务死锁分析                                         → 双向插入定序 + 1213/1205 重试 + 一致性边界
 [x] day41     Qt粘包分析和解决                                         → tcpmgr _b_recv_pending
 [ ] day42     通知客户端异步下载聊天图片
 [ ] day43     用户加载聊天资源
@@ -728,7 +738,7 @@ WeChat/
 [ ] day45     webrtc 信令服务器实现视频通信
 ```
 
-**后续待办顺序**：`day39 多媒体` → `day40 分布式事务` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
+**后续待办顺序**：`day39 多媒体` → `day42-43 图片异步下载/聊天资源` → `day44-45 WebRTC 音视频`。
 
 > 聊天消息由发送方所在 ChatServer **先落库再转发**，因此对端离线也能在下次打开会话时拉回。打开会话先取最新 50 条，滚动到顶部时以当前最旧 `last_id` 继续向上翻页，响应携带 `has_more`；消息以 `msg_id` 去重、以自增 `id` 排序。
 

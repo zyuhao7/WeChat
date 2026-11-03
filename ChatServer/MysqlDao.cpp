@@ -1,7 +1,20 @@
 #include "MysqlDao.h"
 #include "ConfigMgr.h"
 #include <algorithm>
+#include <chrono>
 #include <limits>
+
+namespace
+{
+constexpr int kTransactionRetryLimit = 3;
+
+// 1213 is the deadlock victim; 1205 is a lock-wait timeout. MySQL has already rolled
+// the transaction back in both cases, so the whole unit of work can be retried.
+bool IsRetryableTransactionError(int code)
+{
+    return code == 1213 || code == 1205;
+}
+} // namespace
 
 MysqlDao::MysqlDao()
 {
@@ -295,62 +308,72 @@ bool MysqlDao::AddFriend(const int& from, const int& to, std::string back_name)
         pool_->returnConnection(std::move(con));
     });
 
-    try
+    for (int attempt = 0; attempt < kTransactionRetryLimit; ++attempt)
     {
-
-        // begin the transaction
-        con->_con->setAutoCommit(false);
-
-        // prepare the first SQL: insert the authenticating side's friend data
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("INSERT IGNORE INTO friend(self_id, friend_id, back) "
-                                                                                  "VALUES (?, ?, ?) "));
-        // for the reverse direction, from at apply time and to at verify time
-        pstmt->setInt(1, from); // from id
-        pstmt->setInt(2, to);
-        pstmt->setString(3, back_name);
-        // execute the update
-        int rowAffected = pstmt->executeUpdate();
-        if (rowAffected < 0)
+        try
         {
-            con->_con->rollback();
+            // begin the transaction
+            con->_con->setAutoCommit(false);
+
+            // Reciprocal approvals insert the same two rows. Writing both in one statement,
+            // ordered by self_id, gives every transaction the same lock order, so the two
+            // sides serialize instead of deadlocking on (A,B) vs (B,A).
+            const bool from_first = from < to;
+            const int first_uid = from_first ? from : to;
+            const int second_uid = from_first ? to : from;
+            const std::string first_back = from_first ? back_name : "";
+            const std::string second_back = from_first ? "" : back_name;
+
+            std::unique_ptr<sql::PreparedStatement> pstmt(con->_con->prepareStatement("INSERT IGNORE INTO friend(self_id, friend_id, back) "
+                                                                                      "VALUES (?, ?, ?), (?, ?, ?)"));
+            pstmt->setInt(1, first_uid);
+            pstmt->setInt(2, second_uid);
+            pstmt->setString(3, first_back);
+            pstmt->setInt(4, second_uid);
+            pstmt->setInt(5, first_uid);
+            pstmt->setString(6, second_back);
+
+            // execute the update
+            int rowAffected = pstmt->executeUpdate();
+            if (rowAffected < 0)
+            {
+                con->_con->rollback();
+                return false;
+            }
+
+            // commit the transaction
+            con->_con->commit();
+            std::cout << "addfriend insert friends success" << std::endl;
+
+            return true;
+        }
+        catch (sql::SQLException& e)
+        {
+            // on error, roll back the transaction
+            try
+            {
+                con->_con->rollback();
+            }
+            catch (...)
+            {
+            }
+
+            // INSERT IGNORE makes the retry idempotent: both rows are keyed by
+            // (self_id, friend_id), so a re-run cannot create duplicates.
+            if (IsRetryableTransactionError(e.getErrorCode()) && attempt + 1 < kTransactionRetryLimit)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10 * (1 << attempt)));
+                continue;
+            }
+
+            std::cerr << "SQLException: " << e.what();
+            std::cerr << " (MySQL error code: " << e.getErrorCode();
+            std::cerr << ", SQLState: " << e.getSQLState() << " )" << std::endl;
             return false;
         }
-
-        // prepare the second SQL: insert the requesting side's friend data
-        std::unique_ptr<sql::PreparedStatement> pstmt2(con->_con->prepareStatement("INSERT IGNORE INTO friend(self_id, friend_id, back) "
-                                                                                   "VALUES (?, ?, ?) "));
-        // for the reverse direction, from at apply time and to at verify time
-        pstmt2->setInt(1, to); // from id
-        pstmt2->setInt(2, from);
-        pstmt2->setString(3, "");
-        // execute the update
-        int rowAffected2 = pstmt2->executeUpdate();
-        if (rowAffected2 < 0)
-        {
-            con->_con->rollback();
-            return false;
-        }
-
-        // commit the transaction
-        con->_con->commit();
-        std::cout << "addfriend insert friends success" << std::endl;
-
-        return true;
-    }
-    catch (sql::SQLException& e)
-    {
-        // on error, roll back the transaction
-        if (con)
-        {
-            con->_con->rollback();
-        }
-        std::cerr << "SQLException: " << e.what();
-        std::cerr << " (MySQL error code: " << e.getErrorCode();
-        std::cerr << ", SQLState: " << e.getSQLState() << " )" << std::endl;
-        return false;
     }
 
-    return true;
+    return false;
 }
 
 std::shared_ptr<UserInfo> MysqlDao::GetUser(int uid)
