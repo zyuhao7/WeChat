@@ -17,6 +17,15 @@ find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(jsoncpp REQUIRED)
+# Ubuntu's libdrogon-dev FindMySQL only accepts mysqlclient_r/mariadbclient, but
+# noble's client packages ship libmariadb.so/libmysqlclient.so; pre-seed the cache
+# so Drogon's MySQL dependency resolves instead of aborting configure.
+if(NOT MYSQL_LIBRARIES)
+  find_library(MYSQL_LIBRARIES NAMES mariadb mysqlclient)
+endif()
+if(NOT MYSQL_INCLUDE_DIRS)
+  find_path(MYSQL_INCLUDE_DIRS NAMES mysql.h PATH_SUFFIXES mysql mariadb)
+endif()
 find_package(Drogon CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(HIREDIS REQUIRED hiredis)
