@@ -1,7 +1,7 @@
 # Qt WeChat-style Instant Messaging App
 
 > A cross-platform instant messaging client built with C++ and Qt, backed by a distributed
-> microservice architecture on Boost.Asio and gRPC, supporting high-concurrency long
+> microservice architecture on Drogon, Boost.Asio and gRPC, supporting high-concurrency long
 > connections, text messaging, and friend management.
 
 ## 📌 Overview
@@ -15,8 +15,9 @@
 
 ## 🚀 Highlights
 
-- **Asynchronous, multi-threaded I/O**: a Boost.Asio `io_context` thread pool with one session
-  object per connection, designed for high-concurrency long connections
+- **Asynchronous, multi-threaded I/O**: GateServer runs on Drogon's multi-loop HTTP framework;
+  ChatServer uses a Boost.Asio `io_context` thread pool with one session object per connection,
+  designed for high-concurrency long connections
 - **Horizontally scalable**: ChatServer runs as multiple nodes that talk to each other over
   gRPC, and a new login can kick the stale connection on another node
 - **End-to-end IM flow**: code-based registration → login for a token → friend list → request /
@@ -28,7 +29,7 @@
 | Layer | Technology |
 |-------|------------|
 | Client | C++, Qt 6, ElaWidgetTools, QSS, QPainter |
-| Backend | C++, Boost.Asio / Beast, gRPC, protobuf |
+| Backend | C++, Drogon, Boost.Asio / Beast, gRPC, protobuf |
 | Data | Redis, MySQL |
 | System | Linux, TCP/IP, epoll |
 | Build | CMake (backend), qmake (client), shell scripts |
@@ -74,7 +75,7 @@ WeChat/
 ├── ChatClient/          Qt client (UI / bubble widgets / TCP+HTTP network / resources)
 │   ├── third_party/ElaWidgetTools/   Fluent widget toolkit, compiled in as sources
 │   └── tests/           Client unit tests (qmake project, one test binary)
-├── GateServer/          HTTP gateway: register / login / password reset
+├── GateServer/          HTTP gateway on Drogon: register / login / password reset
 ├── StatusServer/        Status and scheduling: token issuance, load-balanced ChatServer pick
 ├── VerifyServer/        Node.js email verification-code service
 ├── ChatServer/          Long-connection and messaging service (TCP + gRPC + Redis / MySQL)
@@ -100,11 +101,18 @@ sudo apt update
 sudo apt install -y cmake build-essential pkg-config \
   libboost-all-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc \
   libgrpc++-dev libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev \
+  libdrogon-dev libtrantor-dev uuid-dev zlib1g-dev libsqlite3-dev \
+  libbrotli-dev libyaml-cpp-dev libpq-dev libssl-dev libc-ares-dev \
   default-libmysqlclient-dev
 
 # Client
 sudo apt install -y qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev
 ```
+
+GateServer needs Drogon with its CMake package installed. On Ubuntu 24.04 that is the
+`libdrogon-dev` package above; otherwise build and install Drogon 1.8+ from source
+(`cmake -S drogon -B build && cmake --build build -j4 && sudo cmake --install build`).
+The backend calls `find_package(Drogon CONFIG REQUIRED)`.
 
 ### Build the backend
 

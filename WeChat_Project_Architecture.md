@@ -18,7 +18,7 @@ flowchart TB
     Client["ChatClient (Qt)<br/>Qt Widgets + QSS, WeChat-like UI"]
     subgraph Gate["GateServer · HTTP gateway :8080"]
         direction LR
-        CServer["CServer / HttpConnection"] --> Logic["LogicSystem<br/>routing + auth"]
+        Drogon["Drogon HttpAppFramework<br/>4 IO threads"] --> Logic["LogicSystem<br/>routing + auth"]
     end
     subgraph Verify["VerifyServer · Node.js :50052"]
         V["code generation + SMTP"]
@@ -35,7 +35,7 @@ flowchart TB
     Redis[("Redis<br/>token · routing · online count")]
     MySQL[("MySQL<br/>users · friends · history")]
 
-    Client -->|HTTP| CServer
+    Client -->|HTTP| Drogon
     Client -->|TCP long-lived| CS1
     Logic -->|gRPC| V
     Logic -->|gRPC| S
@@ -70,7 +70,7 @@ flowchart TB
 |-------|------------|
 | Client UI | C++, Qt Widgets, QSS, QPainter, custom bubble widgets |
 | Client network | QtNetwork (QNetworkAccessManager for HTTP, QTcpSocket for long conn) |
-| Server network | Boost.Asio, Boost.Beast (HTTP), epoll |
+| Server network | Drogon (HTTP), Boost.Asio / Beast (TCP), epoll |
 | Inter-service | gRPC + Protocol Buffers |
 | Serialization | JSON (client↔ChatServer, inside GateServer), protobuf (between services) |
 | Cache / storage | Redis (hiredis / ioredis), MySQL (MySQL Connector/C++) |
@@ -86,13 +86,16 @@ flowchart TB
 **Role**: the single HTTP entry point for the client; handles registration, login, password reset
 and verify-code requests.
 
-- **Entry**: `GateServer/GateServer.cpp:125`. Reads `[GateServer] Port` (default 8080), creates a
-  `CServer` listener, and installs SIGINT/SIGTERM graceful shutdown.
-- **HTTP layer**: `HttpConnection.cpp`, async read/write over Boost.Beast. Supports GET (query
-  params) and POST (body). Has a `deadline_` timer that closes idle connections after 60s.
-- **Concurrency**: `AsioIOServicePool` round-robins new connections onto several `io_context`
-  threads; the main `io_context` only accepts.
-- **Routes** (`LogicSystem`, GET via `_get_handlers`, POST via `_post_handlers`):
+- **Entry**: `GateServer/GateServer.cpp`. Reads `[GateServer] Port` (default 8080), creates a
+  Drogon `HttpAppFramework`, calls `addListener("0.0.0.0", port)` and `run()`; Drogon installs
+  the SIGINT/SIGTERM graceful shutdown itself.
+- **HTTP layer**: Drogon handles parsing, keep-alive, request bodies and 404s. `LogicSystem`
+  registers the GET/POST routes with `registerHandler`, preserving the existing JSON fields and
+  error codes.
+- **Concurrency**: `setThreadNum(4)` runs four event-loop threads. Handlers still call the
+  synchronous Redis/MySQL/gRPC clients, so a slow downstream occupies its thread; the loop count
+  must stay above one.
+- **Routes** (`LogicSystem::RegisterHandlers`):
 
   | Method | Path | Logic |
   |--------|------|-------|
@@ -106,14 +109,13 @@ and verify-code requests.
 
 ```mermaid
 flowchart LR
-    Client["Client"] -->|HTTP GET/POST| CServer["CServer<br/>accept"]
-    CServer --> Conn["HttpConnection<br/>async read/write · 60s idle timeout"]
-    Conn -->|HandleGet / HandlePost| Logic["LogicSystem<br/>route table"]
+    Client["Client"] -->|HTTP GET/POST| App["Drogon HttpAppFramework<br/>4 IO threads"]
+    App --> Logic["LogicSystem<br/>registerHandler routes + JSON responses"]
     Logic -->|/user_register · /reset_pwd · /user_login| MySQL[("MySQL")]
     Logic -->|"check / consume code_{email}"| Redis[("Redis")]
     Logic -->|/get_verify_code| VG["VerifyGrpcClient"] -->|gRPC :50052| VS["VerifyServer"]
     Logic -->|/user_login| SG["StatusGrpcClient"] -->|gRPC :50053| SS["StatusServer"]
-    Conn -->|WriteResponse · shutdown_send| Client
+    App -->|"HTTP response (keep-alive)"| Client
 ```
 
 - **Config** `GateServer/config.ini`: `[GateServer] Port`, `[VerifyServer]`, `[StatusServer]`,
@@ -895,11 +897,11 @@ exercised. Result: **11/11 passed**.
    Fix: `start_all.sh` probes :6380 and launches a local instance if nothing answers (port/password
    taken from the configs); `stop_all.sh` shuts it down too.
 
-5. **Acceptor hit `Address already in use` on restart** — the `CServer` of ChatServer/GateServer
-   bound the port directly in the constructor initializer list, leaving no chance to set
-   `SO_REUSEADDR`. On a quick restart the previous instance's lingering connections made the rebind
-   fail (chatserver2 refused to start on :8091). Fix: open, set the reuse option, bind and listen
-   explicitly.
+5. **Acceptor hit `Address already in use` on restart** — ChatServer's `CServer` bound the port
+   directly in the constructor initializer list, leaving no chance to set `SO_REUSEADDR`. On a
+   quick restart the previous instance's lingering connections made the rebind fail (chatserver2
+   refused to start on :8091). Fix: open, set the reuse option, bind and listen explicitly.
+   GateServer later moved to Drogon and no longer has this problem.
 
 ### 13.4 Commands that need sudo (not run here — run manually)
 

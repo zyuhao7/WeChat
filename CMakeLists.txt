@@ -17,6 +17,7 @@ find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(Drogon CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(HIREDIS REQUIRED hiredis)
 
@@ -83,6 +84,11 @@ foreach(svc GateServer StatusServer ChatServer)
     ${Boost_INCLUDE_DIRS}
   )
   target_link_libraries(${svc} PRIVATE ${COMMON_LIBS})
+
+  # GateServer's HTTP layer is Drogon; the other services keep their custom Asio TCP stack.
+  if(svc STREQUAL "GateServer")
+    target_link_libraries(${svc} PRIVATE Drogon::Drogon)
+  endif()
 endforeach()
 
 option(BUILD_TESTING "build unit tests" ON)

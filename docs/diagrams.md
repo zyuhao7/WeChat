@@ -11,7 +11,7 @@ flowchart TB
     Client["ChatClient (Qt)<br/>Qt Widgets + QSS 仿微信 UI"]
     subgraph Gate["GateServer · HTTP 网关 :8080"]
         direction LR
-        CServer["CServer / HttpConnection"] --> Logic["LogicSystem<br/>路由 + 鉴权"]
+        Drogon["Drogon HttpAppFramework<br/>4 个 IO 线程"] --> Logic["LogicSystem<br/>路由 + 鉴权"]
     end
     subgraph Verify["VerifyServer · Node.js :50052"]
         V["验证码生成 + SMTP"]
@@ -28,7 +28,7 @@ flowchart TB
     Redis[("Redis<br/>token · 路由 · 在线数")]
     MySQL[("MySQL<br/>用户 · 好友 · 聊天记录")]
 
-    Client -->|HTTP| CServer
+    Client -->|HTTP| Drogon
     Client -->|TCP 长连接| CS1
     Logic -->|gRPC| V
     Logic -->|gRPC| S
@@ -47,14 +47,13 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    Client["Client"] -->|HTTP GET/POST| CServer["CServer<br/>accept"]
-    CServer --> Conn["HttpConnection<br/>异步读写 · 60s 空闲超时"]
-    Conn -->|HandleGet / HandlePost| Logic["LogicSystem<br/>路由表"]
+    Client["Client"] -->|HTTP GET/POST| App["Drogon HttpAppFramework<br/>4 个 IO 线程"]
+    App --> Logic["LogicSystem<br/>registerHandler 路由 + JSON 响应"]
     Logic -->|/user_register · /reset_pwd · /user_login| MySQL[("MySQL")]
     Logic -->|"校验 / 消费 code_{email}"| Redis[("Redis")]
     Logic -->|/get_verify_code| VG["VerifyGrpcClient"] -->|gRPC :50052| VS["VerifyServer"]
     Logic -->|/user_login| SG["StatusGrpcClient"] -->|gRPC :50053| SS["StatusServer"]
-    Conn -->|WriteResponse · shutdown_send| Client
+    App -->|"HTTP 响应（keep-alive）"| Client
 ```
 
 ## 3. StatusServer：选服与发号

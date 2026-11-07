@@ -1,55 +1,83 @@
 #include "LogicSystem.h"
-#include "HttpConnection.h"
+
+#include <json/json.h>
+
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <utility>
+
 #include "HttpParse.h"
-#include "VerifyGrpcClient.h"
-#include "RedisMgr.h"
 #include "MysqlMgr.h"
+#include "RedisMgr.h"
 #include "StatusGrpcClient.h"
+#include "VerifyGrpcClient.h"
 
 namespace
 {
 
-void ReplyJson(const std::shared_ptr<HttpConnection>& connection, const Json::Value& root)
+using drogon::HttpRequestPtr;
+using drogon::HttpResponsePtr;
+using Callback = std::function<void(const HttpResponsePtr&)>;
+
+HttpResponsePtr MakeJsonResponse(const Json::Value& root)
 {
-    connection->AppendBody(root.toStyledString());
+    auto response = drogon::HttpResponse::newHttpResponse();
+    response->setStatusCode(drogon::k200OK);
+    response->setContentTypeString(std::string_view("text/json"));
+    response->setBody(root.toStyledString());
+    return response;
 }
 
-void ReplyError(const std::shared_ptr<HttpConnection>& connection, int error)
+void ReplyJson(const Callback& callback, const Json::Value& root)
+{
+    callback(MakeJsonResponse(root));
+}
+
+void ReplyError(const Callback& callback, int error)
 {
     Json::Value root;
     root["error"] = error;
-    ReplyJson(connection, root);
+    ReplyJson(callback, root);
+}
+
+// Matches the old connection-level catch: a handler that throws becomes a 500 carrying
+// Error_Json, so a bad request never closes the socket without a body.
+void ReplyServerError(const Callback& callback)
+{
+    Json::Value root;
+    root["error"] = ErrorCodes::Error_Json;
+    auto response = MakeJsonResponse(root);
+    response->setStatusCode(drogon::k500InternalServerError);
+    callback(response);
 }
 
 // Parses the body as a JSON object; replies Error_Json and returns false otherwise.
-bool ReadJsonBody(const std::shared_ptr<HttpConnection>& connection, Json::Value& src_root)
+bool ReadJsonBody(const HttpRequestPtr& request, const Callback& callback, Json::Value& src_root)
 {
-    connection->SetContentType("text/json");
-    auto body_str = connection->RequestBody();
-    if (!ParseJsonObject(body_str, src_root))
+    if (!ParseJsonObject(std::string(request->body()), src_root))
     {
         std::cout << "Failed to parse JSON data!" << std::endl;
-        ReplyError(connection, ErrorCodes::Error_Json);
+        ReplyError(callback, ErrorCodes::Error_Json);
         return false;
     }
     return true;
 }
 
 // Checks the emailed code; replies VerifyExpired / VerifyCodeErr and returns false on mismatch.
-bool CheckVerifyCode(const std::shared_ptr<HttpConnection>& connection, const std::string& email,
-                     const std::string& code)
+bool CheckVerifyCode(const Callback& callback, const std::string& email, const std::string& code)
 {
     std::string verify_code;
     if (!RedisMgr::GetInstance()->Get(CODEPREFIX + email, verify_code))
     {
         std::cout << " get verify code expired" << std::endl;
-        ReplyError(connection, ErrorCodes::VerifyExpired);
+        ReplyError(callback, ErrorCodes::VerifyExpired);
         return false;
     }
     if (verify_code != code)
     {
         std::cout << " verify code error" << std::endl;
-        ReplyError(connection, ErrorCodes::VerifyCodeErr);
+        ReplyError(callback, ErrorCodes::VerifyCodeErr);
         return false;
     }
     return true;
@@ -66,33 +94,67 @@ void ConsumeVerifyCode(const std::string& email)
 
 } // namespace
 
-void LogicSystem::RegGet(std::string url, HttpHandler handler)
+void LogicSystem::RegGet(const std::string& path, Handler handler)
 {
-    _get_handlers.insert(make_pair(url, handler));
+    drogon::app().registerHandler(
+        path,
+        [handler = std::move(handler)](const HttpRequestPtr& request,
+                                       std::function<void(const HttpResponsePtr&)>&& callback) {
+            try
+            {
+                handler(request, callback);
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "handle request exception is " << e.what() << std::endl;
+                ReplyServerError(callback);
+            }
+        },
+        {drogon::Get});
 }
 
-void LogicSystem::RegPost(std::string url, HttpHandler handler)
+void LogicSystem::RegPost(const std::string& path, Handler handler)
 {
-    _post_handlers.insert(make_pair(url, handler));
+    drogon::app().registerHandler(
+        path,
+        [handler = std::move(handler)](const HttpRequestPtr& request,
+                                       std::function<void(const HttpResponsePtr&)>&& callback) {
+            try
+            {
+                handler(request, callback);
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "handle request exception is " << e.what() << std::endl;
+                ReplyServerError(callback);
+            }
+        },
+        {drogon::Post});
 }
 
-LogicSystem::LogicSystem()
+void LogicSystem::RegisterHandlers()
 {
-    RegGet("/get_test", [](std::shared_ptr<HttpConnection> connection) {
-        beast::ostream(connection->_response.body()) << "receive get_test req";
+    RegGet("/get_test", [](const HttpRequestPtr& request, const Callback& callback) {
+        std::string body = "receive get_test req";
         int i = 0;
-        for (auto& elem : connection->_get_params)
+        for (const auto& elem : request->getParameters())
         {
-            i++;
-            beast::ostream(connection->_response.body()) << " param " << i << "key is" << elem.first;
-            beast::ostream(connection->_response.body()) << " param " << i << "val is" << elem.second << std::endl;
+            ++i;
+            body += " param " + std::to_string(i) + "key is" + elem.first;
+            body += " param " + std::to_string(i) + "val is" + elem.second + "\n";
         }
+
+        auto response = drogon::HttpResponse::newHttpResponse();
+        response->setStatusCode(drogon::k200OK);
+        response->setContentTypeString(std::string_view("text/plain"));
+        response->setBody(std::move(body));
+        callback(response);
     });
 
-    RegPost("/get_verify_code", [](std::shared_ptr<HttpConnection> connection) {
+    RegPost("/get_verify_code", [](const HttpRequestPtr& request, const Callback& callback) {
         std::cout << "get_verify_code" << std::endl;
         Json::Value src_root;
-        if (!ReadJsonBody(connection, src_root))
+        if (!ReadJsonBody(request, callback, src_root))
         {
             return;
         }
@@ -100,7 +162,7 @@ LogicSystem::LogicSystem()
         std::string email;
         if (!GetStringField(src_root, "email", email, kMaxEmailLength))
         {
-            ReplyError(connection, ErrorCodes::Error_Json);
+            ReplyError(callback, ErrorCodes::Error_Json);
             return;
         }
 
@@ -109,13 +171,13 @@ LogicSystem::LogicSystem()
         Json::Value root;
         root["error"] = rsp.error();
         root["email"] = email;
-        ReplyJson(connection, root);
+        ReplyJson(callback, root);
     });
 
-    RegPost("/user_register", [](std::shared_ptr<HttpConnection> connection) {
+    RegPost("/user_register", [](const HttpRequestPtr& request, const Callback& callback) {
         std::cout << "user_register" << std::endl;
         Json::Value src_root;
-        if (!ReadJsonBody(connection, src_root))
+        if (!ReadJsonBody(request, callback, src_root))
         {
             return;
         }
@@ -123,18 +185,18 @@ LogicSystem::LogicSystem()
         std::string email, name, pwd, confirm, icon, code;
         if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "user", name, kMaxFieldLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength) || !GetStringField(src_root, "confirm", confirm, kMaxFieldLength) || !GetStringField(src_root, "icon", icon, kMaxFieldLength) || !GetStringField(src_root, "verifycode", code, kMaxFieldLength))
         {
-            ReplyError(connection, ErrorCodes::Error_Json);
+            ReplyError(callback, ErrorCodes::Error_Json);
             return;
         }
 
         if (pwd != confirm)
         {
             std::cout << "password err " << std::endl;
-            ReplyError(connection, ErrorCodes::PasswdErr);
+            ReplyError(callback, ErrorCodes::PasswdErr);
             return;
         }
 
-        if (!CheckVerifyCode(connection, email, code))
+        if (!CheckVerifyCode(callback, email, code))
         {
             return;
         }
@@ -143,13 +205,13 @@ LogicSystem::LogicSystem()
         if (uid == 0)
         {
             std::cout << " user or email exist" << std::endl;
-            ReplyError(connection, ErrorCodes::UserExist);
+            ReplyError(callback, ErrorCodes::UserExist);
             return;
         }
         if (uid < 0)
         {
             std::cout << " register user db error" << std::endl;
-            ReplyError(connection, ErrorCodes::DbErr);
+            ReplyError(callback, ErrorCodes::DbErr);
             return;
         }
         ConsumeVerifyCode(email);
@@ -160,13 +222,13 @@ LogicSystem::LogicSystem()
         root["email"] = email;
         root["user"] = name;
         root["icon"] = icon;
-        ReplyJson(connection, root);
+        ReplyJson(callback, root);
     });
 
-    RegPost("/reset_pwd", [](std::shared_ptr<HttpConnection> connection) {
+    RegPost("/reset_pwd", [](const HttpRequestPtr& request, const Callback& callback) {
         std::cout << "reset_pwd" << std::endl;
         Json::Value src_root;
-        if (!ReadJsonBody(connection, src_root))
+        if (!ReadJsonBody(request, callback, src_root))
         {
             return;
         }
@@ -174,11 +236,11 @@ LogicSystem::LogicSystem()
         std::string email, name, pwd, code;
         if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "user", name, kMaxFieldLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength) || !GetStringField(src_root, "verifycode", code, kMaxFieldLength))
         {
-            ReplyError(connection, ErrorCodes::Error_Json);
+            ReplyError(callback, ErrorCodes::Error_Json);
             return;
         }
 
-        if (!CheckVerifyCode(connection, email, code))
+        if (!CheckVerifyCode(callback, email, code))
         {
             return;
         }
@@ -186,26 +248,26 @@ LogicSystem::LogicSystem()
         DbStatus email_status = MysqlMgr::GetInstance()->CheckEmail(name, email);
         if (email_status == DbStatus::Error)
         {
-            ReplyError(connection, ErrorCodes::DbErr);
+            ReplyError(callback, ErrorCodes::DbErr);
             return;
         }
         if (email_status == DbStatus::Mismatch)
         {
             std::cout << " user email not match" << std::endl;
-            ReplyError(connection, ErrorCodes::EmailNotMatch);
+            ReplyError(callback, ErrorCodes::EmailNotMatch);
             return;
         }
 
         DbStatus up_status = MysqlMgr::GetInstance()->UpdatePwd(name, pwd);
         if (up_status == DbStatus::Error)
         {
-            ReplyError(connection, ErrorCodes::DbErr);
+            ReplyError(callback, ErrorCodes::DbErr);
             return;
         }
         if (up_status == DbStatus::Mismatch)
         {
             std::cout << " update pwd failed" << std::endl;
-            ReplyError(connection, ErrorCodes::PasswdUpFailed);
+            ReplyError(callback, ErrorCodes::PasswdUpFailed);
             return;
         }
         ConsumeVerifyCode(email);
@@ -215,13 +277,13 @@ LogicSystem::LogicSystem()
         root["error"] = 0;
         root["email"] = email;
         root["user"] = name;
-        ReplyJson(connection, root);
+        ReplyJson(callback, root);
     });
 
-    RegPost("/user_login", [](std::shared_ptr<HttpConnection> connection) {
+    RegPost("/user_login", [](const HttpRequestPtr& request, const Callback& callback) {
         std::cout << "receive user login message" << std::endl;
         Json::Value src_root;
-        if (!ReadJsonBody(connection, src_root))
+        if (!ReadJsonBody(request, callback, src_root))
         {
             return;
         }
@@ -229,7 +291,7 @@ LogicSystem::LogicSystem()
         std::string email, pwd;
         if (!GetStringField(src_root, "email", email, kMaxEmailLength) || !GetStringField(src_root, "passwd", pwd, kMaxFieldLength))
         {
-            ReplyError(connection, ErrorCodes::Error_Json);
+            ReplyError(callback, ErrorCodes::Error_Json);
             return;
         }
         std::cout << "login email is " << email << std::endl;
@@ -238,13 +300,13 @@ LogicSystem::LogicSystem()
         DbStatus pwd_status = MysqlMgr::GetInstance()->CheckPwd(email, pwd, userInfo);
         if (pwd_status == DbStatus::Error)
         {
-            ReplyError(connection, ErrorCodes::DbErr);
+            ReplyError(callback, ErrorCodes::DbErr);
             return;
         }
         if (pwd_status == DbStatus::Mismatch)
         {
             std::cout << " user pwd not match" << std::endl;
-            ReplyError(connection, ErrorCodes::PasswdInvalid);
+            ReplyError(callback, ErrorCodes::PasswdInvalid);
             return;
         }
 
@@ -253,7 +315,7 @@ LogicSystem::LogicSystem()
         if (reply.error())
         {
             std::cout << " grpc get chat server failed, error is " << reply.error() << std::endl;
-            ReplyError(connection, ErrorCodes::RPCFailed);
+            ReplyError(callback, ErrorCodes::RPCFailed);
             return;
         }
 
@@ -265,29 +327,6 @@ LogicSystem::LogicSystem()
         root["token"] = reply.token();
         root["host"] = reply.host();
         root["port"] = reply.port();
-        ReplyJson(connection, root);
+        ReplyJson(callback, root);
     });
-}
-
-bool LogicSystem::HandleGet(std::string path, std::shared_ptr<HttpConnection> con)
-{
-    auto it = _get_handlers.find(path);
-    if (it == _get_handlers.end())
-    {
-        return false;
-    }
-    it->second(con);
-    return true;
-}
-
-bool LogicSystem::HandlePost(std::string path, std::shared_ptr<HttpConnection> con)
-{
-    auto it = _post_handlers.find(path);
-    if (it == _post_handlers.end())
-    {
-        std::cout << "handle Post failed" << std::endl;
-        return false;
-    }
-    it->second(con);
-    return true;
 }
