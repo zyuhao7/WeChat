@@ -74,7 +74,9 @@ jobs:
             libprotobuf-dev protobuf-compiler \
             libgrpc++-dev protobuf-compiler-grpc \
             libjsoncpp-dev libhiredis-dev libmysqlcppconn-dev \
-            libgtest-dev
+            libdrogon-dev libtrantor-dev uuid-dev zlib1g-dev libsqlite3-dev \
+            libbrotli-dev libyaml-cpp-dev libpq-dev default-libmysqlclient-dev \
+            libssl-dev libc-ares-dev libgtest-dev
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

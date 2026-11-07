@@ -1,23 +1,25 @@
 #pragma once
-#include "const.h"
+
+#include <drogon/drogon.h>
+
+#include <functional>
+#include <string>
+
 #include "Singleton.h"
-class HttpConnection;
-typedef std::function<void(std::shared_ptr<HttpConnection>)> HttpHandler;
 
 class LogicSystem : public Singleton<LogicSystem>
 {
     friend class Singleton<LogicSystem>;
 
 public:
-    ~LogicSystem() {}
-    bool HandleGet(std::string, std::shared_ptr<HttpConnection>);
-    bool HandlePost(std::string, std::shared_ptr<HttpConnection>);
-
-    void RegGet(std::string, HttpHandler handler);
-    void RegPost(std::string, HttpHandler handler);
+    ~LogicSystem() = default;
+    void RegisterHandlers();
 
 private:
-    LogicSystem();
-    std::map<std::string, HttpHandler> _post_handlers;
-    std::map<std::string, HttpHandler> _get_handlers;
+    using Callback = std::function<void(const drogon::HttpResponsePtr&)>;
+    using Handler = std::function<void(const drogon::HttpRequestPtr&, const Callback&)>;
+
+    LogicSystem() = default;
+    void RegGet(const std::string& path, Handler handler);
+    void RegPost(const std::string& path, Handler handler);
 };

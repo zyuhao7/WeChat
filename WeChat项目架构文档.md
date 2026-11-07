@@ -13,7 +13,7 @@ flowchart TB
     Client["ChatClient (Qt)<br/>Qt Widgets + QSS 仿微信 UI"]
     subgraph Gate["GateServer · HTTP 网关 :8080"]
         direction LR
-        CServer["CServer / HttpConnection"] --> Logic["LogicSystem<br/>路由 + 鉴权"]
+        Drogon["Drogon HttpAppFramework<br/>4 个 IO 线程"] --> Logic["LogicSystem<br/>路由 + 鉴权"]
     end
     subgraph Verify["VerifyServer · Node.js :50052"]
         V["验证码生成 + SMTP"]
@@ -30,7 +30,7 @@ flowchart TB
     Redis[("Redis<br/>token · 路由 · 在线数")]
     MySQL[("MySQL<br/>用户 · 好友 · 聊天记录")]
 
-    Client -->|HTTP| CServer
+    Client -->|HTTP| Drogon
     Client -->|TCP 长连接| CS1
     Logic -->|gRPC| V
     Logic -->|gRPC| S
@@ -60,7 +60,7 @@ flowchart TB
 |------|------|
 | 客户端 UI | C++、Qt Widgets、QSS、QPainter、自定义气泡控件 |
 | 客户端网络 | QtNetwork（QNetworkAccessManager 做 HTTP，QTcpSocket 做长连接） |
-| 服务端网络 | Boost.Asio、Boost.Beast（HTTP）、epoll |
+| 服务端网络 | Drogon（HTTP）、Boost.Asio / Beast（TCP）、epoll |
 | 服务间通信 | gRPC + Protocol Buffers |
 | 数据序列化 | JSON（客户端↔ChatServer、GateServer 内部）、protobuf（服务间） |
 | 缓存/存储 | Redis（hiredis / ioredis）、MySQL（MySQL Connector/C++） |
@@ -75,10 +75,10 @@ flowchart TB
 
 **职责**：面向客户端唯一 HTTP 入口，处理注册、登录、密码重置、验证码请求。
 
-- **入口**：`GateServer/GateServer.cpp:125`。读取 `[GateServer] Port`（默认 8080），创建 `CServer` 监听，注册 SIGINT/SIGTERM 优雅退出。
-- **HTTP 层**：`HttpConnection.cpp` 基于 Boost.Beast 异步读写。支持 GET（解析 query 参数）与 POST（读取 body）。内置 `deadline_` 定时器，连接空闲 60 秒自动关闭。
-- **并发模型**：`AsioIOServicePool` 负责把新连接轮询分配到多个 `io_context` 线程，主 `io_context` 只做 accept。
-- **路由表**（`LogicSystem`，GET 用 `_get_handlers`、POST 用 `_post_handlers`）：
+- **入口**：`GateServer/GateServer.cpp`。读取 `[GateServer] Port`（默认 8080），创建 Drogon `HttpAppFramework`，`addListener("0.0.0.0", port)` 后 `run()`；Drogon 自行处理 SIGINT/SIGTERM 优雅退出。
+- **HTTP 层**：Drogon 负责 HTTP 解析、keep-alive、请求体读取与 404；`LogicSystem` 用 `registerHandler` 注册 GET/POST 路由，保留原有 JSON 字段与错误码。
+- **并发模型**：`setThreadNum(4)` 启动 4 个事件循环线程并行处理请求。处理函数仍同步调用 Redis/MySQL/gRPC 客户端，慢下游会占用所在线程，因此线程数不能设为 1。
+- **路由表**（`LogicSystem::RegisterHandlers`）：
 
   | 方法 | 路径 | 处理逻辑 |
   |------|------|----------|
@@ -92,14 +92,13 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    Client["Client"] -->|HTTP GET/POST| CServer["CServer<br/>accept"]
-    CServer --> Conn["HttpConnection<br/>异步读写 · 60s 空闲超时"]
-    Conn -->|HandleGet / HandlePost| Logic["LogicSystem<br/>路由表"]
+    Client["Client"] -->|HTTP GET/POST| App["Drogon HttpAppFramework<br/>4 个 IO 线程"]
+    App --> Logic["LogicSystem<br/>registerHandler 路由 + JSON 响应"]
     Logic -->|/user_register · /reset_pwd · /user_login| MySQL[("MySQL")]
     Logic -->|"校验 / 消费 code_{email}"| Redis[("Redis")]
     Logic -->|/get_verify_code| VG["VerifyGrpcClient"] -->|gRPC :50052| VS["VerifyServer"]
     Logic -->|/user_login| SG["StatusGrpcClient"] -->|gRPC :50053| SS["StatusServer"]
-    Conn -->|WriteResponse · shutdown_send| Client
+    App -->|"HTTP 响应（keep-alive）"| Client
 ```
 
 - **配置** `GateServer/config.ini`：`[GateServer] Port`、`[VerifyServer]`、`[StatusServer]`、`[Mysql]`、`[Redis]`。
@@ -782,7 +781,7 @@ scripts/mock_accounts.sh [count]     # 默认 5，生成 mock1..mock5
 
 4. **Redis 未被纳入启动脚本**：Redis（:6380）是 ChatServer 与 VerifyServer 的硬依赖，但没有任何脚本启动它。Redis 不在时整套服务「看似起来了」实则半死：ChatServer 阻塞在连接、VerifyServer 直接崩溃、只剩 Gate+Status。修复：`start_all.sh` 在启动前探测 6380，未响应则拉起本地实例（端口/密码取自各配置）；`stop_all.sh` 会一并关停。
 
-5. **重启时 acceptor 报 `Address already in use`**：ChatServer/GateServer 的 `CServer` 在构造函数初始化列表里直接 bind 端口，没机会设置 `SO_REUSEADDR`。快速重启时上一实例残留的连接会让新 bind 失败（表现为 chatserver2 起不来，`:8091` 拒绝连接）。修复：改为显式 `open → set_option(reuse_address) → bind → listen`。
+5. **重启时 acceptor 报 `Address already in use`**：ChatServer 的 `CServer` 在构造函数初始化列表里直接 bind 端口，没机会设置 `SO_REUSEADDR`。快速重启时上一实例残留的连接会让新 bind 失败（表现为 chatserver2 起不来，`:8091` 拒绝连接）。修复：改为显式 `open → set_option(reuse_address) → bind → listen`。GateServer 后来改用 Drogon，不再有此问题。
 
 ### 13.4 需要 sudo 的指令（暂未执行，请手动运行）
 

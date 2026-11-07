@@ -1,11 +1,14 @@
+#include <drogon/drogon.h>
+
+#include <cstdlib>
 #include <iostream>
-#include <json/json.h>
-#include <json/value.h>
-#include <json/reader.h>
-#include "CServer.h"
+#include <string>
+#include <string_view>
+
 #include "ConfigMgr.h"
-#include "RedisMgr.h"
+#include "LogicSystem.h"
 #include "MysqlMgr.h"
+#include "RedisMgr.h"
 
 int main()
 {
@@ -24,19 +27,24 @@ int main()
         RedisMgr::GetInstance();
         MysqlMgr::GetInstance();
 
-        unsigned short port = static_cast<unsigned short>(gate_port);
-        net::io_context ioc{1};
-        boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
-        signals.async_wait([&ioc](const boost::system::error_code& error, int signal_number) {
-            if (error)
-            {
-                return;
-            }
-            ioc.stop();
-        });
-        std::make_shared<CServer>(ioc, port)->Start();
-        std::cout << "Gate Server listen on port: " << port << std::endl;
-        ioc.run();
+        auto& app = drogon::app();
+        app.addListener("0.0.0.0", static_cast<uint16_t>(gate_port));
+        // handlers still call the synchronous Redis/MySQL/gRPC clients, so give the loop
+        // enough threads that one slow dependency does not stall every connection
+        app.setThreadNum(4);
+        app.setServerHeaderField("GateServer");
+        app.setLogLevel(trantor::Logger::kWarn);
+
+        LogicSystem::GetInstance()->RegisterHandlers();
+
+        auto not_found = drogon::HttpResponse::newHttpResponse();
+        not_found->setStatusCode(drogon::k404NotFound);
+        not_found->setContentTypeString(std::string_view("text/plain"));
+        not_found->setBody("url not found\r\n");
+        app.setCustom404Page(not_found);
+
+        std::cout << "Gate Server listen on port: " << gate_port << std::endl;
+        app.run();
     }
     catch (std::exception const& e)
     {
